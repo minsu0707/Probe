@@ -1,3 +1,5 @@
+**English** · [한국어](README.ko.md)
+
 # Probe
 
 Local test-automation dashboard. Claude writes the Playwright specs; Probe stores services and credentials, learns the domain from documents, runs the tests, and shows the run live.
@@ -10,18 +12,20 @@ npm run build
 claude mcp add probe -- node "<this folder>\mcp\server.ts"
 ```
 
-Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH` (the "학습 시작" button runs `claude -p`, using your existing login).
+Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH` (the "학습 시작" / Start learning button runs `claude -p`, using your existing login).
 
 ## Use
 
-Ask Claude "Probe 열어줘". The MCP server starts the dashboard on `http://127.0.0.1:4317` and opens it. Or run `npm start`.
+Ask Claude "open Probe". The MCP server starts the dashboard on `http://127.0.0.1:4317` and opens it. Or run `npm start`.
 
 | Menu | What it does |
 |---|---|
-| 서비스 | Register a service, drop a `.env` or passphrase-protected `.enc` file. |
-| 도메인 학습 | Upload documents or add Drive links, press 학습 시작. Claude writes cited knowledge files that it reads before writing tests. |
-| 실시간 모니터링 | Current page, feature, screen and step; counts; live browser frame; progress log. |
-| 결과 · 결함 | Failed tests become deduplicated defect candidates with screenshot and trace. |
+| 서비스 (Services) | Register a service, drop a `.env` or passphrase-protected `.enc` file. |
+| 도메인 학습 (Domain learning) | Upload documents or add Drive links, press Start learning. Claude writes cited knowledge files that it reads before writing tests. |
+| 실시간 모니터링 (Live monitor) | Current page, feature, screen and step; counts; live browser frame; progress log. |
+| 결과 · 결함 (Results · Defects) | Failed tests become deduplicated defect candidates with screenshot and trace. |
+
+The interface is in Korean.
 
 ## Develop
 
