@@ -41,6 +41,7 @@ server/
   modules/<name>/  Vertical slice per feature (see section 3)
 reporter/        Playwright side: probe-reporter (sends events), fixture (page, frames), transport
 mcp/             MCP server for Claude
+desktop/         Electron shell (window, tray, server lifecycle) and icons
 web/src/
   app/             Shell: App, Sidebar, Topbar, router
   core/            api (HTTP client), store (state), socket (WebSocket), format

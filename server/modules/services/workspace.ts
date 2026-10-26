@@ -40,6 +40,8 @@ export default {
   reporter: [['${posix(join(ROOT, 'reporter', 'probe-reporter.ts'))}'], ['line']],
   use: {
     baseURL: process.env.BASE_URL,
+    // 'msedge' | 'chrome' use the installed browser; undefined uses Playwright's own Chromium.
+    channel: process.env.PROBE_BROWSER_CHANNEL || undefined,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     locale: 'ko-KR',

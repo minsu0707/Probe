@@ -10,7 +10,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { conflict, unprocessable } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import { newId } from '../../core/ids.ts';
-import { killTree } from '../../core/process.ts';
+import { envWithoutElectronFlag, killTree } from '../../core/process.ts';
 import { serviceDir } from '../../config.ts';
 import type { Job } from '../../../shared/models.ts';
 import { listDocs, markLearned } from '../documents/service.ts';
@@ -44,7 +44,7 @@ export function startLearn(serviceId: string): Job {
     driveLinks: docs.filter((d) => d.kind === 'drive').map((d) => d.ref),
     hasExistingKnowledge: countKnowledge(serviceId) > 0,
   });
-  const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env: envWithoutElectronFlag(), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
 
   const log: string[] = [];

@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { PORT, testsDir } from '../../config.ts';
 import { runtimeEnv } from '../secrets/service.ts';
+import { detectBrowserChannel } from './browser.ts';
 
 const require = createRequire(import.meta.url);
 
@@ -45,6 +46,8 @@ export function launchPlaywright(o: LaunchOptions): ChildProcess {
       PROBE_RUN_ID: o.runId,
       PROBE_TOKEN: o.token,
       FORCE_COLOR: '0',
+      // Read by the generated playwright.config.ts; empty means Playwright's bundled Chromium.
+      PROBE_BROWSER_CHANNEL: detectBrowserChannel() ?? '',
     },
     windowsHide: true,
   });

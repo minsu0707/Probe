@@ -33,6 +33,20 @@ claude mcp add --scope user probe -- node "C:\full\path\to\probe\mcp\server.ts"
 
 To stop it: `Probe-stop.cmd` or `npm run stop`. It refuses while a test run or learning job is active; add `--force` to stop anyway. The server log is `data/probe.log`.
 
+## Desktop app (installer)
+
+```
+npm run dist       # builds release/Probe-Setup-<version>.exe
+npm run pack       # same app as an unpacked folder: release/win-unpacked/Probe.exe (for testing)
+npm run desktop    # run the desktop app from source
+```
+
+The installer is per-user (no admin rights), adds Start-menu and Desktop shortcuts, and starts Probe in its own window. Closing the window hides it to the tray so runs continue; **종료** in the tray menu quits and stops the server. The tray menu also has "start at Windows login". Installed builds keep their data in `%APPDATA%\Probe`.
+
+Tests run in the installed Microsoft Edge (or Chrome) by default, so nothing extra is downloaded. Set `PROBE_BROWSER=chromium` to use Playwright's own browser (`npx playwright install chromium`).
+
+The installer is not code-signed, so Windows SmartScreen may warn about an unknown publisher: choose "More info → Run anyway". Because npm blocks install scripts by default, `npm install` approves only Electron's (`allowScripts` in `package.json`).
+
 ## Use
 
 | Menu | What it does |

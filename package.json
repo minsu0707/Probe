@@ -18,27 +18,79 @@
     "stop": "node scripts/stop.ts",
     "autostart:on": "node scripts/windows.ts autostart on",
     "autostart:off": "node scripts/windows.ts autostart off",
-    "shortcut": "node scripts/windows.ts shortcut"
+    "shortcut": "node scripts/windows.ts shortcut",
+    "desktop": "electron .",
+    "pack": "npm run build && electron-builder --win --dir",
+    "dist": "npm run build && electron-builder --win"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@playwright/test": "^1.64.1",
     "dotenv": "^18.0.9",
     "fflate": "^0.8.3",
     "hono": "^4.13.14",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
     "ws": "^8.22.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.1.2",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "allowScripts": {
+    "electron@45.0.0": true
+  },
+  "productName": "Probe",
+  "description": "Test automation dashboard for Claude and Playwright",
+  "author": "minsu0707",
+  "main": "desktop/main.ts",
+  "build": {
+    "appId": "com.minsu0707.probe",
+    "productName": "Probe",
+    "artifactName": "Probe-Setup-${version}.exe",
+    "asar": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**/*",
+      "server/**/*",
+      "shared/**/*",
+      "reporter/**/*",
+      "mcp/**/*",
+      "scripts/**/*",
+      "dist/**/*",
+      "package.json",
+      "!**/*.map"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "desktop/assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Probe",
+      "deleteAppDataOnUninstall": false
+    }
   }
 }

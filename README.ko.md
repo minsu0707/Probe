@@ -33,6 +33,20 @@ claude mcp add --scope user probe -- node "C:\전체\경로\probe\mcp\server.ts"
 
 끄려면 `Probe-stop.cmd` 또는 `npm run stop`을 실행합니다. 테스트나 학습이 진행 중이면 거절하고, `--force`를 붙이면 그래도 끕니다. 서버 로그는 `data/probe.log`입니다.
 
+## 데스크톱 앱 (설치 파일)
+
+```
+npm run dist       # release/Probe-Setup-<버전>.exe 생성
+npm run pack       # 같은 앱을 풀어진 폴더로 생성: release/win-unpacked/Probe.exe (테스트용)
+npm run desktop    # 소스에서 데스크톱 앱 실행
+```
+
+설치 파일은 사용자 단위(관리자 권한 불필요)로 설치되고, 시작 메뉴와 바탕화면에 바로가기를 만들며, Probe 전용 창으로 열립니다. 창을 닫으면 트레이로 숨어서 실행이 계속되고, 트레이 메뉴의 **종료**를 누르면 서버까지 완전히 종료됩니다. 트레이 메뉴에서 "Windows 로그인 시 자동 시작"도 켤 수 있습니다. 설치된 앱의 데이터는 `%APPDATA%\Probe`에 저장됩니다.
+
+테스트는 기본적으로 설치된 Microsoft Edge(없으면 Chrome)로 실행하므로 따로 내려받는 것이 없습니다. Playwright 자체 브라우저를 쓰려면 `PROBE_BROWSER=chromium`을 지정하고 `npx playwright install chromium`을 실행하세요.
+
+설치 파일에는 코드 서명이 없어서 Windows SmartScreen이 "알 수 없는 게시자" 경고를 띄울 수 있습니다. "추가 정보 → 실행"을 누르면 됩니다. npm은 설치 스크립트를 기본으로 막기 때문에, `package.json`의 `allowScripts`에서 Electron의 스크립트만 허용해 두었습니다.
+
 ## 사용
 
 | 메뉴 | 하는 일 |
