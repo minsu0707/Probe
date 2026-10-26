@@ -6,17 +6,34 @@
 
 ## 설치 (한 번만)
 
+Probe 폴더 안(이 README가 있는 폴더)에서 실행합니다.
+
 ```
 npm install
 npm run build
-claude mcp add probe -- node "<이 폴더>\mcp\server.ts"
 ```
 
 Node 24 이상(TypeScript를 바로 실행하고 내장 `node:sqlite`를 씁니다)과, `PATH`에 Claude Code CLI가 필요합니다. "학습 시작" 버튼은 `claude -p`를 실행하며 이미 로그인된 Claude를 그대로 씁니다.
 
-## 사용
+선택 사항: Claude Code가 Probe를 열고 테스트를 돌려주게 하려면 MCP로 한 번 등록합니다. 아무 폴더에서나 실행해도 됩니다. 경로는 이 폴더의 전체 경로로 바꾸세요(대시보드 설정 화면에 실제 경로가 채워진 명령이 있습니다).
 
-Claude에게 "Probe 열어줘"라고 하면 MCP 서버가 대시보드를 `http://127.0.0.1:4317`에 띄우고 엽니다. 직접 띄우려면 `npm start`를 실행하세요.
+```
+claude mcp add --scope user probe -- node "C:\전체\경로\probe\mcp\server.ts"
+```
+
+## 켜기
+
+| 방법 | 동작 |
+|---|---|
+| **`Probe.cmd`** 더블클릭 | 서버가 꺼져 있으면 켜고 `http://127.0.0.1:4317`에서 대시보드를 엽니다. 이미 켜져 있으면 브라우저만 엽니다. |
+| `npm run shortcut` | 같은 동작을 하는 "Probe" 바로가기를 바탕화면에 만듭니다. |
+| `npm run autostart:on` | Windows에 로그인할 때 서버를 창과 브라우저 없이 자동으로 켭니다. 되돌리려면 `npm run autostart:off`. |
+| Claude에게 "Probe 열어줘" | 위 MCP를 등록했다면 `Probe.cmd`와 같습니다. |
+| `npm start` | 현재 터미널에서 서버를 실행합니다. |
+
+끄려면 `Probe-stop.cmd` 또는 `npm run stop`을 실행합니다. 테스트나 학습이 진행 중이면 거절하고, `--force`를 붙이면 그래도 끕니다. 서버 로그는 `data/probe.log`입니다.
+
+## 사용
 
 | 메뉴 | 하는 일 |
 |---|---|

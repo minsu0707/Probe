@@ -75,6 +75,9 @@ try {
   const rebinding = await new Promise<number>((ok) => http.get({ host: '127.0.0.1', port: PORT, path: '/api/services', headers: { host: 'evil.example:4411' } }, (r) => ok(r.statusCode ?? 0)));
   assert.equal(rebinding, 403, 'requests with a foreign Host header are rejected');
 
+  // --- launchers rely on this to tell Probe apart from another program on the port
+  assert.equal((await call('/health')).app, 'probe');
+
   // --- register a service with credentials
   const svc = await post('/services', { name: '스모크 쇼핑몰', baseUrl: `http://127.0.0.1:${TARGET_PORT}` });
   await post(`/services/${svc.id}/env`, { text: `TEST_USER=qa@example.com\nTEST_PASSWORD=${SECRET}\n` });

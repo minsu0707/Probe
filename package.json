@@ -13,7 +13,12 @@
     "start": "node server/main.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"tests/*.test.ts\"",
-    "smoke": "node scripts/smoke.ts"
+    "smoke": "node scripts/smoke.ts",
+    "launch": "node scripts/launch.ts",
+    "stop": "node scripts/stop.ts",
+    "autostart:on": "node scripts/windows.ts autostart on",
+    "autostart:off": "node scripts/windows.ts autostart off",
+    "shortcut": "node scripts/windows.ts shortcut"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",

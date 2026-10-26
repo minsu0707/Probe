@@ -11,6 +11,7 @@ import { learningRoutes } from '../modules/learning/routes.ts';
 import { runsRoutes } from '../modules/runs/routes.ts';
 import { secretsRoutes } from '../modules/secrets/routes.ts';
 import { servicesRoutes } from '../modules/services/routes.ts';
+import { systemRoutes } from '../modules/system/routes.ts';
 import { guard } from './guard.ts';
 import { serveWebApp } from './static.ts';
 
@@ -25,6 +26,7 @@ export function buildApp(): Hono {
     return c.json({ error: 'Internal error' }, 500);
   });
 
+  app.route('/api', systemRoutes);
   app.route('/api', servicesRoutes);
   app.route('/api', secretsRoutes);
   app.route('/api', documentsRoutes);

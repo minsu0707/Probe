@@ -6,17 +6,34 @@ Local test-automation dashboard. Claude writes the Playwright specs; Probe store
 
 ## Setup (once)
 
+Run these inside the Probe folder (the folder that contains this README):
+
 ```
 npm install
 npm run build
-claude mcp add probe -- node "<this folder>\mcp\server.ts"
 ```
 
 Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH` (the "학습 시작" / Start learning button runs `claude -p`, using your existing login).
 
-## Use
+Optional: let Claude Code open Probe and run tests for you. Register it once, from any folder. Replace the path with the full path of this folder (the settings page in the dashboard shows the command with your real path filled in):
 
-Ask Claude "open Probe". The MCP server starts the dashboard on `http://127.0.0.1:4317` and opens it. Or run `npm start`.
+```
+claude mcp add --scope user probe -- node "C:\full\path\to\probe\mcp\server.ts"
+```
+
+## Start
+
+| How | What happens |
+|---|---|
+| Double-click **`Probe.cmd`** | Starts the server if needed and opens the dashboard at `http://127.0.0.1:4317`. If it is already running, it only opens the browser. |
+| `npm run shortcut` | Puts a "Probe" shortcut on the Desktop that does the same. |
+| `npm run autostart:on` | Starts the server (no window, no browser) when you log in to Windows. Undo with `npm run autostart:off`. |
+| Ask Claude "open Probe" | Same as `Probe.cmd`, if you registered the MCP server above. |
+| `npm start` | Runs the server in the current terminal. |
+
+To stop it: `Probe-stop.cmd` or `npm run stop`. It refuses while a test run or learning job is active; add `--force` to stop anyway. The server log is `data/probe.log`.
+
+## Use
 
 | Menu | What it does |
 |---|---|

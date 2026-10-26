@@ -48,7 +48,7 @@ web/src/
   features/<name>/ One folder per screen: services, learn, monitor, results, settings
   styles/          tokens → base → shell → components → pages → responsive
 tests/           Unit tests for pure logic (node:test)
-scripts/smoke.ts End-to-end test with a real server and Playwright
+scripts/        Launchers (launch, stop, autostart, shortcut) and the end-to-end smoke test
 ```
 
 ## 3. Server modules

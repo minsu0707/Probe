@@ -48,7 +48,7 @@ web/src/
   features/<기능>/ 화면 단위: services, learn, monitor, results, settings
   styles/          tokens → base → shell → components → pages → responsive
 tests/           순수 로직 단위 테스트 (node:test)
-scripts/smoke.ts 실제 서버+Playwright를 돌리는 종단 간 테스트
+scripts/        실행 스크립트(launch, stop, autostart, shortcut)와 종단 간 스모크 테스트
 ```
 
 ## 3. 서버 모듈

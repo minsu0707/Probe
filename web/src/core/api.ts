@@ -29,6 +29,8 @@ const json = (method: string, body?: unknown): RequestInit => ({
 });
 
 export const api = {
+  health: () => call<{ app: 'probe'; version: string; pid: number; root: string }>('/api/health'),
+
   // services
   services: () => call<ServiceOverview[]>('/api/services'),
   createService: (b: { name: string; baseUrl?: string; notes?: string }) => call<ServiceOverview>('/api/services', json('POST', b)),

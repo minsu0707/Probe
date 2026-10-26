@@ -3,17 +3,12 @@
  * so this process holds no state. If the dashboard isn't running, the first tool call starts
  * it. No tool ever returns a credential value; Claude only learns variable names.
  */
-import { spawn } from 'node:child_process';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PORT = Number(process.env.PORT ?? 4317);
-const BASE = `http://127.0.0.1:${PORT}`;
-const HOME = resolve(process.env.PROBE_HOME ?? join(ROOT, 'data'));
+import { ensureServer, openBrowser, BASE_URL as BASE } from '../scripts/ensure-server.ts';
+import { HOME } from '../server/config.ts';
 
 async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(BASE + path, { ...init, headers: { 'content-type': 'application/json', ...init?.headers } });
@@ -21,24 +16,6 @@ async function api<T = any>(path: string, init?: RequestInit): Promise<T> {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as any).error ?? `HTTP ${res.status}`);
   return data as T;
-}
-
-const up = () => api('/api/services').then(() => true, () => false);
-
-async function ensureServer(): Promise<boolean> {
-  if (await up()) return false;
-  const child = spawn(process.execPath, [join(ROOT, 'server', 'main.ts')], { cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true });
-  child.unref();
-  for (let i = 0; i < 40; i++) {
-    await new Promise((r) => setTimeout(r, 250));
-    if (await up()) return true;
-  }
-  throw new Error(`Probe server did not start on port ${PORT}`);
-}
-
-function openBrowser(url: string) {
-  const [cmd, args] = process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
-  spawn(cmd, args as string[], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
 }
 
 async function resolveService(ref: string) {
