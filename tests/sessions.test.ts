@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseRateLimit } from '../server/modules/agents/claude-cli.ts';
+import { buildMcpAddArgs, formatCommand, parseMcpGet, parseRateLimit } from '../server/modules/agents/claude-cli.ts';
 import { parseStreamLine } from '../server/modules/learning/stream.ts';
 import { buildSystemPrompt, openingMessage } from '../server/modules/sessions/prompt.ts';
 import { buildArgs } from '../server/modules/sessions/service.ts';
@@ -62,4 +62,28 @@ test('opening message: the button narrows with a focus, a chat is just the text'
   assert.match(openingMessage('write-tests', '로그인'), /Focus on: 로그인/);
   assert.equal(openingMessage('chat', ''), '');
   assert.equal(openingMessage('chat', '안녕'), '안녕');
+});
+// Windows paths are built from a backslash constant so the test source needs no escape sequences.
+const BS = String.fromCharCode(92);
+const winPath = (...parts: string[]) => parts.join(BS);
+
+test('mcp: source runs register plain node, the installed app adds ELECTRON_RUN_AS_NODE', () => {
+  const script = winPath('C:', 'p', 'mcp', 'server.ts');
+  assert.deepEqual(buildMcpAddArgs({ runtime: 'node', script, electron: false }), ['mcp', 'add', '--scope', 'user', 'probe', '--', 'node', script]);
+  const app = buildMcpAddArgs({ runtime: winPath('C:', 'Probe', 'Probe.exe'), script, electron: true });
+  assert.deepEqual(app.slice(3, 7), ['user', '-e', 'ELECTRON_RUN_AS_NODE=1', 'probe']);
+  assert.equal(app.indexOf('--'), app.indexOf('probe') + 1); // everything after -- is the server command
+});
+
+test('mcp: the pasteable command quotes paths with spaces', () => {
+  const p = winPath('C:', 'Program Files', 'x', 'server.ts');
+  assert.equal(formatCommand(['mcp', 'add', '--', 'node', p]), `claude mcp add -- node "${p}"`);
+});
+
+test('mcp: registered / current are read from `claude mcp get`', () => {
+  const script = winPath('C:', 'Users', 'me', 'Probe', 'mcp', 'server.ts');
+  assert.deepEqual(parseMcpGet(1, 'No MCP server named "probe"', script), { registered: false, current: false });
+  assert.deepEqual(parseMcpGet(0, `probe:\n  Args: ${script}`, script), { registered: true, current: true });
+  assert.deepEqual(parseMcpGet(0, `probe:\n  Args: ${script.replaceAll(BS, BS + BS)}`, script), { registered: true, current: true }); // JSON-style doubled backslashes
+  assert.deepEqual(parseMcpGet(0, `probe:\n  Args: ${winPath('D:', 'old', 'mcp', 'server.ts')}`, script), { registered: true, current: false });
 });

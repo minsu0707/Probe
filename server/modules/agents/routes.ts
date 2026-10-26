@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { parseBody } from '../../http/validate.ts';
+import { installMcp, mcpStatus, removeMcp } from './mcp.ts';
 import { cancelLogin, claudeStatus, loginState, logout, selectProfile, startLogin, submitLoginCode } from './service.ts';
 
 /** Claude is the only agent today; the path leaves room for others (`/agents/<name>`). */
@@ -19,4 +20,7 @@ export const agentsRoutes = new Hono()
     return c.json(loginState());
   })
   .post('/agents/claude/login/cancel', (c) => (cancelLogin(), c.body(null, 204)))
+  .get('/integrations/mcp', async (c) => c.json(await mcpStatus()))
+  .post('/integrations/mcp', async (c) => c.json(await installMcp()))
+  .delete('/integrations/mcp', async (c) => c.json(await removeMcp()))
   .post('/agents/claude/logout', async (c) => (await logout(), c.json(await claudeStatus())));

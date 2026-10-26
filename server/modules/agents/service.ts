@@ -40,7 +40,7 @@ interface Result {
 }
 
 /** Run `claude <args>` to completion with a deadline. Never throws. */
-function runClaude(args: string[], env: NodeJS.ProcessEnv): Promise<Result> {
+export function runClaude(args: string[], env: NodeJS.ProcessEnv): Promise<Result> {
   return new Promise((resolve) => {
     const child = spawn('claude', args, { env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let stdout = '';

@@ -93,3 +93,25 @@ export function parseRateLimit(ev: unknown): ClaudeUsage | null {
   const sevenDay = win(windows.seven_day);
   return fiveHour || sevenDay ? { fiveHour, sevenDay, at: Date.now() } : null;
 }
+
+// ------------------------------------------------------------------ MCP registration
+
+export const MCP_NAME = 'probe';
+
+/**
+ * Arguments for `claude mcp add` that register Probe's MCP server for the user's own Claude Code.
+ * `runtime` is whatever is running Probe right now: `node` from a source checkout, or the installed
+ * app's executable, which only acts as Node when ELECTRON_RUN_AS_NODE is set (so it is passed along).
+ */
+export function buildMcpAddArgs(o: { runtime: string; script: string; electron: boolean }): string[] {
+  return ['mcp', 'add', '--scope', 'user', ...(o.electron ? ['-e', 'ELECTRON_RUN_AS_NODE=1'] : []), MCP_NAME, '--', o.runtime, o.script];
+}
+
+/** The same command as a line a person can paste into a terminal. */
+export const formatCommand = (args: string[]): string => ['claude', ...args].map((a) => (/[\s"]/.test(a) ? `"${a}"` : a)).join(' ');
+
+/** Registered means `claude mcp get probe` succeeded; `current` means it points at this install's script. */
+export function parseMcpGet(code: number | null, output: string, script: string): { registered: boolean; current: boolean } {
+  if (code !== 0) return { registered: false, current: false };
+  return { registered: true, current: output.toLowerCase().replaceAll('\\\\', '\\').includes(script.toLowerCase()) };
+}

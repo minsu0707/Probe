@@ -15,7 +15,7 @@ npm run build
 
 Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH`. Learning runs `claude -p`; sign in under **설정 → Claude Code** (a browser opens, then you paste the code it shows). The status bar shows your 5-hour and 7-day usage, as last reported by a background job. By default Probe keeps its own sign-in in `data/claude`, separate from your personal Claude Code; one click switches to your existing login instead.
 
-Optional: let Claude Code open Probe and run tests for you. Register it once, from any folder. Replace the path with the full path of this folder (the settings page in the dashboard shows the command with your real path filled in):
+Optional: let your own Claude Code open Probe and run tests for you. Press **설정 → 연동 → 등록하기** (it runs `claude mcp add` for you and shows the output), or register it by hand once, from any folder. Replace the path with the full path of this folder (the settings page in the dashboard shows the command with your real path filled in):
 
 ```
 claude mcp add --scope user probe -- node "C:\full\path\to\probe\mcp\server.ts"

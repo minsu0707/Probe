@@ -476,3 +476,18 @@ input[aria-invalid='true'] {
 .field .seg-control {
   align-self: flex-start;
 }
+
+/* Output of a command the server ran for the user, shown like a terminal. Dark in both themes
+   on purpose: it reads as "this is a console", not as part of the page. */
+.terminal {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: 240px;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: #11161c;
+  color: #d5dde5;
+  font: 12.5px/1.5 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

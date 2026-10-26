@@ -6,6 +6,17 @@ import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatu
 
 export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, UsageWindow };
 
+export interface McpStatus {
+  installed: boolean;
+  registered: boolean;
+  stale: boolean;
+  command: string;
+}
+export interface McpResult extends McpStatus {
+  ok: boolean;
+  output: string;
+}
+
 export class ApiError extends Error {}
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -63,6 +74,11 @@ export const api = {
   jobs: (id: string) => call<Job[]>(`/api/services/${id}/jobs`),
   knowledge: (id: string) => call<KnowledgeFile[]>(`/api/services/${id}/knowledge`),
   saveKnowledge: (id: string, name: string, content: string) => call<void>(`/api/services/${id}/knowledge/${encodeURIComponent(name)}`, json('PUT', { content })),
+
+  // integrations
+  mcp: () => call<McpStatus>('/api/integrations/mcp'),
+  installMcp: () => call<McpResult>('/api/integrations/mcp', json('POST')),
+  removeMcp: () => call<McpResult>('/api/integrations/mcp', json('DELETE')),
 
   // sessions
   sessions: (serviceId: string) => call<Session[]>(`/api/services/${serviceId}/sessions`),

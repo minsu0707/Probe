@@ -15,7 +15,7 @@ npm run build
 
 Node 24 이상(TypeScript를 바로 실행하고 내장 `node:sqlite`를 씁니다)과, `PATH`에 Claude Code CLI가 필요합니다. 학습은 `claude -p`를 실행하며, **설정 → Claude Code**에서 로그인합니다(브라우저가 열리고, 거기에 나오는 코드를 붙여넣습니다). 하단 상태 줄에 5시간·7일 사용량이 보입니다(마지막 백그라운드 작업이 보고한 값). 기본값은 Probe 전용 로그인(`data/claude`)이라 개인 Claude Code와 섞이지 않고, 버튼 한 번으로 기존 로그인을 쓰도록 바꿀 수 있습니다.
 
-선택 사항: Claude Code가 Probe를 열고 테스트를 돌려주게 하려면 MCP로 한 번 등록합니다. 아무 폴더에서나 실행해도 됩니다. 경로는 이 폴더의 전체 경로로 바꾸세요(대시보드 설정 화면에 실제 경로가 채워진 명령이 있습니다).
+선택 사항: 평소 쓰는 Claude Code가 Probe를 열고 테스트를 돌려주게 하려면 **설정 → 연동 → 등록하기**를 누릅니다(`claude mcp add`를 대신 실행하고 출력을 보여줍니다). 직접 하려면 아무 폴더에서나 한 번 실행하면 됩니다. 경로는 이 폴더의 전체 경로로 바꾸세요(대시보드 설정 화면에 실제 경로가 채워진 명령이 있습니다).
 
 ```
 claude mcp add --scope user probe -- node "C:\전체\경로\probe\mcp\server.ts"

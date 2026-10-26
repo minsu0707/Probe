@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { api } from '../../core/api.ts';
 import { settingsHref, SETTINGS_SECTIONS, type SettingsSection } from '../../app/router.ts';
-import { CopyButton, Icon, type IconName } from '../../ui/index.ts';
+import { Icon, type IconName } from '../../ui/index.ts';
 import { ClaudeAgentCard } from './ClaudeAgentCard.tsx';
+import { McpCard } from './McpCard.tsx';
 
 interface SectionDef {
   id: SettingsSection;
@@ -152,22 +153,9 @@ function GeneralSection() {
 }
 
 function IntegrationsSection() {
-  const health = useHealth();
-  const command = `claude mcp add --scope user probe -- node "${health?.root ?? '<Probe 폴더 전체 경로>'}\\mcp\\server.ts"`;
   return (
     <>
-      <Panel title="Claude Code에서 Probe 쓰기 (MCP)">
-        <p>
-          Claude Code에 Probe를 MCP 서버로 등록하면 “Probe 열어줘”, “{'{서비스}'} 테스트 돌려줘” 같은 요청으로 이 대시보드가 열리고 테스트가 실행됩니다. 아래 명령을 터미널에서 한 번만 실행하세요. 경로는 이 Probe가 설치된 위치로 이미 채워져 있습니다.
-        </p>
-        <div className="code-line">
-          <code>{command}</code>
-          <CopyButton text={command} />
-        </div>
-        <p className="muted small">
-          <code>--scope user</code>는 어느 폴더에서 Claude Code를 열어도 Probe 도구가 보이게 합니다. 등록 후 Claude가 쓸 수 있는 도구: 대시보드 열기, 서비스 조회, 지식 읽기, 테스트 실행, 결함 조회·등록·분류.
-        </p>
-      </Panel>
+      <McpCard />
       <Panel title="Google Drive">
         <p className="muted small">
           도메인 학습에서 Drive 링크를 추가하면, 학습을 실행하는 Claude가 자기 계정에 연결된 Google Drive 커넥터로 문서를 읽습니다. 연결은 claude.ai의 설정에서 한 번 하면 됩니다. Probe는 Drive 계정 정보를 따로 받지 않습니다.
