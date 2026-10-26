@@ -23,10 +23,30 @@ Ask Claude "Probe 열어줘". The MCP server starts the dashboard on `http://127
 | 실시간 모니터링 | Current page, feature, screen and step; counts; live browser frame; progress log. |
 | 결과 · 결함 | Failed tests become deduplicated defect candidates with screenshot and trace. |
 
-Frontend development: `npm run dev` (server) and `npm run web` (Vite on :5173, proxies to :4317).
+## Develop
+
+```
+npm run dev        # server with auto-restart
+npm run web        # Vite dev server on :5173 (proxies to :4317)
+npm run typecheck
+npm test           # unit tests, ~1 s
+npm run smoke      # end-to-end against a real server and Playwright, ~20 s
+```
+
+Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) first: it explains the module layout, the dependency rules, how one test run flows through the system, and how to add a feature.
 
 ## Layout
 
-- `server/` Hono API, SQLite, run engine, learning job. `mcp/` stdio MCP server. `reporter/` Playwright reporter and fixture.
-- `data/` (git-ignored): `probe.db`, `master.key`, and per service `docs/`, `knowledge/`, `tests/specs/`. Back up `master.key` with the database.
-- The Claude skill that tells Claude how to write specs lives in `claude-skill/SKILL.md` (copy it to `.claude/skills/probe/` in the workspace where you run Claude).
+```
+shared/    contracts shared by server, reporter and web
+server/    core/ (db, crypto, hub) · http/ · modules/<feature>/{repository,service,routes}
+reporter/  Playwright reporter and fixture
+mcp/       MCP server for Claude
+web/src/   app/ · core/ · ui/ · features/<feature>/ · styles/
+tests/     unit tests          scripts/  smoke test
+data/      git-ignored: probe.db, master.key, per-service docs/knowledge/tests
+```
+
+`data/` holds the encrypted credentials and the key that opens them. Back up `master.key` together with `probe.db`.
+
+The Claude skill that tells Claude how to write specs is in `claude-skill/SKILL.md`; copy it to `.claude/skills/probe/` in the workspace where you run Claude.

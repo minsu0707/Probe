@@ -1,7 +1,16 @@
+/**
+ * Playwright reporter that streams the run to the dashboard (see shared/events.ts for the
+ * event shapes). It runs in Playwright's main process; the fixture (fixture.ts) covers what
+ * only the worker can see (the page URL and screenshots).
+ *
+ * Outside a dashboard run PROBE_API is unset and every send is a no-op, so specs behave
+ * exactly like plain Playwright.
+ */
 import type { FullConfig, FullResult, Reporter, Suite, TestCase, TestResult, TestStep } from '@playwright/test/reporter';
-import type { TestStatus } from '../server/types.ts';
+import type { TestStatus } from '../shared/models.ts';
 import { send } from './transport.ts';
 
+/** Step categories worth showing. Hooks and fixtures are internal noise. */
 const REPORTED_STEPS = new Set(['test.step', 'pw:api', 'expect']);
 
 export default class ProbeReporter implements Reporter {

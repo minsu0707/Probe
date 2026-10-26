@@ -1,3 +1,8 @@
+/**
+ * MCP server: how Claude Code talks to Probe. Each tool is a thin wrapper over the HTTP API,
+ * so this process holds no state. If the dashboard isn't running, the first tool call starts
+ * it. No tool ever returns a credential value; Claude only learns variable names.
+ */
 import { spawn } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +27,7 @@ const up = () => api('/api/services').then(() => true, () => false);
 
 async function ensureServer(): Promise<boolean> {
   if (await up()) return false;
-  const child = spawn(process.execPath, [join(ROOT, 'server', 'index.ts')], { cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true });
+  const child = spawn(process.execPath, [join(ROOT, 'server', 'main.ts')], { cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true });
   child.unref();
   for (let i = 0; i < 40; i++) {
     await new Promise((r) => setTimeout(r, 250));

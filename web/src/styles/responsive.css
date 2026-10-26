@@ -1,0 +1,53 @@
+/* Narrow-window adjustments for the shell and the page grids. Last on purpose, so it wins ties. */
+/* ------------------------------------------------------------ responsive */
+@media (max-width: 1100px) {
+  .monitor-grid,
+  .split,
+  .split-learn {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .stat:nth-child(4) {
+    border-left: 0;
+  }
+  .stat:nth-child(n + 4) {
+    border-top: 1px solid var(--line);
+  }
+}
+@media (max-width: 760px) {
+  .shell {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .brand span,
+  .nav-text,
+  .side-foot {
+    display: none;
+  }
+  .brand {
+    justify-content: center;
+    padding: 0;
+  }
+  .nav {
+    justify-content: center;
+  }
+  .page {
+    padding: 16px;
+  }
+  .topbar {
+    padding: 0 16px;
+  }
+  .url {
+    display: none;
+  }
+  .crumbs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .crumbs li:nth-child(3) {
+    border-left: 0;
+  }
+  .crumbs li:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}

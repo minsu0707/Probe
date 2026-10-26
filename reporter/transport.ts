@@ -1,4 +1,4 @@
-import type { IngestEvent } from '../server/types.ts';
+import type { IngestEvent } from '../shared/events.ts';
 
 const api = process.env.PROBE_API;
 const runId = process.env.PROBE_RUN_ID;

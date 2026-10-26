@@ -1,0 +1,51 @@
+/* Layout: fixed left rail of five destinations, a thin top bar holding the service context
+   and the run control, and a single scrolling work area. Numbers and times are set in the
+   mono face so columns of counts read like instrument output. */
+
+:root {
+  --bg: #edf0f3;
+  --panel: #ffffff;
+  --sunken: #f3f5f8;
+  --line: #d9dee4;
+  --line-strong: #c3cad2;
+  --ink: #17212b;
+  --muted: #5d6b79;
+  --accent: #2554d8;
+  --accent-ink: #ffffff;
+  --accent-soft: #e5ecfb;
+  --pass: #17803f;
+  --pass-soft: #e0f2e7;
+  --fail: #c4302c;
+  --fail-soft: #fbe5e4;
+  --warn: #8f6200;
+  --warn-soft: #faefd2;
+  --shadow: 0 1px 2px rgb(20 30 40 / 0.06);
+  --font: 'Segoe UI Variable Text', 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+  --mono: 'Cascadia Mono', 'D2Coding', Consolas, 'SF Mono', ui-monospace, monospace;
+  --radius: 6px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1217;
+    --panel: #151c23;
+    --sunken: #10161c;
+    --line: #25303a;
+    --line-strong: #34414d;
+    --ink: #e3e8ed;
+    --muted: #8d9aa7;
+    --accent: #7f9cff;
+    --accent-ink: #0a1022;
+    --accent-soft: #1b2540;
+    --pass: #4cc380;
+    --pass-soft: #14291e;
+    --fail: #ff7b76;
+    --fail-soft: #331a1b;
+    --warn: #e0b04f;
+    --warn-soft: #2e2610;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+
