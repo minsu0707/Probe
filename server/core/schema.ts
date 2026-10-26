@@ -79,6 +79,12 @@ export const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS defects_fp ON defects(service_id, fingerprint);
 
+  -- Small app-wide preferences (e.g. which Claude profile to use).
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS jobs (
     id TEXT PRIMARY KEY,
     service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,

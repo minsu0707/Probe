@@ -22,6 +22,9 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
   const [knowledge, setKnowledge] = useState<KnowledgeFile[]>([]);
   const [lastJob, setLastJob] = useState<Job | null>(null);
   const job = liveJob ?? lastJob;
+  const claude = useStore((s) => s.claude);
+  /** Known to be unusable: not installed or signed out. While still loading (null) the button stays enabled. */
+  const claudeReady = !claude || (claude.installed && Boolean(claude.auth?.loggedIn));
 
   // Refetch on server-reported changes and when a job finishes (new knowledge files appear).
   useEffect(() => {
@@ -57,12 +60,21 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
             학습 중단
           </button>
         ) : (
-          <button className="btn btn-primary" disabled={!docs?.length} onClick={() => void attempt(() => api.learn(serviceId))}>
+          <button className="btn btn-primary" disabled={!docs?.length || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId))}>
             <Icon name="learn" size={16} />
             {learnLabel}
           </button>
         )}
       </div>
+
+      {!claudeReady && (
+        <div className="callout">
+          <strong>{claude?.installed ? 'Claude에 로그인해야 학습할 수 있습니다.' : 'Claude Code가 설치되어 있지 않습니다.'}</strong>
+          <a className="btn btn-primary btn-sm" href="#/settings">
+            설정에서 {claude?.installed ? '로그인' : '확인'}하기
+          </a>
+        </div>
+      )}
 
       <div className="split split-learn">
         <SourcesPanel serviceId={serviceId} docs={docs} supported={supported} />

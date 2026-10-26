@@ -70,6 +70,7 @@ Pure computation (no side effects) lives in its own file. It is easy to test, an
 | `secrets` | Import/export .env and .enc; environment for the test process | `classify.ts` (which keys are sensitive) |
 | `documents` | Store files and Drive links; extract text from Office files | `ooxml.ts` |
 | `learning` | Run `claude -p`, show progress, read and edit knowledge files | `prompt.ts`, `stream.ts` |
+| `agents` | Detect the Claude CLI, sign in from the app, choose the profile, tool policy for background jobs | `claude-cli.ts` |
 | `runs` | Start/stop Playwright, receive events, aggregate state | `reduce.ts`, `redact.ts` |
 | `defects` | Turn failures into defects, merge duplicates, triage | `classify.ts` |
 
@@ -83,6 +84,7 @@ services  ←  secrets, documents, learning, runs      (check the service exists
 defects   ←  runs                                    (record failures)
 secrets   ←  runs                                    (env vars, values to mask)
 documents ←  learning                                (document list)
+agents    ←  learning                                (signed-in check, environment, tool policy)
 services/overview.ts reads all of the above → nothing imports overview
 ```
 
@@ -111,6 +113,7 @@ The authoritative state of a live run is in memory (`runs/live.ts`); every chang
 | Secret values shown on screen or sent to Claude | Sensitive variables return their name only | `secrets/service.listSecrets` |
 | Forged ingest events copying arbitrary files | Attachment paths must be inside the service workspace | `defects/attachments.ts` |
 | Malicious HTML in knowledge documents | Everything escaped; http(s) links only | `web/src/ui/markdown.ts` |
+| Anthropic credentials | Probe never handles them: it runs the official `claude` CLI. The sign-in code the user pastes is written to the CLI's stdin and neither stored nor logged | `agents/service.ts` |
 | Learning job using a shell or the web | `--disallowedTools Bash WebFetch WebSearch` | `learning/prompt.ts` |
 
 Known limitation: Playwright traces (`.zip`) and screenshots can contain typed values and are not masked.

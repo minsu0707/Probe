@@ -10,9 +10,10 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { conflict, unprocessable } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import { newId } from '../../core/ids.ts';
-import { envWithoutElectronFlag, killTree } from '../../core/process.ts';
+import { killTree } from '../../core/process.ts';
 import { serviceDir } from '../../config.ts';
 import type { Job } from '../../../shared/models.ts';
+import { requireClaudeReady } from '../agents/service.ts';
 import { listDocs, markLearned } from '../documents/service.ts';
 import { requireService } from '../services/service.ts';
 import { countKnowledge } from './knowledge.ts';
@@ -29,11 +30,14 @@ const children = new Map<string, ChildProcess>();
 export const listJobs = (serviceId: string, limit = 10): Job[] => repo.recent(serviceId, limit);
 export const isLearning = repo.isLearning;
 
-export function startLearn(serviceId: string): Job {
+export async function startLearn(serviceId: string): Promise<Job> {
   const service = requireService(serviceId);
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service');
   const docs = listDocs(serviceId);
   if (docs.length === 0) throw unprocessable('Add at least one document or Drive link first');
+  // Fail here with a clear message rather than as a cryptic exit code from the CLI.
+  const env = await requireClaudeReady();
+  if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service'); // re-check: the await above let another request in
 
   const id = newId();
   repo.insert(id, serviceId, Date.now());
@@ -44,7 +48,7 @@ export function startLearn(serviceId: string): Job {
     driveLinks: docs.filter((d) => d.kind === 'drive').map((d) => d.ref),
     hasExistingKnowledge: countKnowledge(serviceId) > 0,
   });
-  const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env: envWithoutElectronFlag(), stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+  const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
 
   const log: string[] = [];

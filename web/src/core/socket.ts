@@ -3,7 +3,7 @@
  * drops it reconnects and refetches, so a closed laptop lid never leaves stale data on screen.
  */
 import type { ServerMessage } from '../../../shared/events.ts';
-import { appendLog, loadDefects, patch, refreshServices, toast, loadRuns } from './store.ts';
+import { appendLog, loadDefects, loadRuns, patch, refreshClaude, refreshServices, toast } from './store.ts';
 
 const RECONNECT_MS = 1500;
 const REFRESH_DEBOUNCE_MS = 250;
@@ -43,6 +43,9 @@ function handle(msg: ServerMessage): void {
       patch((s) => ({ jobs: { ...s.jobs, [msg.job.serviceId]: msg.job } }));
       refreshSoon();
       break;
+    case 'agent':
+      void refreshClaude().catch(() => undefined);
+      break;
     case 'service':
     case 'docs':
       bumpServiceVersion(msg.serviceId);
@@ -58,6 +61,7 @@ function connect(): void {
     // Anything that happened while disconnected is recovered by refetching.
     void refreshServices().catch(() => undefined);
     void loadDefects().catch(() => undefined);
+    void refreshClaude().catch(() => undefined);
   };
   ws.onmessage = (e) => handle(JSON.parse(e.data));
   ws.onclose = () => {

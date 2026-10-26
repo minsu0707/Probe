@@ -138,3 +138,46 @@ export interface Defect {
   firstSeen: number;
   lastSeen: number;
 }
+
+// -------------------------------------------------------------------- agents
+
+/** Where the Claude CLI keeps its login: Probe's own folder, or whatever the environment gives. */
+export type ClaudeProfile = 'probe' | 'system';
+
+/** What `claude auth status` reports. Tokens are never part of it. */
+export interface ClaudeAuth {
+  loggedIn: boolean;
+  /** 'claude.ai' (subscription), 'console' (API billing), or 'none'. */
+  method: string;
+  /** e.g. 'pro', 'max', 'team'. */
+  plan: string | null;
+  email: string | null;
+  organization: string | null;
+  configDirectory: string | null;
+}
+
+export type LoginPhase = 'idle' | 'starting' | 'waiting' | 'verifying' | 'done' | 'failed' | 'cancelled';
+
+/** Progress of an in-app login. The browser step happens outside Probe. */
+export interface LoginState {
+  phase: LoginPhase;
+  /** Sign-in page to open in the browser, once the CLI has printed it. */
+  url: string | null;
+  /** The CLI is waiting for the code shown after sign-in. */
+  needsCode: boolean;
+  message: string | null;
+}
+
+export interface ClaudeAgentStatus {
+  installed: boolean;
+  version: string | null;
+  profile: ClaudeProfile;
+  /** Status for the selected profile; null when the CLI isn't installed. */
+  auth: ClaudeAuth | null;
+  /** Set when Probe's own profile is signed out but the system one is signed in. */
+  systemAuth: ClaudeAuth | null;
+  login: LoginState;
+  /** What the background jobs may and may not do, shown read-only in settings. */
+  allowedTools: string[];
+  deniedTools: string[];
+}

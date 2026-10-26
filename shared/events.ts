@@ -38,4 +38,6 @@ export type ServerMessage =
   | { type: 'job'; job: Job }
   /** A service's env, docs or knowledge changed; open pages should refetch. */
   | { type: 'service'; serviceId: string }
-  | { type: 'docs'; serviceId: string };
+  | { type: 'docs'; serviceId: string }
+  /** The Claude CLI's login state or login progress changed. */
+  | { type: 'agent' };

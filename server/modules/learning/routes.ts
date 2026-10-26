@@ -6,7 +6,7 @@ import { listKnowledge, saveKnowledge } from './knowledge.ts';
 import { cancelLearn, listJobs, startLearn } from './service.ts';
 
 export const learningRoutes = new Hono()
-  .post('/services/:id/learn', (c) => c.json(startLearn(c.req.param('id')), 202))
+  .post('/services/:id/learn', async (c) => c.json(await startLearn(c.req.param('id')), 202))
   .post('/services/:id/learn/cancel', (c) => (cancelLearn(c.req.param('id')), c.body(null, 204)))
   .get('/services/:id/jobs', (c) => c.json(listJobs(c.req.param('id'))))
   .get('/services/:id/knowledge', (c) => (requireService(c.req.param('id')), c.json(listKnowledge(c.req.param('id')))))

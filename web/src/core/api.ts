@@ -2,9 +2,9 @@
  * Typed client for the Probe HTTP API. Every call returns parsed JSON (or text for the .enc
  * export) and throws `ApiError` with a message safe to show the user.
  */
-import type { Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, RunSummary, SecretMeta, ServiceOverview, Severity } from '../../../shared/models.ts';
+import type { ClaudeAgentStatus, ClaudeProfile, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Severity } from '../../../shared/models.ts';
 
-export type { Defect, Doc, Job, KnowledgeFile, LogLine, RunSummary, SecretMeta, ServiceOverview };
+export type { ClaudeAgentStatus, ClaudeProfile, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview };
 
 export class ApiError extends Error {}
 
@@ -30,6 +30,14 @@ const json = (method: string, body?: unknown): RequestInit => ({
 
 export const api = {
   health: () => call<{ app: 'probe'; version: string; pid: number; root: string }>('/api/health'),
+
+  // agents
+  claude: () => call<ClaudeAgentStatus>('/api/agents/claude'),
+  setClaudeProfile: (profile: ClaudeProfile) => call<ClaudeAgentStatus>('/api/agents/claude/profile', json('PUT', { profile })),
+  startClaudeLogin: (b: { method?: 'claudeai' | 'console'; email?: string }) => call<LoginState>('/api/agents/claude/login', json('POST', b)),
+  submitClaudeCode: (code: string) => call<LoginState>('/api/agents/claude/login/code', json('POST', { code })),
+  cancelClaudeLogin: () => call<void>('/api/agents/claude/login/cancel', json('POST')),
+  claudeLogout: () => call<ClaudeAgentStatus>('/api/agents/claude/logout', json('POST')),
 
   // services
   services: () => call<ServiceOverview[]>('/api/services'),

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../core/api.ts';
 import { CopyButton } from '../../ui/index.ts';
+import { ClaudeAgentCard } from './ClaudeAgentCard.tsx';
 
 /**
  * 설정: nothing here is stored. It explains how to connect Claude and exactly how credentials
@@ -18,12 +19,14 @@ export function SettingsPage() {
       <div className="page-head">
         <div>
           <h1>설정</h1>
-          <p className="muted">Claude 연결과 자격 증명이 어떻게 다뤄지는지 확인합니다.</p>
+          <p className="muted">Claude 로그인, 연결, 자격 증명이 어떻게 다뤄지는지 확인합니다.</p>
         </div>
       </div>
       <div className="stack narrow">
+        <ClaudeAgentCard />
+
         <section className="panel">
-          <h2>Claude 연결</h2>
+          <h2>Claude Code에서 Probe 쓰기 (MCP)</h2>
           <p>
             Claude Code에 Probe를 MCP 서버로 등록하면 “Probe 열어줘”, “{'{서비스}'} 테스트 돌려줘” 같은 요청으로 이 대시보드가 열리고 테스트가 실행됩니다. 아래 명령을 터미널에서 한 번만 실행하세요. 경로는 이 Probe가 설치된 위치로 이미 채워져 있습니다.
           </p>

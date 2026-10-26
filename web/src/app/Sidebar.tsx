@@ -16,6 +16,7 @@ export function Sidebar({ route }: { route: Route }) {
   const services = useStore((s) => s.services);
   const current = useStore((s) => s.services.find((x) => x.id === s.currentId));
   const connected = useStore((s) => s.connected);
+  const claude = useStore((s) => s.claude);
   const active = services.find((s) => s.activeRun)?.activeRun;
 
   const learnSub = !current ? '서비스를 선택하세요' : current.learning ? '학습 중…' : current.unlearnedDocs ? `새 문서 ${current.unlearnedDocs}개` : current.knowledgeCount ? `지식 ${current.knowledgeCount}개 문서` : '문서 없음';
@@ -48,8 +49,16 @@ export function Sidebar({ route }: { route: Route }) {
         ))}
       </nav>
       <div className="side-foot">
-        <span className={`dot ${connected ? 'dot-ok' : 'dot-bad'}`} />
-        {connected ? '서버 연결됨' : '서버 연결 끊김 · 재연결 중'}
+        <div>
+          <span className={`dot ${connected ? 'dot-ok' : 'dot-bad'}`} />
+          {connected ? '서버 연결됨' : '서버 연결 끊김 · 재연결 중'}
+        </div>
+        {claude && (
+          <a className="side-foot-link" href="#/settings" title="Claude 로그인 설정">
+            <span className={`dot ${claude.installed && claude.auth?.loggedIn ? 'dot-ok' : 'dot-warn'}`} />
+            {!claude.installed ? 'Claude Code 없음' : claude.auth?.loggedIn ? `Claude 로그인됨${claude.auth.plan ? ` · ${claude.auth.plan}` : ''}` : 'Claude 로그인 필요'}
+          </a>
+        )}
       </div>
     </aside>
   );

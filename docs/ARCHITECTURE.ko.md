@@ -70,6 +70,7 @@ scripts/        실행 스크립트(launch, stop, autostart, shortcut)와 종단
 | `secrets` | .env/.enc 가져오기·내보내기, 테스트 프로세스용 환경 변수 | `classify.ts` (민감 키 판별) |
 | `documents` | 파일·Drive 링크 보관, Office 파일 텍스트 추출 | `ooxml.ts` |
 | `learning` | `claude -p` 실행, 진행 표시, 지식 문서 읽기·수정 | `prompt.ts`, `stream.ts` |
+| `agents` | Claude CLI 감지, 앱 안 로그인, 프로필 선택, 백그라운드 작업의 도구 정책 | `claude-cli.ts` |
 | `runs` | Playwright 실행·중단, 이벤트 수신, 상태 집계 | `reduce.ts`, `redact.ts` |
 | `defects` | 실패 → 결함 변환, 중복 병합, 분류 | `classify.ts` |
 
@@ -83,6 +84,7 @@ services  ←  secrets, documents, learning, runs      (서비스 존재 확인)
 defects   ←  runs                                    (실패 기록)
 secrets   ←  runs                                    (환경 변수, 마스킹 값)
 documents ←  learning                                (자료 목록)
+agents    ←  learning                                (로그인 확인, 환경, 도구 정책)
 services/overview.ts 는 위 모듈을 모두 읽는다 → 아무도 overview를 import하지 않는다
 ```
 
@@ -112,6 +114,7 @@ services/overview.ts 는 위 모듈을 모두 읽는다 → 아무도 overview�
 | 비밀 값이 화면·Claude에 노출 | 민감 변수는 이름만 반환 | `secrets/service.listSecrets` |
 | 가짜 ingest 이벤트로 임의 파일 복사 | 첨부 경로는 서비스 작업공간 안만 허용 | `defects/attachments.ts` |
 | 지식 문서의 악성 HTML | 전부 이스케이프, http(s) 링크만 | `web/src/ui/markdown.ts` |
+| Anthropic 자격 증명 | Probe는 다루지 않습니다. 공식 `claude` CLI를 실행할 뿐이고, 사용자가 붙여넣은 로그인 코드는 CLI의 stdin으로만 전달하며 저장하거나 기록하지 않습니다 | `agents/service.ts` |
 | 학습 작업이 셸·웹 사용 | `--disallowedTools Bash WebFetch WebSearch` | `learning/prompt.ts` |
 
 알려진 한계: Playwright 트레이스(`.zip`)와 스크린샷에는 입력한 값이 들어갈 수 있고 마스킹되지 않습니다.

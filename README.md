@@ -13,7 +13,7 @@ npm install
 npm run build
 ```
 
-Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH` (the "학습 시작" / Start learning button runs `claude -p`, using your existing login).
+Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH`. Learning runs `claude -p`; sign in under **설정 → Claude Code** (a browser opens, then you paste the code it shows). By default Probe keeps its own sign-in in `data/claude`, separate from your personal Claude Code; one click switches to your existing login instead.
 
 Optional: let Claude Code open Probe and run tests for you. Register it once, from any folder. Replace the path with the full path of this folder (the settings page in the dashboard shows the command with your real path filled in):
 

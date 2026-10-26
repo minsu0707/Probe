@@ -7,6 +7,8 @@
  * the final summary in Korean, which is what the user reads.
  */
 
+import { BACKGROUND_ALLOWED_TOOLS, BACKGROUND_DENIED_TOOLS } from '../agents/claude-cli.ts';
+
 /** The knowledge files the prompt asks for, in the order the UI shows them. */
 export const KNOWLEDGE_FILES = ['overview.md', 'screens.md', 'flows.md', 'rules.md', 'test-points.md', 'open-questions.md'] as const;
 
@@ -51,10 +53,7 @@ Rules:
 6. Finish with a short summary written in Korean: what you read, what you wrote, and the three biggest gaps. If a document clearly belongs to a different service than "${serviceName}", say so first.`;
 }
 
-/**
- * CLI arguments for `claude -p`. File tools plus the Drive connector are allowed; shell
- * and web access are denied because the job only reads documents and writes Markdown.
- */
+/** CLI arguments for `claude -p`. The tool lists are the agent-wide policy for background jobs. */
 export function buildClaudeArgs(prompt: string): string[] {
   return [
     '-p',
@@ -66,15 +65,8 @@ export function buildClaudeArgs(prompt: string): string[] {
     '--permission-mode',
     'acceptEdits',
     '--allowedTools',
-    'Read',
-    'Write',
-    'Edit',
-    'Glob',
-    'Grep',
-    'mcp__claude_ai_Google_Drive',
+    ...BACKGROUND_ALLOWED_TOOLS,
     '--disallowedTools',
-    'Bash',
-    'WebFetch',
-    'WebSearch',
+    ...BACKGROUND_DENIED_TOOLS,
   ];
 }

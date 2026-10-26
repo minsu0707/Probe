@@ -8,7 +8,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { api } from './api.ts';
-import type { Defect, Job, LogLine, RunSummary, ServiceOverview } from './api.ts';
+import type { ClaudeAgentStatus, Defect, Job, LogLine, RunSummary, ServiceOverview } from './api.ts';
 
 export interface Toast {
   id: number;
@@ -32,10 +32,12 @@ export interface State {
   frameTick: Record<string, number>;
   /** Bumped when a service's env/docs/knowledge changed, so open pages refetch their own data. */
   serviceVersion: Record<string, number>;
+  /** Claude CLI install and sign-in state; null until first fetched. */
+  claude: ClaudeAgentStatus | null;
   toasts: Toast[];
 }
 
-let state: State = { ready: false, connected: false, services: [], currentId: null, runs: {}, logs: {}, defects: [], jobs: {}, frameTick: {}, serviceVersion: {}, toasts: [] };
+let state: State = { ready: false, connected: false, services: [], currentId: null, runs: {}, logs: {}, defects: [], jobs: {}, frameTick: {}, serviceVersion: {}, claude: null, toasts: [] };
 const listeners = new Set<() => void>();
 
 export const getState = (): State => state;
@@ -105,6 +107,12 @@ export async function refreshServices(): Promise<void> {
     const wanted = s.currentId ?? remembered();
     return { services, currentId: services.some((x) => x.id === wanted) ? wanted : (services[0]?.id ?? null) };
   });
+}
+
+/** Re-read the Claude CLI state (runs the CLI, so it takes a moment). Failure keeps the old value. */
+export async function refreshClaude(): Promise<void> {
+  const claude = await api.claude();
+  patch(() => ({ claude }));
 }
 
 export async function loadDefects(): Promise<void> {
