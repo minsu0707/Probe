@@ -157,14 +157,14 @@
   max-width: 220px;
   line-height: 1.25;
 }
-.tabs {
+.svc-tabs {
   display: flex;
   align-items: stretch;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
 }
-.tab {
+.svc-tab {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -175,11 +175,11 @@
   text-decoration: none;
   white-space: nowrap;
 }
-.tab:hover {
+.svc-tab:hover {
   color: var(--ink);
 }
-.tab-on,
-.tab-on:hover {
+.svc-tab-on,
+.svc-tab-on:hover {
   color: var(--accent);
   border-bottom-color: var(--accent);
 }
@@ -299,4 +299,32 @@
   padding: 24px;
   overflow-y: auto;
   min-width: 0;
+}
+
+/* Usage meter (status bar and the agent card). */
+.usage {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+.usage-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.usage-bar {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.usage-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.usage-hot {
+  background: var(--fail);
 }

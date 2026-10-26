@@ -13,7 +13,7 @@ npm install
 npm run build
 ```
 
-Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH`. Learning runs `claude -p`; sign in under **설정 → Claude Code** (a browser opens, then you paste the code it shows). By default Probe keeps its own sign-in in `data/claude`, separate from your personal Claude Code; one click switches to your existing login instead.
+Requires Node 24+ (runs TypeScript directly and uses the built-in `node:sqlite`) and the Claude Code CLI on `PATH`. Learning runs `claude -p`; sign in under **설정 → Claude Code** (a browser opens, then you paste the code it shows). The status bar shows your 5-hour and 7-day usage, as last reported by a background job. By default Probe keeps its own sign-in in `data/claude`, separate from your personal Claude Code; one click switches to your existing login instead.
 
 Optional: let Claude Code open Probe and run tests for you. Register it once, from any folder. Replace the path with the full path of this folder (the settings page in the dashboard shows the command with your real path filled in):
 
@@ -55,6 +55,7 @@ The sidebar lists your services (`+` adds one). Each service opens its own tabs,
 |---|---|
 | 개요 (Overview) | Name, address, notes; drop a `.env` or passphrase-protected `.enc` file; delete the service. |
 | 도메인 학습 (Domain learning) | Upload documents or add Drive links, press Start learning. Claude writes cited knowledge files that it reads before writing tests. |
+| Claude 세션 (Claude sessions) | **테스트 작성** asks Claude to read the knowledge files and write specs into `tests/specs/`; keep talking to it to refine them (the session is resumed with `--resume`). Claude can read and write files only: no shell, no web. Press **테스트 실행** to run what it wrote. One session works per service at a time. |
 | 실시간 모니터링 (Live monitor) | Current page, feature, screen and step; counts; live browser frame; progress log. |
 | 결과 · 결함 (Results · Defects) | Failed tests become deduplicated defect candidates with screenshot and trace. |
 

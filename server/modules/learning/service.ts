@@ -14,6 +14,7 @@ import { killTree } from '../../core/process.ts';
 import { serviceDir } from '../../config.ts';
 import type { Job } from '../../../shared/models.ts';
 import { requireClaudeReady } from '../agents/service.ts';
+import { recordUsage } from '../agents/usage.ts';
 import { listDocs, markLearned } from '../documents/service.ts';
 import { requireService } from '../services/service.ts';
 import { countKnowledge } from './knowledge.ts';
@@ -74,8 +75,11 @@ export async function startLearn(serviceId: string): Promise<Job> {
     for (const line of lines)
       for (const ev of parseStreamLine(line)) {
         if (ev.kind === 'progress') note(ev.text);
-        else if (ev.ok) summary = ev.text;
-        else reportedError = ev.text;
+        else if (ev.kind === 'usage') recordUsage(ev.usage);
+        else if (ev.kind === 'result') {
+          if (ev.ok) summary = ev.text;
+          else reportedError = ev.text;
+        }
       }
   });
 

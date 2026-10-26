@@ -638,3 +638,72 @@ table.runs .num {
   white-space: nowrap;
 }
 
+
+/* ---------------------------------------------------------- Claude sessions */
+.split-sessions {
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: start;
+}
+.chat {
+  min-height: 420px;
+  max-height: calc(100vh - 230px);
+}
+.chat-log {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 4px;
+}
+.msg {
+  max-width: 88%;
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+.msg time {
+  display: block;
+  margin-top: 4px;
+  font: 11px var(--mono);
+  color: var(--muted);
+}
+.msg-user {
+  align-self: flex-end;
+  padding: 8px 12px;
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+.msg-user p {
+  white-space: pre-wrap;
+}
+.msg-claude {
+  align-self: flex-start;
+  padding: 8px 12px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+}
+.msg-tool {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 12px var(--mono);
+  color: var(--muted);
+}
+.msg-error {
+  align-self: flex-start;
+  padding: 8px 12px;
+  background: var(--fail-soft);
+  color: var(--fail);
+  white-space: pre-wrap;
+}
+.chat-input {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.chat-input textarea {
+  flex: 1;
+  resize: none;
+}

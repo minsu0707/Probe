@@ -9,6 +9,7 @@ import { countDocs, countUnlearnedDocs } from '../documents/service.ts';
 import { countKnowledge } from '../learning/knowledge.ts';
 import { isLearning } from '../learning/service.ts';
 import { countSecrets } from '../secrets/service.ts';
+import { isSessionRunning } from '../sessions/service.ts';
 import { activeRun, listRuns } from '../runs/service.ts';
 import { requireService } from './service.ts';
 
@@ -23,5 +24,6 @@ export function serviceOverview(id: string): ServiceOverview {
     lastRun: listRuns(id, 1)[0] ?? null,
     activeRun: activeRun(id) ?? null,
     learning: isLearning(id),
+    claudeWorking: isSessionRunning(id),
   };
 }

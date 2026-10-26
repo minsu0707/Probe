@@ -15,6 +15,7 @@ interface TabDef {
 const TAB_DEFS: TabDef[] = [
   { id: 'overview', label: '개요' },
   { id: 'learn', label: '도메인 학습', badge: (s) => (s.learning ? { live: true } : s.unlearnedDocs ? { text: String(s.unlearnedDocs) } : null) },
+  { id: 'sessions', label: 'Claude 세션', badge: (s) => (s.claudeWorking ? { live: true } : null) },
   { id: 'monitor', label: '실시간 모니터링', badge: (s) => (s.activeRun ? { live: true } : null) },
   { id: 'results', label: '결과 · 결함', badge: (s) => (s.openDefects ? { text: String(s.openDefects), tone: 'fail' } : null) },
 ];
@@ -34,11 +35,11 @@ export function ServiceTabs({ service, tab }: { service: ServiceOverview; tab: T
         )}
       </div>
 
-      <nav className="tabs" aria-label={`${service.name} 화면`}>
+      <nav className="svc-tabs" aria-label={`${service.name} 화면`}>
         {TAB_DEFS.map((t) => {
           const badge = t.badge?.(service);
           return (
-            <a key={t.id} href={serviceHref(service.id, t.id)} className={`tab${tab === t.id ? ' tab-on' : ''}`} aria-current={tab === t.id ? 'page' : undefined}>
+            <a key={t.id} href={serviceHref(service.id, t.id)} className={`svc-tab${tab === t.id ? ' svc-tab-on' : ''}`} aria-current={tab === t.id ? 'page' : undefined}>
               {t.label}
               {badge?.live && <span className="dot dot-live" />}
               {badge?.text && <span className={`count${badge.tone === 'fail' ? ' count-fail' : ''}`}>{badge.text}</span>}

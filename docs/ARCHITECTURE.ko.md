@@ -70,7 +70,8 @@ scripts/        실행 스크립트(launch, stop, autostart, shortcut)와 종단
 | `secrets` | .env/.enc 가져오기·내보내기, 테스트 프로세스용 환경 변수 | `classify.ts` (민감 키 판별) |
 | `documents` | 파일·Drive 링크 보관, Office 파일 텍스트 추출 | `ooxml.ts` |
 | `learning` | `claude -p` 실행, 진행 표시, 지식 문서 읽기·수정 | `prompt.ts`, `stream.ts` |
-| `agents` | Claude CLI 감지, 앱 안 로그인, 프로필 선택, 백그라운드 작업의 도구 정책 | `claude-cli.ts` |
+| `agents` | Claude CLI 감지, 앱 안 로그인, 프로필 선택, 백그라운드 작업의 도구 정책, 마지막으로 보고된 사용량 | `claude-cli.ts` |
+| `sessions` | 서비스에 대한 Claude와의 대화("테스트 작성", 자유 대화). 메시지 하나가 `claude -p` 한 번이고 `--session-id` / `--resume`으로 이어가며, 서비스당 진행 중인 턴은 하나 | `service.ts`, `prompt.ts` |
 | `runs` | Playwright 실행·중단, 이벤트 수신, 상태 집계 | `reduce.ts`, `redact.ts` |
 | `defects` | 실패 → 결함 변환, 중복 병합, 분류 | `classify.ts` |
 
@@ -84,7 +85,8 @@ services  ←  secrets, documents, learning, runs      (서비스 존재 확인)
 defects   ←  runs                                    (실패 기록)
 secrets   ←  runs                                    (환경 변수, 마스킹 값)
 documents ←  learning                                (자료 목록)
-agents    ←  learning                                (로그인 확인, 환경, 도구 정책)
+agents    ←  learning, sessions                      (로그인 확인, 환경, 도구 정책, 사용량)
+learning  ←  sessions                                (스트림 파서, 지식 파일)
 services/overview.ts 는 위 모듈을 모두 읽는다 → 아무도 overview를 import하지 않는다
 ```
 

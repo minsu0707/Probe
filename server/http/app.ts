@@ -11,6 +11,7 @@ import { documentsRoutes } from '../modules/documents/routes.ts';
 import { learningRoutes } from '../modules/learning/routes.ts';
 import { runsRoutes } from '../modules/runs/routes.ts';
 import { secretsRoutes } from '../modules/secrets/routes.ts';
+import { sessionsRoutes } from '../modules/sessions/routes.ts';
 import { servicesRoutes } from '../modules/services/routes.ts';
 import { systemRoutes } from '../modules/system/routes.ts';
 import { guard } from './guard.ts';
@@ -33,6 +34,7 @@ export function buildApp(): Hono {
   app.route('/api', secretsRoutes);
   app.route('/api', documentsRoutes);
   app.route('/api', learningRoutes);
+  app.route('/api', sessionsRoutes);
   app.route('/api', runsRoutes);
   app.route('/api', defectsRoutes);
 

@@ -24,6 +24,8 @@ export interface ServiceOverview extends Service {
   lastRun: RunSummary | null;
   activeRun: RunSummary | null;
   learning: boolean;
+  /** A Claude session is mid-turn in this service. */
+  claudeWorking: boolean;
 }
 
 /** An environment variable as shown to the UI. Sensitive values are never included. */
@@ -168,6 +170,20 @@ export interface LoginState {
   message: string | null;
 }
 
+/** How much of a rate-limit window is used (0..1) and when it resets (epoch ms). */
+export interface UsageWindow {
+  utilization: number;
+  resetsAt: number;
+}
+
+/** Last usage the CLI reported, from the rate_limit_event in a background job's stream. */
+export interface ClaudeUsage {
+  fiveHour: UsageWindow | null;
+  sevenDay: UsageWindow | null;
+  /** When it was observed (epoch ms). */
+  at: number;
+}
+
 export interface ClaudeAgentStatus {
   installed: boolean;
   version: string | null;
@@ -180,4 +196,31 @@ export interface ClaudeAgentStatus {
   /** What the background jobs may and may not do, shown read-only in settings. */
   allowedTools: string[];
   deniedTools: string[];
+  /** Null until a background job has run with this profile. */
+  usage: ClaudeUsage | null;
+}
+
+// ------------------------------------------------------------------ sessions
+
+export type SessionKind = 'write-tests' | 'chat';
+
+/** A conversation with Claude about one service. Each message is one `claude -p` turn, resumed by id. */
+export interface Session {
+  id: string;
+  serviceId: string;
+  title: string;
+  kind: SessionKind;
+  /** running = a turn is in progress; failed = the last turn failed (you can still send another). */
+  status: 'idle' | 'running' | 'failed';
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SessionMessage {
+  id: number;
+  sessionId: string;
+  ts: number;
+  /** tool = a one-line note about what Claude is doing, not something it said. */
+  role: 'user' | 'assistant' | 'tool' | 'error';
+  text: string;
 }

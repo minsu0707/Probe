@@ -4,9 +4,9 @@ import { sortKnowledgeNames } from '../server/modules/learning/knowledge.ts';
 import { buildClaudeArgs, buildLearnPrompt } from '../server/modules/learning/prompt.ts';
 import { describeTool, parseStreamLine } from '../server/modules/learning/stream.ts';
 
-test('stream: tool use becomes a Korean progress line', () => {
+test('stream: tool use becomes a Korean progress line, text its own event', () => {
   const line = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'hi' }, { type: 'tool_use', name: 'Read', input: { file_path: 'C:\\x\\docs\\spec.md' } }] } });
-  assert.deepEqual(parseStreamLine(line), [{ kind: 'progress', text: '읽는 중: spec.md' }]);
+  assert.deepEqual(parseStreamLine(line), [{ kind: 'text', text: 'hi' }, { kind: 'progress', text: '읽는 중: spec.md' }]);
 });
 
 test('stream: result carries success or error', () => {

@@ -14,6 +14,7 @@ import { killTree } from '../../core/process.ts';
 import type { ClaudeAgentStatus, ClaudeAuth, ClaudeProfile, LoginState } from '../../../shared/models.ts';
 import { BACKGROUND_ALLOWED_TOOLS, BACKGROUND_DENIED_TOOLS, claudeEnv, extractLoginUrl, parseAuthStatus, stripTerminalEscapes, waitingForCode } from './claude-cli.ts';
 import { getProfile, setProfile } from './settings.ts';
+import { getUsage } from './usage.ts';
 
 const QUICK_COMMAND_TIMEOUT_MS = 15_000;
 const LOGIN_TIMEOUT_MS = 10 * 60_000;
@@ -88,7 +89,7 @@ export async function claudeStatus(): Promise<ClaudeAgentStatus> {
   const auth = installed ? await authStatus(profile) : null;
   // Offer the user's existing login when Probe's own profile is empty.
   const systemAuth = installed && profile === 'probe' && !auth?.loggedIn ? await authStatus('system') : null;
-  return { installed, version, profile, auth, systemAuth: systemAuth?.loggedIn ? systemAuth : null, login: loginState(), allowedTools: BACKGROUND_ALLOWED_TOOLS, deniedTools: BACKGROUND_DENIED_TOOLS };
+  return { installed, version, profile, auth, systemAuth: systemAuth?.loggedIn ? systemAuth : null, login: loginState(), allowedTools: BACKGROUND_ALLOWED_TOOLS, deniedTools: BACKGROUND_DENIED_TOOLS, usage: getUsage() };
 }
 
 export function selectProfile(profile: ClaudeProfile): void {

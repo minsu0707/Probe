@@ -2,9 +2,9 @@
  * Typed client for the Probe HTTP API. Every call returns parsed JSON (or text for the .enc
  * export) and throws `ApiError` with a message safe to show the user.
  */
-import type { ClaudeAgentStatus, ClaudeProfile, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Severity } from '../../../shared/models.ts';
+import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, UsageWindow } from '../../../shared/models.ts';
 
-export type { ClaudeAgentStatus, ClaudeProfile, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview };
+export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, UsageWindow };
 
 export class ApiError extends Error {}
 
@@ -63,6 +63,14 @@ export const api = {
   jobs: (id: string) => call<Job[]>(`/api/services/${id}/jobs`),
   knowledge: (id: string) => call<KnowledgeFile[]>(`/api/services/${id}/knowledge`),
   saveKnowledge: (id: string, name: string, content: string) => call<void>(`/api/services/${id}/knowledge/${encodeURIComponent(name)}`, json('PUT', { content })),
+
+  // sessions
+  sessions: (serviceId: string) => call<Session[]>(`/api/services/${serviceId}/sessions`),
+  session: (id: string) => call<{ session: Session; messages: SessionMessage[] }>(`/api/sessions/${id}`),
+  createSession: (serviceId: string, b: { kind: SessionKind; message?: string }) => call<Session>(`/api/services/${serviceId}/sessions`, json('POST', b)),
+  sendMessage: (id: string, text: string) => call<Session>(`/api/sessions/${id}/messages`, json('POST', { text })),
+  cancelSession: (id: string) => call<void>(`/api/sessions/${id}/cancel`, json('POST')),
+  deleteSession: (id: string) => call<void>(`/api/sessions/${id}`, json('DELETE')),
 
   // runs
   runs: (serviceId?: string) => call<RunSummary[]>(`/api/runs${serviceId ? `?serviceId=${serviceId}` : ''}`),

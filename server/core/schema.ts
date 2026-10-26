@@ -85,6 +85,28 @@ export const SCHEMA = `
     value TEXT NOT NULL
   );
 
+  -- Claude conversations. claude_session_id is the CLI's own id, used with --session-id/--resume;
+  -- started flips to 1 once the CLI has created it, so the next turn resumes instead of creating.
+  CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    status TEXT NOT NULL,
+    claude_session_id TEXT NOT NULL,
+    started INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS session_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    ts INTEGER NOT NULL,
+    role TEXT NOT NULL,
+    text TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS session_messages_s ON session_messages(session_id, id);
+
   CREATE TABLE IF NOT EXISTS jobs (
     id TEXT PRIMARY KEY,
     service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,

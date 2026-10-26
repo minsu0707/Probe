@@ -70,7 +70,8 @@ Pure computation (no side effects) lives in its own file. It is easy to test, an
 | `secrets` | Import/export .env and .enc; environment for the test process | `classify.ts` (which keys are sensitive) |
 | `documents` | Store files and Drive links; extract text from Office files | `ooxml.ts` |
 | `learning` | Run `claude -p`, show progress, read and edit knowledge files | `prompt.ts`, `stream.ts` |
-| `agents` | Detect the Claude CLI, sign in from the app, choose the profile, tool policy for background jobs | `claude-cli.ts` |
+| `agents` | Detect the Claude CLI, sign in from the app, choose the profile, tool policy for background jobs, last reported usage | `claude-cli.ts` |
+| `sessions` | Conversations with Claude about a service ("테스트 작성", chat). One `claude -p` per message, continued with `--session-id` / `--resume`; one running turn per service | `service.ts`, `prompt.ts` |
 | `runs` | Start/stop Playwright, receive events, aggregate state | `reduce.ts`, `redact.ts` |
 | `defects` | Turn failures into defects, merge duplicates, triage | `classify.ts` |
 
@@ -84,7 +85,8 @@ services  ←  secrets, documents, learning, runs      (check the service exists
 defects   ←  runs                                    (record failures)
 secrets   ←  runs                                    (env vars, values to mask)
 documents ←  learning                                (document list)
-agents    ←  learning                                (signed-in check, environment, tool policy)
+agents    ←  learning, sessions                      (signed-in check, environment, tool policy, usage)
+learning  ←  sessions                                (stream parser, knowledge files)
 services/overview.ts reads all of the above → nothing imports overview
 ```
 

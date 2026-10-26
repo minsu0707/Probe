@@ -1,11 +1,19 @@
 /** Reading `claude -p --output-format stream-json`: one JSON object per stdout line. */
 import { basename } from 'node:path';
+import type { ClaudeUsage } from '../../../shared/models.ts';
+import { parseRateLimit } from '../agents/claude-cli.ts';
 
 export type StreamEvent =
   /** Claude started using a tool; `text` is a Korean one-liner for the progress log. */
   | { kind: 'progress'; text: string }
   /** The final result. `ok` is false when Claude reported an error. */
-  | { kind: 'result'; ok: boolean; text: string };
+  | { kind: 'result'; ok: boolean; text: string }
+  /** Something Claude said (conversations show it; the learning job ignores it). */
+  | { kind: 'text'; text: string }
+  /** The CLI created or resumed its session; from here the session id is valid. */
+  | { kind: 'init' }
+  /** Account usage, to show in the status bar. */
+  | { kind: 'usage'; usage: ClaudeUsage };
 
 /** A line that isn't JSON (stray warnings) yields no events rather than an error. */
 export function parseStreamLine(line: string): StreamEvent[] {
@@ -17,8 +25,18 @@ export function parseStreamLine(line: string): StreamEvent[] {
     return [];
   }
 
+  if (ev.type === 'system' && ev.subtype === 'init') return [{ kind: 'init' }];
+  if (ev.type === 'rate_limit_event') {
+    const usage = parseRateLimit(ev);
+    return usage ? [{ kind: 'usage', usage }] : [];
+  }
   if (ev.type === 'assistant') {
-    return (ev.message?.content ?? []).filter((block: any) => block.type === 'tool_use').map((block: any) => ({ kind: 'progress', text: describeTool(block.name, block.input) }) as StreamEvent);
+    // Blocks keep their order: Claude often says what it will do, then does it.
+    return (ev.message?.content ?? []).flatMap((block: any): StreamEvent[] => {
+      if (block.type === 'tool_use') return [{ kind: 'progress', text: describeTool(block.name, block.input) }];
+      if (block.type === 'text' && String(block.text).trim()) return [{ kind: 'text', text: String(block.text) }];
+      return [];
+    });
   }
   if (ev.type === 'result') {
     return [{ kind: 'result', ok: !ev.is_error, text: String(ev.result ?? (ev.is_error ? 'Claude reported an error' : '')) }];

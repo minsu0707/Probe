@@ -11,6 +11,7 @@ function serviceStatus(s: ServiceOverview): { text: string; live: boolean } {
     const t = s.activeRun.totals;
     return { text: `실행 중 ${t.passed + t.failed + t.skipped}/${t.total || '?'}`, live: true };
   }
+  if (s.claudeWorking) return { text: 'Claude 작업 중…', live: true };
   if (s.learning) return { text: '학습 중…', live: true };
   if (s.openDefects) return { text: `열린 결함 ${s.openDefects}건`, live: false };
   if (s.unlearnedDocs) return { text: `새 문서 ${s.unlearnedDocs}개`, live: false };

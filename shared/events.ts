@@ -4,7 +4,7 @@
  *  - IngestEvent:   Playwright worker/reporter  →  server   (HTTP POST /api/ingest/:runId)
  *  - ServerMessage: server                      →  browser  (WebSocket /ws)
  */
-import type { Defect, Job, LogKind, RunSummary, TestStatus } from './models.ts';
+import type { Defect, Job, LogKind, RunSummary, Session, SessionMessage, TestStatus } from './models.ts';
 
 export type IngestEvent =
   /** Sent once at the start: how many tests the run will attempt. */
@@ -36,6 +36,9 @@ export type ServerMessage =
   | { type: 'frame'; runId: string; ts: number }
   | { type: 'defect'; defect: Defect }
   | { type: 'job'; job: Job }
+  | { type: 'session'; session: Session }
+  | { type: 'session:message'; message: SessionMessage }
+  | { type: 'session:deleted'; sessionId: string; serviceId: string }
   /** A service's env, docs or knowledge changed; open pages should refetch. */
   | { type: 'service'; serviceId: string }
   | { type: 'docs'; serviceId: string }

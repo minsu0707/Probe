@@ -12,6 +12,7 @@ import { conflict } from '../../core/errors.ts';
 import { isLearning } from '../learning/service.ts';
 import { activeRun } from '../runs/service.ts';
 import { detectBrowserChannel } from '../runs/browser.ts';
+import { isSessionRunning } from '../sessions/service.ts';
 import { listServices } from '../services/service.ts';
 
 const version: string = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
@@ -23,6 +24,7 @@ const EXIT_DELAY_MS = 150;
 function busyWith(): string | null {
   if (activeRun()) return 'a test run is in progress';
   if (listServices().some((s) => isLearning(s.id))) return 'a learning job is in progress';
+  if (listServices().some((s) => isSessionRunning(s.id))) return 'a Claude session is working';
   return null;
 }
 

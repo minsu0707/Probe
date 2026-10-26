@@ -36,4 +36,5 @@ export function tx<T>(fn: () => T): T {
 export function recoverInterrupted(now = Date.now()): void {
   run(`UPDATE runs SET status = 'error', ended_at = ? WHERE status IN ('starting','running')`, now);
   run(`UPDATE jobs SET status = 'failed', ended_at = ? WHERE status = 'running'`, now);
+  run(`UPDATE sessions SET status = 'failed', updated_at = ? WHERE status = 'running'`, now);
 }

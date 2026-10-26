@@ -8,7 +8,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { api } from './api.ts';
-import type { ClaudeAgentStatus, Defect, Job, LogLine, RunSummary, ServiceOverview } from './api.ts';
+import type { ClaudeAgentStatus, Defect, Job, LogLine, RunSummary, ServiceOverview, Session, SessionMessage } from './api.ts';
 
 export interface Toast {
   id: number;
@@ -34,10 +34,14 @@ export interface State {
   serviceVersion: Record<string, number>;
   /** Claude CLI install and sign-in state; null until first fetched. */
   claude: ClaudeAgentStatus | null;
+  /** Claude sessions per service, newest activity first. */
+  sessions: Record<string, Session[]>;
+  /** Transcript per session. */
+  transcripts: Record<string, SessionMessage[]>;
   toasts: Toast[];
 }
 
-let state: State = { ready: false, connected: false, services: [], currentId: null, runs: {}, logs: {}, defects: [], jobs: {}, frameTick: {}, serviceVersion: {}, claude: null, toasts: [] };
+let state: State = { ready: false, connected: false, services: [], currentId: null, runs: {}, logs: {}, defects: [], jobs: {}, frameTick: {}, serviceVersion: {}, claude: null, sessions: {}, transcripts: {}, toasts: [] };
 const listeners = new Set<() => void>();
 
 export const getState = (): State => state;
@@ -144,4 +148,41 @@ const MAX_LOG_LINES = 3000;
 export function appendLog(runId: string, line: LogLine): void {
   if (runId in pendingLog) pendingLog[runId].push(line);
   else patch((s) => ({ logs: { ...s.logs, [runId]: [...(s.logs[runId] ?? []), line].slice(-MAX_LOG_LINES) } }));
+}
+
+// -------------------------------------------------------------- sessions
+
+export async function loadSessions(serviceId: string): Promise<void> {
+  const list = await api.sessions(serviceId);
+  patch((s) => ({ sessions: { ...s.sessions, [serviceId]: list } }));
+}
+
+/** Insert or replace a session and keep the list ordered by last activity. */
+export function upsertSession(session: Session): void {
+  patch((s) => {
+    const rest = (s.sessions[session.serviceId] ?? []).filter((x) => x.id !== session.id);
+    return { sessions: { ...s.sessions, [session.serviceId]: [session, ...rest].sort((a, b) => b.updatedAt - a.updatedAt) } };
+  });
+}
+
+export function removeSession(serviceId: string, sessionId: string): void {
+  patch((s) => {
+    const { [sessionId]: _gone, ...transcripts } = s.transcripts;
+    return { sessions: { ...s.sessions, [serviceId]: (s.sessions[serviceId] ?? []).filter((x) => x.id !== sessionId) }, transcripts };
+  });
+}
+
+/** Messages are keyed by id, so one that arrives over the socket while the transcript is being fetched is not doubled. */
+export function addTranscript(sessionId: string, messages: SessionMessage[]): void {
+  patch((s) => {
+    const known = new Map((s.transcripts[sessionId] ?? []).map((m) => [m.id, m]));
+    for (const m of messages) known.set(m.id, m);
+    return { transcripts: { ...s.transcripts, [sessionId]: [...known.values()].sort((a, b) => a.id - b.id) } };
+  });
+}
+
+export async function loadTranscript(sessionId: string): Promise<void> {
+  const { session, messages } = await api.session(sessionId);
+  upsertSession(session);
+  addTranscript(sessionId, messages);
 }

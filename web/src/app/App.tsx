@@ -4,6 +4,7 @@ import { selectService, useStore } from '../core/store.ts';
 import { LearnPage } from '../features/learn/LearnPage.tsx';
 import { MonitorPage } from '../features/monitor/MonitorPage.tsx';
 import { ResultsPage } from '../features/results/ResultsPage.tsx';
+import { SessionsPage } from '../features/sessions/SessionsPage.tsx';
 import { ServiceDetail } from '../features/services/ServiceDetail.tsx';
 import { Welcome } from '../features/services/Welcome.tsx';
 import { SettingsPage } from '../features/settings/SettingsPage.tsx';
@@ -56,6 +57,8 @@ export function App() {
           ) : route.page === 'service' ? (
             !service ? null : route.tab === 'learn' ? (
               <LearnPage />
+            ) : route.tab === 'sessions' ? (
+              <SessionsPage />
             ) : route.tab === 'monitor' ? (
               <MonitorPage />
             ) : route.tab === 'results' ? (

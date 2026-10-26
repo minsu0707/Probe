@@ -8,3 +8,4 @@ export { Markdown } from './Markdown.tsx';
 export { Modal } from './Modal.tsx';
 export { Pill, type Tone } from './Pill.tsx';
 export { Toasts } from './Toasts.tsx';
+export { UsageMeter } from './UsageMeter.tsx';

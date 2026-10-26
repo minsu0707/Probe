@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { parseRoute, serviceHref } from '../web/src/app/router.ts';
 
 test('a service route carries the service and tab', () => {
+  assert.deepEqual(parseRoute('#/s/abc/sessions'), { page: 'service', serviceId: 'abc', tab: 'sessions' });
   assert.deepEqual(parseRoute('#/s/abc/monitor'), { page: 'service', serviceId: 'abc', tab: 'monitor' });
 });
 

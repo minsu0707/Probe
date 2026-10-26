@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api, type ClaudeAgentStatus, type ClaudeProfile } from '../../core/api.ts';
 import { attempt, refreshClaude, useStore } from '../../core/store.ts';
-import { CopyButton, Icon, Pill } from '../../ui/index.ts';
+import { CopyButton, Icon, Pill, UsageMeter } from '../../ui/index.ts';
 
 const PROFILE_HELP: Record<ClaudeProfile, string> = {
   probe: 'Probe 안에서만 쓰는 별도 로그인입니다. 개인 Claude Code의 설정, 훅, MCP 서버와 섞이지 않아서 어느 PC에서나 같은 방식으로 동작합니다.',
@@ -92,6 +92,8 @@ function Account({ claude }: { claude: ClaudeAgentStatus }) {
         <dd>{[a.plan, a.organization].filter(Boolean).join(' · ') || '—'}</dd>
         <dt>방식</dt>
         <dd>{METHOD_LABEL[a.method] ?? a.method}</dd>
+        <dt>사용량</dt>
+        <dd>{claude.usage ? <UsageMeter usage={claude.usage} /> : '백그라운드 작업을 한 번 실행하면 표시됩니다'}</dd>
         <dt>설정 폴더</dt>
         <dd className="mono-wrap">{a.configDirectory ?? '—'}</dd>
       </dl>
