@@ -29,7 +29,7 @@ const json = (method: string, body?: unknown): RequestInit => ({
 });
 
 export const api = {
-  health: () => call<{ app: 'probe'; version: string; pid: number; root: string }>('/api/health'),
+  health: () => call<{ app: 'probe'; version: string; pid: number; root: string; browser: 'msedge' | 'chrome' | 'chromium' }>('/api/health'),
 
   // agents
   claude: () => call<ClaudeAgentStatus>('/api/agents/claude'),

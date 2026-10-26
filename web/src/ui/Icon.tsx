@@ -19,6 +19,7 @@ const PATHS = {
   edit: 'M4 20h4L19 9l-4-4L4 16zM13 7l4 4',
   copy: 'M9 9h10v11H9zM5 15V4h10',
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
+  lock: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
   refresh: 'M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5',
 } as const;
 

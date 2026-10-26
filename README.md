@@ -49,12 +49,16 @@ The installer is not code-signed, so Windows SmartScreen may warn about an unkno
 
 ## Use
 
-| Menu | What it does |
+The sidebar lists your services (`+` adds one). Each service opens its own tabs, with a live badge on the tab that is busy; a status bar at the bottom shows the server, Claude and any running work.
+
+| Tab | What it does |
 |---|---|
-| 서비스 (Services) | Register a service, drop a `.env` or passphrase-protected `.enc` file. |
+| 개요 (Overview) | Name, address, notes; drop a `.env` or passphrase-protected `.enc` file; delete the service. |
 | 도메인 학습 (Domain learning) | Upload documents or add Drive links, press Start learning. Claude writes cited knowledge files that it reads before writing tests. |
 | 실시간 모니터링 (Live monitor) | Current page, feature, screen and step; counts; live browser frame; progress log. |
 | 결과 · 결함 (Results · Defects) | Failed tests become deduplicated defect candidates with screenshot and trace. |
+
+**설정 (Settings)** is a full page with its own menu: 에이전트 (Claude account and permissions), 자격 증명 · 보안, 브라우저, 일반, 연동 (MCP, Drive).
 
 The interface is in Korean.
 

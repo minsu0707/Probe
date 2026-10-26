@@ -16,30 +16,54 @@
     border-top: 1px solid var(--line);
   }
 }
+@media (max-width: 860px) {
+  .tabbar-title {
+    display: none;
+  }
+}
 @media (max-width: 760px) {
+  /* The sidebar shrinks to a rail of service initials. */
   .shell {
     grid-template-columns: 64px minmax(0, 1fr);
   }
   .brand span,
-  .nav-text,
-  .side-foot {
+  .svc-text,
+  .side-head .eyebrow {
     display: none;
   }
-  .brand {
+  .brand,
+  .side-head {
     justify-content: center;
     padding: 0;
   }
-  .nav {
+  .svc {
     justify-content: center;
   }
   .page {
     padding: 16px;
   }
-  .topbar {
-    padding: 0 16px;
+  .tabbar {
+    padding: 0 12px;
+    gap: 8px;
   }
-  .url {
+  .settings {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .settings-nav h1 {
     display: none;
+  }
+  .settings-nav .svc-text {
+    display: flex;
+  }
+  .settings-body {
+    padding: 16px;
   }
   .crumbs {
     grid-template-columns: repeat(2, minmax(0, 1fr));

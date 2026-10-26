@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type Doc, type Job, type KnowledgeFile } from '../../core/api.ts';
 import { attempt, toast, useStore } from '../../core/store.ts';
+import { settingsHref } from '../../app/router.ts';
 import { Empty, Icon } from '../../ui/index.ts';
 import { JobCard } from './JobCard.tsx';
 import { KnowledgePanel } from './KnowledgePanel.tsx';
@@ -70,7 +71,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
       {!claudeReady && (
         <div className="callout">
           <strong>{claude?.installed ? 'Claude에 로그인해야 학습할 수 있습니다.' : 'Claude Code가 설치되어 있지 않습니다.'}</strong>
-          <a className="btn btn-primary btn-sm" href="#/settings">
+          <a className="btn btn-primary btn-sm" href={settingsHref('agent')}>
             설정에서 {claude?.installed ? '로그인' : '확인'}하기
           </a>
         </div>

@@ -11,6 +11,7 @@ import { ROOT } from '../../config.ts';
 import { conflict } from '../../core/errors.ts';
 import { isLearning } from '../learning/service.ts';
 import { activeRun } from '../runs/service.ts';
+import { detectBrowserChannel } from '../runs/browser.ts';
 import { listServices } from '../services/service.ts';
 
 const version: string = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
@@ -27,8 +28,9 @@ function busyWith(): string | null {
 
 export const systemRoutes = new Hono()
   // `app` lets a launcher tell Probe apart from some other program that holds the port.
-  // `root` lets the settings page show the real install path instead of a placeholder.
-  .get('/health', (c) => c.json({ app: 'probe', version, pid: process.pid, root: ROOT }))
+  // `root` lets the settings page show the real install path instead of a placeholder;
+  // `browser` tells it which browser tests will run in.
+  .get('/health', (c) => c.json({ app: 'probe', version, pid: process.pid, root: ROOT, browser: detectBrowserChannel() ?? 'chromium' }))
   .post('/shutdown', (c) => {
     const busy = busyWith();
     if (busy && c.req.query('force') !== '1') throw conflict(`Not stopping: ${busy}. Stop it first, or use force.`);

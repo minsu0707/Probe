@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../../core/api.ts';
+import { goService } from '../../app/router.ts';
 import { attempt, selectService, toast } from '../../core/store.ts';
 import { FileDrop, Icon, Modal } from '../../ui/index.ts';
 import { looksEncrypted } from './envFile.ts';
@@ -19,6 +20,7 @@ export function AddServiceModal({ onClose }: { onClose: () => void }) {
     const created = await attempt(() => api.createService({ name, baseUrl: url.trim() || undefined }));
     if (created) {
       selectService(created.id);
+      goService(created.id);
       // The service already exists if the file fails; the user can retry it from the service page.
       if (file && !(await attempt(() => api.importEnv(created.id, file.text, passphrase || undefined)))) {
         setBusy(false);

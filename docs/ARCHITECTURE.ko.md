@@ -43,7 +43,7 @@ reporter/        Playwright 쪽: probe-reporter(이벤트 전송), fixture(페�
 mcp/             Claude용 MCP 서버
 desktop/         Electron 셸(창, 트레이, 서버 수명 관리)과 아이콘
 web/src/
-  app/             셸: App, Sidebar, Topbar, router
+  app/             셸: App, Sidebar(서비스), ServiceTabs, StatusBar, router
   core/            api(HTTP 클라이언트), store(상태), socket(WebSocket), format
   ui/              재사용 컴포넌트 (Pill, Modal, FileDrop, Markdown …)
   features/<기능>/ 화면 단위: services, learn, monitor, results, settings
@@ -129,7 +129,7 @@ services/overview.ts 는 위 모듈을 모두 읽는다 → 아무도 overview�
 
 **새 화면**
 1. `web/src/features/<기능>/`에 페이지 컴포넌트를 만든다. 서버 호출은 `core/api.ts`에 함수를 추가한다.
-2. `app/router.ts`의 `ROUTES`와 `app/App.tsx`, `app/Sidebar.tsx`에 등록한다.
+2. 서비스의 탭으로 넣으려면 `app/router.ts`의 `TABS`, `app/ServiceTabs.tsx`의 `TAB_DEFS`, `app/App.tsx`의 분기에 등록한다. 설정 항목이면 `SETTINGS_SECTIONS`와 `features/settings/SettingsPage.tsx`의 `SECTIONS`에 등록한다.
 3. 스타일은 공용이면 `components.css`, 화면 전용이면 `pages.css`에 둔다. 색은 `tokens.css`의 변수만 쓴다.
 
 **새 MCP 도구**: `mcp/server.ts`에 `registerTool`을 추가한다. 비밀 값은 반환하지 않는다.

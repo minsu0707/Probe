@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
 import { api, type ServiceOverview } from '../../core/api.ts';
 import { attempt } from '../../core/store.ts';
+import { goService } from '../../app/router.ts';
 import { Icon } from '../../ui/index.ts';
 import { EnvPanel } from './EnvPanel.tsx';
 
 /** Edit panel for the selected service: basic info, env variables, and deletion. */
-export function ServiceDetail({ service, onOpenLearn }: { service: ServiceOverview; onOpenLearn: () => void }) {
+export function ServiceDetail({ service }: { service: ServiceOverview }) {
   // Local drafts so typing doesn't fight with server pushes; the parent remounts this per service.
   const [name, setName] = useState(service.name);
   const [url, setUrl] = useState(service.baseUrl ?? '');
@@ -19,7 +20,7 @@ export function ServiceDetail({ service, onOpenLearn }: { service: ServiceOvervi
   };
 
   return (
-    <div className="stack">
+    <div className="stack narrow">
       <form className="panel" onSubmit={save}>
         <h2>기본 정보</h2>
         <div className="field">
@@ -39,7 +40,7 @@ export function ServiceDetail({ service, onOpenLearn }: { service: ServiceOvervi
           <button className="btn btn-primary" disabled={!dirty}>
             저장
           </button>
-          <button type="button" className="btn" onClick={onOpenLearn}>
+          <button type="button" className="btn" onClick={() => goService(service.id, 'learn')}>
             문서 · 학습으로
           </button>
         </div>
