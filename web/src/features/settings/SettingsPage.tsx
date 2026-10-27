@@ -4,6 +4,7 @@ import { settingsHref, SETTINGS_SECTIONS, type SettingsSection } from '../../app
 import { Icon, type IconName } from '../../ui/index.ts';
 import { ClaudeAgentCard } from './ClaudeAgentCard.tsx';
 import { McpCard } from './McpCard.tsx';
+import { UpdateCard } from './UpdateCard.tsx';
 
 interface SectionDef {
   id: SettingsSection;
@@ -121,6 +122,7 @@ function GeneralSection() {
   const health = useHealth();
   return (
     <>
+      <UpdateCard version={health?.version} />
       <Panel title="Probe 켜기">
         <ul className="plain">
           <li>

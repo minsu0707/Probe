@@ -8,7 +8,7 @@ description: Test a service registered in the Probe dashboard. Use when the user
 Probe is the user's local test dashboard (`Economy/probe`). It holds registered services, their credentials, domain documents, and shows runs live. You write the Playwright specs; Probe runs them and shows the user what is happening.
 
 Use the `probe` MCP tools. If they are not available, tell the user to run:
-`claude mcp add probe -- node "C:\Users\mylink\orca\projects\Economy\probe\mcp\server.ts"` and stop.
+`설정 → 연동 → 등록하기` in the Probe dashboard (or `claude mcp add probe -- node "<Probe folder>/mcp/server.ts"`) and stop.
 
 ## Workflow
 

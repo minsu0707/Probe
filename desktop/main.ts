@@ -14,6 +14,7 @@ import { closeSync, mkdirSync, openSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, dialog, Menu, nativeImage, nativeTheme, shell, Tray } from 'electron';
+import { checkForUpdate, initUpdater, installUpdate, updateState } from './updater.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.PORT ?? 4317);
@@ -117,9 +118,10 @@ function createWindow(): BrowserWindow {
     icon: join(ROOT, 'desktop', 'assets', 'icon.png'),
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0d1217' : '#edf0f3',
     autoHideMenuBar: true,
+    webPreferences: { preload: join(ROOT, 'desktop', 'preload.cjs'), contextIsolation: true, sandbox: true },
   });
   w.setMenuBarVisibility(false);
-  void w.loadURL(`${URL_BASE}/#/services`);
+  void w.loadURL(URL_BASE);
   w.once('ready-to-show', () => {
     if (!process.argv.includes('--hidden')) w.show();
   });
@@ -170,12 +172,26 @@ function createTray(): Tray {
         checked: app.getLoginItemSettings().openAtLogin,
         click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked, args: ['--hidden'] }),
       },
+      updateMenuItem(),
       { type: 'separator' },
       { label: '종료', click: () => void quit() },
     ]);
   t.on('click', showWindow);
   t.on('right-click', () => t.popUpContextMenu(menu())); // rebuilt each time so the checkbox is current
   return t;
+}
+
+/** Used by the updater just before the installer takes over: the server must be gone first. */
+async function confirmInstall(): Promise<boolean> {
+  if (!(await stopServer())) return false;
+  quitting = true;
+  return true;
+}
+
+function updateMenuItem(): Electron.MenuItemConstructorOptions {
+  const u = updateState();
+  if (u.phase === 'ready') return { label: `업데이트 설치 (v${u.version})`, click: () => void installUpdate() };
+  return { label: '업데이트 확인', enabled: u.phase !== 'unsupported', click: () => void checkForUpdate() };
 }
 
 async function quit(): Promise<void> {
@@ -202,6 +218,7 @@ if (!app.requestSingleInstanceLock()) {
     }
     tray = createTray();
     win = createWindow();
+    initUpdater({ window: () => win, confirmInstall });
   });
 
   // Closing the last window must not quit: the tray keeps the app alive.

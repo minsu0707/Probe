@@ -41,7 +41,7 @@ server/
   modules/<기능>/  기능 단위 세로 슬라이스 (아래 3번)
 reporter/        Playwright 쪽: probe-reporter(이벤트 전송), fixture(페이지·프레임), transport
 mcp/             Claude용 MCP 서버
-desktop/         Electron 셸(창, 트레이, 서버 수명 관리)과 아이콘
+desktop/         Electron 셸(창, 트레이, 서버 수명 관리, GitHub Releases 자동 업데이트)과 아이콘
 web/src/
   app/             셸: App, Sidebar(서비스), ServiceTabs, StatusBar, router
   core/            api(HTTP 클라이언트), store(상태), socket(WebSocket), format

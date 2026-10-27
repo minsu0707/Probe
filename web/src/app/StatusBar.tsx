@@ -1,3 +1,4 @@
+import { useUpdateState } from '../core/desktop.ts';
 import { useStore } from '../core/store.ts';
 import { UsageMeter } from '../ui/index.ts';
 import { goService, settingsHref } from './router.ts';
@@ -10,6 +11,7 @@ export function StatusBar() {
   const learning = useStore((s) => s.services.find((x) => x.learning));
   const working = useStore((s) => s.services.find((x) => x.claudeWorking));
 
+  const update = useUpdateState();
   const claudeOk = Boolean(claude?.installed && claude.auth?.loggedIn);
   const claudeText = !claude ? 'Claude 확인 중…' : !claude.installed ? 'Claude Code 없음' : claude.auth?.loggedIn ? `Claude · ${claude.auth.email ?? '로그인됨'}${claude.auth.plan ? ` · ${claude.auth.plan}` : ''}` : 'Claude 로그인 필요';
   const run = running?.activeRun;
@@ -28,6 +30,12 @@ export function StatusBar() {
       )}
       {claude?.usage && <UsageMeter usage={claude.usage} />}
       <span className="spacer" />
+      {update?.phase === 'ready' && (
+        <a className="status-item status-link" href={settingsHref('general')} title="설정에서 설치">
+          <span className="dot dot-ok" />
+          업데이트 {update.version} 준비됨
+        </a>
+      )}
       {working && (
         <a className="status-item status-link" href={`#/s/${encodeURIComponent(working.id)}/sessions`}>
           <span className="dot dot-live" />

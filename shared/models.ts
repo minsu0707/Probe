@@ -224,3 +224,19 @@ export interface SessionMessage {
   role: 'user' | 'assistant' | 'tool' | 'error';
   text: string;
 }
+
+// ------------------------------------------------------------- app updates
+
+/**
+ * Where the desktop app's self-update stands. Produced by the Electron main process and handed to
+ * the page through the preload bridge (window.probeDesktop); the server never sees it.
+ */
+export type UpdateState =
+  /** Not an installed app (source checkout, dev run): there is nothing to update. */
+  | { phase: 'unsupported'; currentVersion: string }
+  | { phase: 'idle'; currentVersion: string; checkedAt: number | null }
+  | { phase: 'checking'; currentVersion: string }
+  | { phase: 'downloading'; currentVersion: string; version: string; percent: number }
+  /** Downloaded; it installs when the app restarts. */
+  | { phase: 'ready'; currentVersion: string; version: string }
+  | { phase: 'error'; currentVersion: string; message: string };

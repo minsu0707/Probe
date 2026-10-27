@@ -47,6 +47,12 @@ Tests run in the installed Microsoft Edge (or Chrome) by default, so nothing ext
 
 The installer is not code-signed, so Windows SmartScreen may warn about an unknown publisher: choose "More info → Run anyway". Because npm blocks install scripts by default, `npm install` approves only Electron's (`allowScripts` in `package.json`).
 
+## Updates
+
+The installed app checks GitHub Releases when it starts and every 6 hours, downloads a newer version in the background, and installs it when you quit the app or press **설정 → 일반 → 재시작해서 설치**. It never restarts by itself while work is running. Your services and sign-ins live in `%APPDATA%\Probe` and are kept.
+
+To publish a version (maintainers): commit your work, then `npm run release` (or `-- minor`, `-- major`, `-- 1.4.0`). It bumps the version, runs typecheck and tests, pushes, builds the installer and uploads it to a GitHub Release using your `gh` login.
+
 ## Use
 
 The sidebar lists your services (`+` adds one). Each service opens its own tabs, with a live badge on the tab that is busy; a status bar at the bottom shows the server, Claude and any running work.
