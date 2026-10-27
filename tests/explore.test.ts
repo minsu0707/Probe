@@ -4,15 +4,16 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { isDangerousLabel, isDangerousUrl, pageKey, pagePattern, pickLogin } from '../server/modules/learning/explore-helpers.ts';
+import { isDangerousLabel, isDangerousUrl, pageKey, pagePattern, pickLogin, pickLogins } from '../server/modules/learning/explore-helpers.ts';
 import { isolatedHome } from './helpers.ts';
 
 test('the admin ID/password pair is chosen from the variable names', () => {
-  assert.deepEqual(pickLogin(['BASE_URL', 'USER_ID', 'USER_PW', 'ADMIN_ID', 'ADMIN_PW']), { userKey: 'ADMIN_ID', passKey: 'ADMIN_PW' });
-  assert.deepEqual(pickLogin(['LOGIN_USER', 'LOGIN_PASSWORD']), { userKey: 'LOGIN_USER', passKey: 'LOGIN_PASSWORD' });
-  assert.deepEqual(pickLogin(['ID', 'PASSWORD']), { userKey: 'ID', passKey: 'PASSWORD' });
+  assert.deepEqual(pickLogin(['BASE_URL', 'USER_ID', 'USER_PW', 'ADMIN_ID', 'ADMIN_PW']), { userKey: 'ADMIN_ID', passKey: 'ADMIN_PW', name: 'ADMIN' });
+  assert.deepEqual(pickLogin(['LOGIN_USER', 'LOGIN_PASSWORD']), { userKey: 'LOGIN_USER', passKey: 'LOGIN_PASSWORD', name: 'LOGIN' });
+  assert.deepEqual(pickLogin(['ID', 'PASSWORD']), { userKey: 'ID', passKey: 'PASSWORD', name: 'ID' });
   assert.equal(pickLogin(['BASE_URL', 'API_TOKEN']), null);
   assert.equal(pickLogin(['ADMIN_PW']), null, 'a password with no matching ID is not a login');
+  assert.deepEqual(pickLogins(['RES2_ID', 'RES2_PW', 'ADMIN_ID', 'ADMIN_PW', 'RES1_ID', 'RES1_PW', 'BASE_URL']).map((p) => p.name), ['ADMIN', 'RES1', 'RES2'], 'every pair, the admin first');
 });
 
 test('logging out and deleting are never followed', () => {
@@ -116,6 +117,55 @@ test('a single-page app whose menus are buttons (no links) is walked screen by s
     for (const expected of ['제품 개발', '원료 기준정보', '제품 목록', '제품명 \| 상태']) assert.match(md, new RegExp(expected), expected);
     assert.ok(result.pages >= 4, `expected at least 4 screens, got ${result.pages}`);
     assert.ok(!hits.some((h) => h.startsWith('POST')), 'the logout button was not clicked');
+  } finally {
+    site.close();
+  }
+});
+
+test('every account is explored on its own, and a role that sees fewer menus shows fewer screens', async () => {
+  isolatedHome();
+  const hits: string[] = [];
+  const shell = (nav: string, body: string) => `<!doctype html><html><head><title>Roles</title></head><body><nav>${nav}</nav>${body}</body></html>`;
+  const site = http.createServer((req, res) => {
+    hits.push(`${req.method} ${req.url}`);
+    const role = /sid=(\w+)/.exec(req.headers.cookie ?? '')?.[1];
+    const send = (html: string) => res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(html);
+    if (req.method === 'POST' && req.url === '/login') {
+      let body = '';
+      req.on('data', (d) => (body += d));
+      return void req.on('end', () => {
+        const who = /u=(\w+)/.exec(body)?.[1];
+        const ok = (who === 'boss' && body.includes('p=pw1')) || (who === 'clerk' && body.includes('p=pw2'));
+        if (!ok) return res.writeHead(401).end('no');
+        res.writeHead(302, { 'set-cookie': `sid=${who}; Path=/`, location: '/' }).end();
+      });
+    }
+    if (!role) return send('<h1>로그인</h1><form method="post" action="/login"><input name="u" placeholder="아이디"><input name="p" type="password"><button>로그인</button></form>');
+    const nav = role === 'boss' ? '<a href="/orders">주문</a><a href="/admin">시스템 관리</a>' : '<a href="/orders">주문</a>';
+    if (req.url === '/admin') return send(role === 'boss' ? shell(nav, '<h1>시스템 관리 화면</h1>') : shell(nav, '<h1>권한 없음</h1>'));
+    if (req.url === '/orders') return send(shell(nav, '<h1>주문 목록</h1>'));
+    send(shell(nav, '<h1>홈</h1>'));
+  });
+  await new Promise<void>((r) => site.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${(site.address() as AddressInfo).port}`;
+  try {
+    const services = await import('../server/modules/services/service.ts');
+    const secrets = await import('../server/modules/secrets/service.ts');
+    const { exploreService, exploreDir, exploreSummary } = await import('../server/modules/learning/explore.ts');
+    const s = services.createService({ name: 'Roles', baseUrl: url });
+    secrets.importEnv(s.id, 'BOSS_ID=boss\nBOSS_PW=pw1\nCLERK_ID=clerk\nCLERK_PW=pw2\n');
+
+    const result = await exploreService(s.id, url, () => undefined, () => undefined);
+    assert.equal(result.ok, true, result.note);
+    const summary = exploreSummary(s.id)!;
+    assert.deepEqual(summary.accounts?.map((a) => [a.name, a.signedIn]), [['BOSS', true], ['CLERK', true]]);
+
+    const md = readFileSync(join(exploreDir(s.id), 'pages.md'), 'utf8');
+    const [boss, clerk] = [md.indexOf('# 계정: BOSS'), md.indexOf('# 계정: CLERK')];
+    assert.ok(boss >= 0 && clerk > boss, 'one part per account, admin-like first');
+    assert.match(md.slice(boss, clerk), /시스템 관리 화면/, 'the boss sees the admin screen');
+    assert.doesNotMatch(md.slice(clerk), /시스템 관리 화면/, 'the clerk never gets it');
+    assert.doesNotMatch(md, /pw1|pw2/, 'passwords never appear in the notes');
   } finally {
     site.close();
   }

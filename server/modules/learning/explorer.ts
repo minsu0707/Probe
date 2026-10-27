@@ -1,7 +1,8 @@
 /**
  * Runs as its own process (spawned by explore.ts): opens the live service in a browser, signs in
- * if it can, and walks through its pages and menus, writing what it sees to PROBE_EXPLORE_OUT:
- * pages.md (one section per screen) and shots/NNN.jpg. It only looks. Every request that is not a
+ * as each account it was given (a fresh browser session per account, since each role sees different
+ * menus), and walks through its pages and menus, writing what it sees to PROBE_EXPLORE_OUT:
+ * pages.md (one section per screen, grouped by account) and shots/NNN.jpg. It only looks. Every request that is not a
  * read (or a sign-in) is refused in the browser, and links or menu items that log out or delete
  * are never touched. Progress goes to stdout as JSON lines.
  */
@@ -13,11 +14,16 @@ import { NOT_A_PAGE, isDangerousLabel, isDangerousUrl, pageKey, pagePattern, sna
 
 const BASE = process.env.PROBE_EXPLORE_URL ?? '';
 const OUT = process.env.PROBE_EXPLORE_OUT ?? '';
-const USER = process.env.PROBE_EXPLORE_USER ?? '';
-const PASS = process.env.PROBE_EXPLORE_PASS ?? '';
-const LOGIN_NAME = process.env.PROBE_EXPLORE_LOGIN_NAME ?? '';
-const MAX_PAGES = Number(process.env.PROBE_EXPLORE_MAX_PAGES ?? 60);
-const MAX_MS = Number(process.env.PROBE_EXPLORE_MAX_MS ?? 8 * 60_000);
+interface Account {
+  /** Role label for the notes, e.g. ADMIN. Never the ID itself. */
+  name: string;
+  user: string;
+  pass: string;
+}
+const ACCOUNTS: Account[] = JSON.parse(process.env.PROBE_EXPLORE_ACCOUNTS ?? '[]');
+/** Limits are per account, so one account cannot use up the budget of the next. */
+const MAX_PAGES = Number(process.env.PROBE_EXPLORE_MAX_PAGES ?? 50);
+const MAX_MS = Number(process.env.PROBE_EXPLORE_MAX_MS ?? 6 * 60_000);
 const SAMPLES_PER_PATTERN = 2;
 const CLICK_PAGES = 3; // menus are explored by clicking only on the first few screens
 const MAX_CLICKS = 90;
@@ -31,7 +37,10 @@ const MENU_SELECTOR = [
 
 const say = (text: string) => console.log(JSON.stringify({ type: 'progress', text }));
 const started = Date.now();
-const timeUp = () => Date.now() - started > MAX_MS;
+let accountStarted = started;
+const timeUp = () => Date.now() - accountStarted > MAX_MS;
+/** Section and screenshot numbers run on across accounts. */
+let shotNumber = 0;
 
 if (!BASE || !OUT) {
   console.error('PROBE_EXPLORE_URL and PROBE_EXPLORE_OUT are required');
@@ -97,18 +106,18 @@ async function snapshot(page: Page, n: number, label?: string): Promise<PageSnap
   return snap;
 }
 
-async function signIn(page: Page): Promise<boolean> {
+async function signIn(page: Page, account: Account | null): Promise<boolean> {
   const pw = page.locator('input[type=password]:visible').first();
   if ((await pw.count()) === 0) return true; // nothing to sign in to
-  if (!USER || !PASS) {
+  if (!account || !account.user || !account.pass) {
     say('로그인 정보(ID/비밀번호 변수)가 없어 로그인 전 화면만 둘러봅니다');
     return false;
   }
   const form = pw.locator('xpath=ancestor::form[1]');
   const scope = (await form.count()) ? form : page.locator('body');
   const user = scope.locator('input:not([type=password]):not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):visible').first();
-  await user.fill(USER).catch(() => undefined);
-  await pw.fill(PASS).catch(() => undefined);
+  await user.fill(account.user).catch(() => undefined);
+  await pw.fill(account.pass).catch(() => undefined);
   await pw.press('Enter').catch(() => undefined);
   await settle(page, 10_000);
   if ((await page.locator('input[type=password]:visible').count()) > 0) {
@@ -116,15 +125,12 @@ async function signIn(page: Page): Promise<boolean> {
     await settle(page, 10_000);
   }
   const ok = (await page.locator('input[type=password]:visible').count()) === 0;
-  say(ok ? `로그인했습니다 (${LOGIN_NAME})` : '로그인하지 못했습니다. 로그인 전 화면만 둘러봅니다');
+  say(ok ? `로그인했습니다 (${account.name})` : `로그인하지 못했습니다 (${account.name}). 로그인 전 화면만 둘러봅니다`);
   return ok;
 }
 
-const browser = await chromium.launch({ channel: (process.env.PROBE_BROWSER_CHANNEL as 'msedge' | 'chrome' | undefined) || undefined, headless: true });
-let visitedCount = 0;
-let stoppedBy: 'complete' | 'limit' | 'time' = 'complete';
-let signedIn = false;
-try {
+async function exploreAccount(account: Account | null): Promise<{ name: string; signedIn: boolean; pages: number; stoppedBy: 'complete' | 'limit' | 'time' }> {
+  accountStarted = Date.now();
   const context = await browser.newContext({ locale: 'ko-KR', viewport: { width: 1366, height: 800 } });
   // Looking only: reads and sign-in pass, everything else is refused.
   await context.route('**/*', (route) => {
@@ -137,7 +143,13 @@ try {
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await settle(page);
-  signedIn = await signIn(page);
+  const signedIn = await signIn(page, account);
+  let stoppedBy: 'complete' | 'limit' | 'time' = 'complete';
+  let visitedCount = 0;
+  const who = account?.name ?? '로그인 전';
+  appendFileSync(join(OUT, 'pages.md'), `# 계정: ${who}${account ? (signedIn ? '' : ' (로그인 실패)') : ''}
+
+`);
 
   const seenKeys = new Set<string>();
   const perPattern = new Map<string, number>();
@@ -163,8 +175,8 @@ try {
     seenKeys.add(landing);
     perPattern.set(pagePattern(landing), 1);
   }
-  await snapshot(page, ++visitedCount);
-  say(`화면 ${visitedCount}: ${page.url()}`);
+  await snapshot(page, ++shotNumber); visitedCount++;
+  say(`[${who}] 화면 ${visitedCount}: ${page.url()}`);
   await links();
 
   /**
@@ -206,13 +218,13 @@ try {
           seenKeys.add(key);
           perPattern.set(pagePattern(key), (perPattern.get(pagePattern(key)) ?? 0) + 1);
           seenSignatures.add(sig);
-          await snapshot(page, ++visitedCount);
-          say(`화면 ${visitedCount}: ${page.url()}`);
+          await snapshot(page, ++shotNumber); visitedCount++;
+          say(`[${who}] 화면 ${visitedCount}: ${page.url()}`);
           await links();
         } else if (!seenSignatures.has(sig)) {
           seenSignatures.add(sig);
-          await snapshot(page, ++visitedCount, label);
-          say(`화면 ${visitedCount}: ${label}`);
+          await snapshot(page, ++shotNumber, label); visitedCount++;
+          say(`[${who}] 화면 ${visitedCount}: ${label}`);
         }
         // The click opened a submenu: go through it now, before the next top-level click closes it again.
         if (depth < 3) {
@@ -238,16 +250,28 @@ try {
     }
     await settle(page);
     // A session that expired sends us back to the login form; sign in again and carry on.
-    if ((await page.locator('input[type=password]:visible').count()) > 0 && signedIn) await signIn(page);
-    await snapshot(page, ++visitedCount);
-    say(`화면 ${visitedCount}: ${page.url()}`);
+    if ((await page.locator('input[type=password]:visible').count()) > 0 && signedIn) await signIn(page, account);
+    await snapshot(page, ++shotNumber); visitedCount++;
+    say(`[${who}] 화면 ${visitedCount}: ${page.url()}`);
     await links();
     if (++visitedViaQueue < CLICK_PAGES) await clickMenus();
   }
   if (queue.length && visitedCount >= MAX_PAGES) stoppedBy = 'limit';
+  await context.close().catch(() => undefined);
+  return { name: who, signedIn, pages: visitedCount, stoppedBy };
+}
+
+const browser = await chromium.launch({ channel: (process.env.PROBE_BROWSER_CHANNEL as 'msedge' | 'chrome' | undefined) || undefined, headless: true });
+const results: { name: string; signedIn: boolean; pages: number; stoppedBy: string }[] = [];
+try {
+  // Each account in its own browser session. Without any account the sign-in screen is still read.
+  for (const account of ACCOUNTS.length ? ACCOUNTS : [null]) results.push(await exploreAccount(account));
 } finally {
   await browser.close().catch(() => undefined);
 }
+const visitedCount = results.reduce((n, r) => n + r.pages, 0);
+const signedIn = results.some((r) => r.signedIn);
+const stoppedBy = results.find((r) => r.stoppedBy !== 'complete')?.stoppedBy ?? 'complete';
 
-writeFileSync(join(OUT, 'summary.json'), JSON.stringify({ url: BASE, pages: visitedCount, signedIn, stoppedBy, seconds: Math.round((Date.now() - started) / 1000) }));
+writeFileSync(join(OUT, 'summary.json'), JSON.stringify({ url: BASE, pages: visitedCount, signedIn, stoppedBy, accounts: results, seconds: Math.round((Date.now() - started) / 1000) }));
 console.log(JSON.stringify({ type: 'done', pages: visitedCount, signedIn, stoppedBy }));

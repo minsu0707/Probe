@@ -80,7 +80,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
           <strong>서비스를 직접 둘러보며 학습</strong>
           <span className="hint">
             {canExplore
-              ? '로그인한 뒤 메뉴와 화면을 차례로 열어 보고(최대 약 60화면, 8분) 실제로 보이는 항목을 자료와 함께 학습합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다. 로그인에는 환경 변수의 ID/비밀번호 쌍(예: ADMIN_ID, ADMIN_PW)을 씁니다.'
+              ? '환경 변수에 있는 모든 계정(ADMIN_ID/ADMIN_PW, RES1_ID/RES1_PW처럼 ID와 비밀번호가 짝인 것, 최대 8개)으로 각각 로그인해서 메뉴와 화면을 차례로 열어 보고(계정당 최대 약 50화면, 6분) 실제로 보이는 항목을 자료와 함께 학습합니다. 계정별로 보이는 메뉴가 어떻게 다른지(권한)도 정리합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다.'
               : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
           </span>
         </span>

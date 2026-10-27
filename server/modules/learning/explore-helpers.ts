@@ -7,27 +7,31 @@
 export interface LoginPair {
   userKey: string;
   passKey: string;
+  /** What to call this account in the notes: the shared prefix (ADMIN, RES1), never the ID itself. */
+  name: string;
 }
 
 const PASS = /(^|_)(PW|PWD|PASS|PASSWD|PASSWORD)$/i;
 const USER = /(^|_)(ID|USER|USERNAME|USERID|EMAIL|LOGIN|ACCOUNT)$/i;
 
 /**
- * Picks an ID/password pair out of the service's variable names (ADMIN_ID + ADMIN_PW, USER + PASS,
- * …). With several roles the admin pair wins: it sees the most menus. Names only; values stay
- * with the caller.
+ * Finds every ID/password pair in the service's variable names (ADMIN_ID + ADMIN_PW, RES1_ID +
+ * RES1_PW, USER + PASS, …). Each role sees different menus, so every pair is explored; the admin
+ * comes first because it sees the most. Names only; values stay with the caller.
  */
-export function pickLogin(names: string[]): LoginPair | null {
+export function pickLogins(names: string[]): LoginPair[] {
   const pairs: LoginPair[] = [];
   for (const passKey of names.filter((n) => PASS.test(n))) {
     const prefix = passKey.replace(PASS, '');
     const userKey = names.find((n) => USER.test(n) && n.replace(USER, '') === prefix);
-    if (userKey) pairs.push({ userKey, passKey });
+    if (userKey) pairs.push({ userKey, passKey, name: prefix.replace(/_$/, '') || userKey });
   }
-  if (pairs.length === 0) return null;
   const score = (p: LoginPair) => (/admin|관리/i.test(p.userKey) ? 0 : 1);
-  return [...pairs].sort((a, b) => score(a) - score(b) || a.passKey.length - b.passKey.length)[0];
+  return pairs.sort((a, b) => score(a) - score(b) || a.name.localeCompare(b.name));
 }
+
+/** The first account of pickLogins: the admin when there is one. */
+export const pickLogin = (names: string[]): LoginPair | null => pickLogins(names)[0] ?? null;
 
 /** Things that must never be followed or clicked, even though following them only sends a GET. */
 const DANGEROUS_TEXT = /로그아웃|log ?out|sign ?out|탈퇴|withdraw|삭제|delete|remove|초기화|reset|파기|destroy|재인증|re-?auth/i;
