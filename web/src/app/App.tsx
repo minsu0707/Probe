@@ -14,6 +14,7 @@ import { useRoute } from './router.ts';
 import { ServiceTabs } from './ServiceTabs.tsx';
 import { Sidebar } from './Sidebar.tsx';
 import { StatusBar } from './StatusBar.tsx';
+import { UpdatePopup } from './UpdatePopup.tsx';
 
 /**
  * App shell: sidebar of services, the open service's tabs (or the settings page), and a status bar.
@@ -74,6 +75,7 @@ export function App() {
         </main>
       </div>
       <StatusBar />
+      <UpdatePopup />
       <Toasts />
       {update?.phase === 'installing' && (
         <div className="installing" role="alert">

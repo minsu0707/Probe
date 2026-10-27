@@ -707,3 +707,44 @@ table.runs .num {
   flex: 1;
   resize: none;
 }
+
+/* Knowledge files as an outline: one row per section, opened on demand. */
+.fold-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0 4px;
+}
+.fold-bar input {
+  flex: 1;
+  min-width: 0;
+}
+.fold-item {
+  border-bottom: 1px solid var(--line);
+}
+.fold-item > summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 4px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.fold-item > summary::-webkit-details-marker {
+  display: none;
+}
+.fold-item > summary:hover {
+  color: var(--accent);
+}
+.fold-item > summary .icon {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.12s;
+}
+.fold-item[open] > summary .icon {
+  transform: rotate(90deg);
+}
+.fold-item > .md {
+  padding: 0 4px 14px 22px;
+}

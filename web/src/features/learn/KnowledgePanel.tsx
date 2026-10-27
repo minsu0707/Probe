@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api, type KnowledgeFile } from '../../core/api.ts';
 import { attempt } from '../../core/store.ts';
-import { Empty, Icon, Markdown } from '../../ui/index.ts';
+import { Empty, Icon } from '../../ui/index.ts';
+import { FoldedDoc } from './FoldedDoc.tsx';
 
 /** Tab labels for the files the learning job writes. Unknown files fall back to their file name. */
 const FILE_LABEL: Record<string, string> = {
@@ -70,7 +71,7 @@ export function KnowledgePanel({ serviceId, files, onSaved }: { serviceId: strin
         ))}
       </div>
 
-      {editing ? <textarea className="editor" aria-label={`${file.name} 편집`} value={draft} onChange={(e) => setDraft(e.target.value)} spellCheck={false} /> : <Markdown source={file.content} />}
+      {editing ? <textarea className="editor" aria-label={`${file.name} 편집`} value={draft} onChange={(e) => setDraft(e.target.value)} spellCheck={false} /> : <FoldedDoc source={file.content} />}
 
       <p className="muted small">
         대괄호는 근거가 된 자료이고, (추정) 표시는 자료에 없는 내용을 Claude가 짐작한 부분입니다. 틀린 부분은 직접 고치세요. 다시 학습할 때 Claude는 기존 문서를 먼저 읽고, 자료와 충돌하지 않는 수정은 남기도록 지시받습니다.
