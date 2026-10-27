@@ -46,6 +46,28 @@
   background: var(--sunken);
   color: var(--ink);
 }
+.icon-btn-lg {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+.icon-btn-on,
+.icon-btn-on:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+/* A dot on the icon: something in there wants attention (a downloaded update). */
+.icon-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--panel);
+  box-sizing: content-box;
+}
 .side-list {
   display: flex;
   flex-direction: column;

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useUpdateState } from '../core/desktop.ts';
 import { useStore } from '../core/store.ts';
 import { AddServiceModal } from '../features/services/AddServiceModal.tsx';
 import { Icon, Logo } from '../ui/index.ts';
@@ -23,6 +24,7 @@ export function Sidebar({ route }: { route: Route }) {
   const services = useStore((s) => s.services);
   const currentId = useStore((s) => s.currentId);
   const [adding, setAdding] = useState(false);
+  const updateReady = useUpdateState()?.phase === 'ready';
   const openId = route.page === 'service' ? route.serviceId : null;
 
   return (
@@ -62,11 +64,15 @@ export function Sidebar({ route }: { route: Route }) {
       </nav>
 
       <div className="side-foot">
-        <a href={settingsHref()} className={`svc${route.page === 'settings' ? ' svc-on' : ''}`} aria-current={route.page === 'settings' ? 'page' : undefined} title="설정">
-          <Icon name="settings" />
-          <span className="svc-text">
-            <span className="svc-name">설정</span>
-          </span>
+        <a
+          href={settingsHref()}
+          className={`icon-btn icon-btn-lg${route.page === 'settings' ? ' icon-btn-on' : ''}`}
+          aria-current={route.page === 'settings' ? 'page' : undefined}
+          aria-label="설정"
+          title={updateReady ? '설정 · 새 버전 준비됨' : '설정'}
+        >
+          <Icon name="settings" size={20} />
+          {updateReady && <span className="icon-badge" aria-hidden="true" />}
         </a>
       </div>
       {adding && <AddServiceModal onClose={() => setAdding(false)} />}
