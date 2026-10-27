@@ -88,7 +88,13 @@ export function startRun(serviceId: string, opts: StartOptions = {}): RunSummary
   };
   addLive(run);
 
-  run.proc = launchPlaywright({ serviceId, runId: summary.id, token: run.token, grep: opts.grep, file: opts.file, headed: opts.headed });
+  try {
+    run.proc = launchPlaywright({ serviceId, runId: summary.id, token: run.token, grep: opts.grep, file: opts.file, headed: opts.headed });
+  } catch (e) {
+    // Without this the run would sit in "starting" forever and block the next one.
+    finishRun(run, 'error', `Could not start Playwright: ${e instanceof Error ? e.message : String(e)}`);
+    return summary;
+  }
   writeLog(run, 'system', `Started ${specs.length} spec file${specs.length === 1 ? '' : 's'}${opts.grep ? ` matching "${opts.grep}"` : ''}`);
   watchProcess(run);
   persist(run);
