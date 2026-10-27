@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { Defect } from '../../core/api.ts';
 import { useStore } from '../../core/store.ts';
 import { CAUSE_LABEL } from '../../core/format.ts';
@@ -9,12 +9,12 @@ import { DefectDetail, DefectItem } from './DefectRow.tsx';
 type Filter = 'open' | Defect['status'] | 'all';
 
 const FILTERS: [Filter, string][] = [
+  ['all', '전체'],
   ['open', '열린 결함'],
   ['candidate', '확인 필요'],
   ['confirmed', '확정'],
   ['fixed', '수정됨'],
   ['false_positive', '오탐'],
-  ['all', '전체'],
 ];
 
 const matches = (d: Defect, f: Filter): boolean => (f === 'all' ? true : f === 'open' ? d.status === 'candidate' || d.status === 'confirmed' : d.status === f);
@@ -41,17 +41,23 @@ export function DefectList({ serviceId }: { serviceId: string }) {
     <>
       <div className="filters" role="group" aria-label="결함 필터">
         {FILTERS.map(([f, label]) => (
-          <button key={f} className={`filter${filter === f ? ' on' : ''}`} aria-pressed={filter === f} onClick={() => setFilter(f)}>
-            {label} <span className="tabular">{mine.filter((d) => matches(d, f)).length}</span>
-          </button>
+          <Fragment key={f}>
+            <button className={`filter${filter === f ? ' on' : ''}`} aria-pressed={filter === f} onClick={() => setFilter(f)}>
+              {label} <span className="tabular">{mine.filter((d) => matches(d, f)).length}</span>
+            </button>
+            {f === 'all' && <span className="filter-sep" aria-hidden="true" />}
+          </Fragment>
         ))}
       </div>
 
       <div className="filters" role="group" aria-label="원인 추정 필터">
         {(['all', 'app', 'test', 'env', 'unknown'] as const).map((c) => (
-          <button key={c} className={`filter${cause === c ? ' on' : ''}`} aria-pressed={cause === c} onClick={() => setCause(c)}>
-            {c === 'all' ? '원인 전체' : CAUSE_LABEL[c]} <span className="tabular">{mine.filter((d) => matches(d, filter) && (c === 'all' || d.cause === c)).length}</span>
-          </button>
+          <Fragment key={c}>
+            <button className={`filter${cause === c ? ' on' : ''}`} aria-pressed={cause === c} onClick={() => setCause(c)}>
+              {c === 'all' ? '원인 전체' : CAUSE_LABEL[c]} <span className="tabular">{mine.filter((d) => matches(d, filter) && (c === 'all' || d.cause === c)).length}</span>
+            </button>
+            {c === 'all' && <span className="filter-sep" aria-hidden="true" />}
+          </Fragment>
         ))}
       </div>
 

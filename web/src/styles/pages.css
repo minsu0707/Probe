@@ -914,3 +914,10 @@ table.runs .num {
   font-size: 12.5px;
   padding: 4px 0;
 }
+
+.filter-sep {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  background: var(--line-strong);
+}
