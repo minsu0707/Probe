@@ -1,7 +1,7 @@
 /**
  * Process-level endpoints used by the launcher scripts and the MCP server, not by the UI.
  *
- *  GET  /api/health    "is a Probe server answering on this port?" (and which version)
+ *  GET  /api/health    "is a Probe server answering on this port?" (version, and what work is running)
  *  POST /api/shutdown  stop the server; refused while work is running unless ?force=1
  */
 import { readFileSync } from 'node:fs';
@@ -32,7 +32,7 @@ export const systemRoutes = new Hono()
   // `app` lets a launcher tell Probe apart from some other program that holds the port.
   // `root` lets the settings page show the real install path instead of a placeholder;
   // `browser` tells it which browser tests will run in.
-  .get('/health', (c) => c.json({ app: 'probe', version, pid: process.pid, root: ROOT, browser: detectBrowserChannel() ?? 'chromium' }))
+  .get('/health', (c) => c.json({ app: 'probe', version, pid: process.pid, root: ROOT, browser: detectBrowserChannel() ?? 'chromium', busy: busyWith() }))
   .post('/shutdown', (c) => {
     const busy = busyWith();
     if (busy && c.req.query('force') !== '1') throw conflict(`Not stopping: ${busy}. Stop it first, or use force.`);

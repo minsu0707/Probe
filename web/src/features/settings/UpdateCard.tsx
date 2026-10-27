@@ -14,7 +14,7 @@ export function UpdateCard({ version }: { version: string | undefined }) {
     <Pill tone="pass">새 버전 {update.version} 준비됨</Pill>
   ) : update.phase === 'downloading' ? (
     <Pill tone="run" dot>
-      {update.version} 내려받는 중 {update.percent}%
+      {update.version} 내려받는 중
     </Pill>
   ) : update.phase === 'checking' ? (
     <Pill tone="run" dot>
@@ -49,7 +49,7 @@ export function UpdateCard({ version }: { version: string | undefined }) {
         <p className="muted small">개발용으로 실행 중이라 자동 업데이트를 쓰지 않습니다. 설치한 앱에서는 새 버전이 나오면 백그라운드로 내려받습니다.</p>
       ) : (
         <>
-          <p className="muted small">새 버전은 6시간마다, 그리고 앱을 켤 때 확인해서 백그라운드로 내려받습니다. 진행 중인 작업을 끊지 않도록 자동으로 재시작하지 않고, 앱을 종료할 때나 아래 버튼을 눌렀을 때 설치합니다. 서비스와 로그인 정보는 그대로 유지됩니다.</p>
+          <p className="muted small">새 버전은 앱을 켠 뒤와 6시간마다 확인해서 백그라운드로 내려받고, 작업(테스트 실행, 학습, Claude 세션)이 없고 Probe 창이 앞에 있지 않을 때 저절로 재시작해서 설치합니다. 지금 바로 설치하려면 아래 버튼을 누르세요. 서비스와 로그인 정보는 그대로 유지됩니다.</p>
           {update.phase === 'error' && <p className="muted small">{update.message}</p>}
           <div className="actions">
             {update.phase === 'ready' ? (

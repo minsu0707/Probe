@@ -188,6 +188,17 @@ async function confirmInstall(): Promise<boolean> {
   return true;
 }
 
+/** No work running on the server, and the window is not in front of the user. */
+async function safeToRestart(): Promise<boolean> {
+  if (win?.isVisible() && win.isFocused() && !win.isMinimized()) return false;
+  try {
+    const res = await fetch(`${URL_BASE}/api/health`, { signal: AbortSignal.timeout(1500) });
+    return (await res.json()).busy === null;
+  } catch {
+    return true; // no server answering: nothing to interrupt
+  }
+}
+
 function updateMenuItem(): Electron.MenuItemConstructorOptions {
   const u = updateState();
   if (u.phase === 'ready') return { label: `업데이트 설치 (v${u.version})`, click: () => void installUpdate() };
@@ -218,7 +229,7 @@ if (!app.requestSingleInstanceLock()) {
     }
     tray = createTray();
     win = createWindow();
-    initUpdater({ window: () => win, confirmInstall });
+    initUpdater({ window: () => win, confirmInstall, safeToRestart });
   });
 
   // Closing the last window must not quit: the tray keeps the app alive.

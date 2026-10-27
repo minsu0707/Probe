@@ -8,6 +8,8 @@
  * PROBE_UPDATE_URL points the app at any folder or server that holds `latest.yml` and the
  * installer, which is how the update flow is tested without publishing a release.
  */
+import { appendFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { app, ipcMain, type BrowserWindow } from 'electron';
 import electronUpdater from 'electron-updater';
 import type { UpdateState } from '../shared/models.ts';
@@ -17,6 +19,7 @@ const { autoUpdater } = electronUpdater;
 
 const FIRST_CHECK_DELAY_MS = 15_000; // let the window and server settle first
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+const IDLE_POLL_MS = 30_000;
 
 const testFeed = process.env.PROBE_UPDATE_URL;
 /** Dev runs have no installer to replace; a test feed makes the flow testable anywhere. */
@@ -25,8 +28,19 @@ const enabled = app.isPackaged || Boolean(testFeed);
 let state: UpdateState = enabled ? { phase: 'idle', currentVersion: app.getVersion(), checkedAt: null } : { phase: 'unsupported', currentVersion: app.getVersion() };
 let getWindow: () => BrowserWindow | null = () => null;
 let beforeInstall: () => Promise<boolean> = async () => true;
+let isSafeToRestart: () => Promise<boolean> = async () => false;
+
+/** One line per update event in <data>/update.log, so "it didn't update" can be answered from the file. */
+function log(line: string): void {
+  try {
+    appendFileSync(join(process.env.PROBE_HOME ?? app.getPath('userData'), 'update.log'), `${new Date().toISOString()} ${line}\n`);
+  } catch {
+    /* logging must never break updating */
+  }
+}
 
 function apply(ev: UpdateEvent): void {
+  if (ev.type !== 'progress') log(JSON.stringify(ev));
   state = reduceUpdate(state, ev);
   getWindow()?.webContents.send('update:state', state);
 }
@@ -53,12 +67,28 @@ export async function installUpdate(): Promise<boolean> {
 }
 
 /**
+ * Restart into the new version by itself, but only at a moment nobody would notice: no test run,
+ * learning job or Claude session working, and the window is hidden, minimized or not in front.
+ * Until then it keeps asking every 30 s; the banner and the settings button work in the meantime.
+ */
+async function installWhenSafe(): Promise<void> {
+  while (state.phase === 'ready') {
+    if (await isSafeToRestart()) {
+      log('installing: idle');
+      if (await installUpdate()) return;
+    }
+    await new Promise((r) => setTimeout(r, IDLE_POLL_MS));
+  }
+}
+
+/**
  * Wire the updater. `confirmInstall` runs before the app quits to install (it stops the server,
  * which is a second Probe.exe the installer could not replace); returning false cancels.
  */
-export function initUpdater(opts: { window: () => BrowserWindow | null; confirmInstall: () => Promise<boolean> }): void {
+export function initUpdater(opts: { window: () => BrowserWindow | null; confirmInstall: () => Promise<boolean>; safeToRestart: () => Promise<boolean> }): void {
   getWindow = opts.window;
   beforeInstall = opts.confirmInstall;
+  isSafeToRestart = opts.safeToRestart;
 
   ipcMain.handle('update:get', () => state);
   ipcMain.handle('update:check', () => checkForUpdate());
@@ -72,9 +102,13 @@ export function initUpdater(opts: { window: () => BrowserWindow | null; confirmI
   autoUpdater.on('update-available', (i) => apply({ type: 'available', version: i.version }));
   autoUpdater.on('update-not-available', () => apply({ type: 'none', at: Date.now() }));
   autoUpdater.on('download-progress', (p) => apply({ type: 'progress', percent: p.percent }));
-  autoUpdater.on('update-downloaded', (i) => apply({ type: 'downloaded', version: i.version }));
+  autoUpdater.on('update-downloaded', (i) => {
+    apply({ type: 'downloaded', version: i.version });
+    if (!testFeed) void installWhenSafe();
+  });
   autoUpdater.on('error', (e) => apply({ type: 'error', message: briefError(e) }));
 
+  log(`start v${app.getVersion()}${testFeed ? ` (test feed ${testFeed})` : ''}`);
   setTimeout(() => void checkForUpdate(), FIRST_CHECK_DELAY_MS);
   setInterval(() => void checkForUpdate(), CHECK_EVERY_MS);
 }
