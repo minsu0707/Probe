@@ -497,15 +497,36 @@ table.runs {
   flex-direction: column;
   gap: 8px;
 }
-.defect {
+.defect-item {
   position: relative;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 4px 16px 10px 20px;
   box-shadow: var(--shadow);
 }
-.defect::before {
+.defect-item.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.defect-item > button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 12px 10px 18px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.defect-item > button:hover {
+  background: var(--sunken);
+  border-radius: var(--radius);
+}
+.defect-item::before {
   content: '';
   position: absolute;
   left: 0;
@@ -524,43 +545,65 @@ table.runs {
 .defect-done {
   opacity: 0.65;
 }
-.defect-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 0 2px;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-.defect-head[aria-expanded='true'] .icon {
-  transform: rotate(90deg);
-}
 .defect-title {
-  flex: 1;
   min-width: 0;
   font-weight: 650;
-  font-size: 14.5px;
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .defect-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  justify-content: flex-end;
 }
 .defect-where {
-  padding-left: 24px;
+  overflow-wrap: anywhere;
 }
-.defect-body {
+.defect-split {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.defect-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 0 0 24px;
+  gap: 8px;
+  max-height: calc(100vh - 260px);
+  min-height: 320px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.defect-pane {
+  position: sticky;
+  top: 8px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.defect-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.defect-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.defect-detail-head h3 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.35;
 }
 .error-block {
   margin: 0;
@@ -573,18 +616,28 @@ table.runs {
   max-height: 260px;
   overflow-y: auto;
 }
-.evidence {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  flex-wrap: wrap;
+.shot {
+  display: block;
+  cursor: zoom-in;
 }
 .shot img {
   display: block;
-  max-width: 360px;
   width: 100%;
+  height: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
+}
+@media (max-width: 900px) {
+  .defect-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .defect-list {
+    max-height: 320px;
+  }
+  .defect-pane {
+    position: static;
+    max-height: none;
+  }
 }
 .table-panel {
   padding: 0;
