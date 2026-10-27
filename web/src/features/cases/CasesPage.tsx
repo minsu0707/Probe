@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api, type ServiceOverview, type TestCase } from '../../core/api.ts';
+import { api, type ServiceOverview, type TestCase, type TrashedCase } from '../../core/api.ts';
+import { ago } from '../../core/format.ts';
 import { goService } from '../../app/router.ts';
 import { useStore, attempt } from '../../core/store.ts';
-import { Empty, Icon, Pill } from '../../ui/index.ts';
+import { ConfirmModal, Empty, Icon, Pill } from '../../ui/index.ts';
 
 /** 테스트 케이스: what Claude wrote, grouped by feature, with a choice of what to run. */
 export function CasesPage() {
@@ -17,6 +18,8 @@ function CasesBody({ service }: { service: ServiceOverview }) {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [trash, setTrash] = useState<TrashedCase[]>([]);
+  const [deleting, setDeleting] = useState<TestCase[] | null>(null);
   const running = Boolean(service.activeRun);
 
   const load = useCallback(async () => {
@@ -34,6 +37,9 @@ function CasesBody({ service }: { service: ServiceOverview }) {
       setLoading(false);
     }
   }, [service.id]);
+
+  const loadTrash = useCallback(() => api.trash(service.id).then(setTrash, () => undefined), [service.id]);
+  useEffect(() => void loadTrash(), [loadTrash, service.claudeWorking]);
 
   // Load on open, and again when Claude finishes writing (its turn ends, claudeWorking goes false).
   useEffect(() => void load(), [load, service.claudeWorking]);
@@ -57,6 +63,15 @@ function CasesBody({ service }: { service: ServiceOverview }) {
   const start = async (list: TestCase[] | null) => {
     const body = list ? { tests: list.map((c) => ({ file: c.file, line: c.line })), title: `${service.name} · 선택한 ${list.length}개` } : {};
     if (await attempt(() => api.startRun(service.id, body))) goService(service.id, 'monitor');
+  };
+  const remove = async (list: TestCase[]) => {
+    const done = await attempt(() => api.deleteTests(service.id, list.map((c) => ({ file: c.file, line: c.line, title: c.title, feature: c.feature }))));
+    if (done) setPicked(new Set());
+    await Promise.all([load(), loadTrash()]);
+  };
+  const restore = async (item: TrashedCase) => {
+    await attempt(() => api.restoreTrashed(service.id, item.id));
+    await Promise.all([load(), loadTrash()]);
   };
   const chosen = (cases ?? []).filter((c) => picked.has(c.id));
 
@@ -103,6 +118,10 @@ function CasesBody({ service }: { service: ServiceOverview }) {
             </label>
             <input type="search" className="case-search" aria-label="케이스 검색" placeholder="제목, 기능, 근거로 찾기" value={query} onChange={(e) => setQuery(e.target.value)} />
             <span className="spacer" />
+            <button className="btn btn-quiet" disabled={chosen.length === 0} onClick={() => setDeleting(chosen)}>
+              <Icon name="trash" size={14} />
+              선택 삭제
+            </button>
             <button className="btn btn-primary" disabled={running || chosen.length === 0} onClick={() => void start(chosen)} title={running ? '다른 실행이 진행 중입니다' : undefined}>
               <Icon name="play" size={14} />
               선택한 {chosen.length}개 실행
@@ -158,6 +177,39 @@ function CasesBody({ service }: { service: ServiceOverview }) {
             );
           })}
         </>
+      )}
+
+      {trash.length > 0 && (
+        <details className="panel case-trash">
+          <summary>
+            <Icon name="chevron" size={14} />
+            <Icon name="trash" size={14} />
+            <strong>휴지통</strong>
+            <span className="count">{trash.length}</span>
+          </summary>
+          <ul className="case-list">
+            {trash.map((t) => (
+              <li key={t.id} className="case-row">
+                <span className="case-main">
+                  <span className="case-title">{t.whole ? `파일 전체 · ${t.file}` : t.title}</span>
+                  <span className="case-source">{[t.whole ? '' : t.file, ago(t.deletedAt, Date.now())].filter(Boolean).join(' · ')}</span>
+                </span>
+                <button className="btn btn-sm" onClick={() => void restore(t)}>
+                  복원
+                </button>
+                <button className="btn btn-quiet btn-sm" onClick={() => void attempt(() => api.emptyTrash(service.id, t.id)).then(loadTrash)}>
+                  완전 삭제
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {deleting && (
+        <ConfirmModal title="테스트 케이스 삭제" confirm="휴지통으로 이동" onConfirm={() => remove(deleting)} onClose={() => setDeleting(null)}>
+          {deleting.length}개 케이스를 테스트 파일에서 빼서 휴지통으로 옮깁니다. 아래 휴지통에서 언제든 복원할 수 있습니다.
+        </ConfirmModal>
       )}
     </>
   );

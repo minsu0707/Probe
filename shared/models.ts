@@ -33,6 +33,19 @@ export interface ServiceOverview extends Service {
 }
 
 /** One Playwright test, as listed for the 테스트 케이스 tab. */
+/** A test case (or a whole spec file Claude emptied) that was removed and can be put back. */
+export interface TrashedCase {
+  id: string;
+  /** Path under tests/specs/. */
+  file: string;
+  title: string;
+  feature: string;
+  /** The removed source: one test block, or the whole file when `whole` is set. */
+  text: string;
+  whole?: boolean;
+  deletedAt: number;
+}
+
 export interface TestCase {
   /** "file:line": what Playwright takes to run exactly this test. */
   id: string;

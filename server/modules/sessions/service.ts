@@ -27,7 +27,7 @@ import { listSecrets } from '../secrets/service.ts';
 import { requireService } from '../services/service.ts';
 import { buildSystemPrompt, openingMessage } from './prompt.ts';
 import * as repo from './repository.ts';
-import { sweepDeletedSpecs } from './sweep.ts';
+import { snapshotSpecs, sweepDeletedSpecs } from './sweep.ts';
 
 const STDERR_TAIL_CHARS = 2000;
 const TITLE_MAX = 40;
@@ -112,6 +112,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
   setStatus(id, 'running');
   broadcast({ type: 'service', serviceId: session.serviceId });
 
+  const specsBefore = snapshotSpecs(session.serviceId);
   const args = buildArgs({ prompt, claudeSessionId: ids.claudeSessionId, resume: ids.started, system: buildSystemPrompt(contextFor(session.serviceId)) });
   const child = spawn('claude', args, { cwd: serviceDir(session.serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
@@ -143,8 +144,8 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
     if (closed) return; // 'error' can be followed by 'close'
     closed = true;
     children.delete(id);
-    const removed = sweepDeletedSpecs(session.serviceId);
-    if (removed.length) say(id, 'tool', `삭제한 파일: ${removed.join(', ')}`);
+    const removed = sweepDeletedSpecs(session.serviceId, specsBefore);
+    if (removed.length) say(id, 'tool', `휴지통으로 옮긴 파일: ${removed.join(', ')}`);
     if (note) say(id, 'error', note);
     setStatus(id, status);
     broadcast({ type: 'service', serviceId: session.serviceId });
