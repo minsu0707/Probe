@@ -1,0 +1,173 @@
+/* Small, quick motion: things arrive instead of appearing, controls answer a press. Off for people who ask for less motion. */
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+@keyframes slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* Pages: the page head and each panel rise in one after another. The page is re-created per tab, so every tab change plays it. */
+.page > * {
+  animation: rise 0.34s var(--ease-out) backwards;
+}
+.page > :nth-child(2) {
+  animation-delay: 0.04s;
+}
+.page > :nth-child(3) {
+  animation-delay: 0.08s;
+}
+.page > :nth-child(4) {
+  animation-delay: 0.12s;
+}
+.page > :nth-child(n + 5) {
+  animation-delay: 0.16s;
+}
+
+/* Lists: the first rows slide in with a short stagger (later ones just appear, so long lists stay quick). */
+.defect-list > li,
+.list > .row,
+.stack > .panel,
+.runs tbody tr {
+  animation: rise 0.3s var(--ease-out) backwards;
+}
+.defect-list > li:nth-child(2),
+.list > .row:nth-child(2),
+.runs tbody tr:nth-child(2) {
+  animation-delay: 0.03s;
+}
+.defect-list > li:nth-child(3),
+.list > .row:nth-child(3),
+.runs tbody tr:nth-child(3) {
+  animation-delay: 0.06s;
+}
+.defect-list > li:nth-child(4),
+.list > .row:nth-child(4),
+.runs tbody tr:nth-child(4) {
+  animation-delay: 0.09s;
+}
+.defect-list > li:nth-child(5),
+.list > .row:nth-child(5),
+.runs tbody tr:nth-child(5) {
+  animation-delay: 0.12s;
+}
+.defect-list > li:nth-child(n + 6),
+.list > .row:nth-child(n + 6),
+.runs tbody tr:nth-child(n + 6) {
+  animation-delay: 0.15s;
+}
+
+/* The detail beside a list changes with the selection. */
+.defect-detail,
+.chat-log > .msg {
+  animation: fade 0.25s var(--ease-out) backwards;
+}
+.chat-log > .msg {
+  animation-name: rise;
+  animation-duration: 0.28s;
+}
+
+/* Dialogs, toasts, the update popup. */
+.modal[open] {
+  animation: pop 0.22s var(--ease-out);
+}
+.modal[open]::backdrop {
+  animation: fade 0.22s ease-out;
+}
+.toast {
+  animation: slide-in 0.3s var(--ease-out);
+}
+.update-popup {
+  animation: slide-in 0.4s var(--ease-out);
+}
+
+/* Controls answer the pointer. */
+.btn,
+.filter,
+.row,
+.svc,
+.svc-tab,
+.tab,
+.defect-item,
+.icon-btn {
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s var(--ease-out);
+}
+.btn:active:not(:disabled),
+.filter:active {
+  transform: scale(0.97);
+}
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.filter:hover:not(.on) {
+  transform: translateY(-1px);
+}
+.defect-item:hover:not(.selected) {
+  transform: translateX(2px);
+}
+.svc:hover:not(.svc-on) {
+  transform: translateX(2px);
+}
+.svc-tab,
+.tab {
+  border-bottom-width: 2px;
+}
+.svc-tab-on,
+.tab-on {
+  animation: fade 0.25s ease-out;
+}
+.row-on {
+  animation: slide-left 0.2s var(--ease-out);
+}
+
+/* Counters and pills settle when they change; progress bars fill from the left. */
+.pill,
+.count {
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+.progress > *,
+.bar > * {
+  transform-origin: left center;
+  animation: grow-x 0.5s var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+}
