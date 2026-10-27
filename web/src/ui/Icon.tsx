@@ -52,10 +52,6 @@ export function ClaudeMark({ size = 14 }: { size?: number }) {
 /** A probe tip: a ring with a crosshair and a centre dot. */
 export function Logo() {
   return (
-    <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
-      <circle cx="16" cy="16" r="11" fill="none" stroke="var(--accent)" strokeWidth="3" />
-      <path d="M16 2v7M16 23v7M2 16h7M23 16h7" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" />
-      <circle cx="16" cy="16" r="3.5" fill="var(--accent)" />
-    </svg>
+    <img src="/logo.png" width="26" height="26" alt="" aria-hidden="true" />
   );
 }

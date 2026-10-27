@@ -1,42 +1,76 @@
 /**
- * Render the app and tray icons from the logo. Run once after changing the logo:
+ * Render the app, tray and in-page logo from the logo image. Run once after changing the logo:
  *
- *   node scripts/make-icons.ts
+ *   node scripts/make-icons.ts [path/to/Probe_logo.png]
  *
- * Output goes to desktop/assets/ and is committed, so building the installer needs no browser.
- * Uses the Playwright Chromium (or Edge) that is already required for running tests.
+ * The source defaults to Probe_logo.png in the Downloads folder. It is a large PNG with empty
+ * margin and a soft glow, so the visible tile is found by alpha and cropped to a square first.
+ * Output goes to desktop/assets/ and web/public/ and is committed, so building the installer
+ * needs no browser. Uses the Playwright Chromium (or Edge) that is already required for tests.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
-const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'desktop', 'assets');
-const ACCENT = '#2554d8';
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const SOURCE = resolve(process.argv[2] ?? join(homedir(), 'Downloads', 'Probe_logo.png'));
+const OUTPUTS = [
+  { file: join(ROOT, 'desktop', 'assets', 'icon.png'), size: 512 }, // electron-builder converts this to the .exe's .ico
+  { file: join(ROOT, 'desktop', 'assets', 'tray.png'), size: 32 },
+  { file: join(ROOT, 'desktop', 'assets', 'tray@2x.png'), size: 64 }, // Windows picks this on high-DPI screens
+  { file: join(ROOT, 'web', 'public', 'logo.png'), size: 128 }, // sidebar logo and the page's favicon
+];
 
-/** The logo: a ring, a crosshair and a centre dot, on a 32×32 grid. */
-const logo = (color: string) => `
-  <circle cx="16" cy="16" r="11" fill="none" stroke="${color}" stroke-width="3"/>
-  <path d="M16 2v7M16 23v7M2 16h7M23 16h7" stroke="${color}" stroke-width="3" stroke-linecap="round"/>
-  <circle cx="16" cy="16" r="3.5" fill="${color}"/>`;
-
-/** App icon: white logo on a blue rounded square, so it reads on any taskbar or desktop. */
-const appSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="${ACCENT}"/><g transform="translate(4 4) scale(.75)">${logo('#fff')}</g></svg>`;
-/** Tray icon: blue logo, no background. */
-const traySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">${logo(ACCENT)}</svg>`;
-
-mkdirSync(OUT, { recursive: true });
+mkdirSync(join(ROOT, 'web', 'public'), { recursive: true });
 const browser = await chromium.launch({ channel: 'msedge' }).catch(() => chromium.launch());
 const page = await browser.newPage();
+await page.setContent('<body style="margin:0;background:transparent"></body>');
 
-async function render(svg: string, size: number, file: string) {
-  await page.setViewportSize({ width: size, height: size });
-  await page.setContent(`<body style="margin:0;background:transparent"><img src="data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}" width="${size}" height="${size}" style="display:block"></body>`);
-  writeFileSync(join(OUT, file), await page.screenshot({ omitBackground: true }));
-}
+const dataUrl = `data:image/png;base64,${readFileSync(SOURCE).toString('base64')}`;
+const rendered: Record<number, string> = await page.evaluate(
+  async ({ dataUrl, sizes }) => {
+    const img = new Image();
+    img.src = dataUrl;
+    await img.decode();
 
-await render(appSvg, 512, 'icon.png'); // electron-builder converts this to the .exe's .ico
-await render(traySvg, 32, 'tray.png');
-await render(traySvg, 64, 'tray@2x.png'); // Windows picks this on high-DPI screens
+    // Bounding box of the visible tile (the faint glow is below the threshold).
+    const probe = document.createElement('canvas');
+    probe.width = img.naturalWidth;
+    probe.height = img.naturalHeight;
+    const pctx = probe.getContext('2d')!;
+    pctx.drawImage(img, 0, 0);
+    const { data, width, height } = pctx.getImageData(0, 0, probe.width, probe.height);
+    let x0 = width, y0 = height, x1 = 0, y1 = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3] > 128) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    const side = Math.max(x1 - x0, y1 - y0) + 1;
+    const sx = Math.round((x0 + x1 + 1) / 2 - side / 2);
+    const sy = Math.round((y0 + y1 + 1) / 2 - side / 2);
+
+    const out: Record<number, string> = {};
+    for (const size of sizes) {
+      const c = document.createElement('canvas');
+      c.width = c.height = size;
+      const ctx = c.getContext('2d')!;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+      out[size] = c.toDataURL('image/png');
+    }
+    return out;
+  },
+  { dataUrl, sizes: OUTPUTS.map((o) => o.size) },
+);
+
+for (const { file, size } of OUTPUTS) writeFileSync(file, Buffer.from(rendered[size].split(',')[1], 'base64'));
 await browser.close();
-console.log('Wrote icon.png, tray.png, tray@2x.png to', OUT);
+console.log('Wrote', OUTPUTS.map((o) => o.file).join('\n      '));
