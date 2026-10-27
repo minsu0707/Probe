@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api, type ClaudeAgentStatus, type ClaudeProfile } from '../../core/api.ts';
 import { attempt, refreshClaude, useStore } from '../../core/store.ts';
-import { CopyButton, Icon, Pill, UsageMeter } from '../../ui/index.ts';
+import { ConfirmModal, CopyButton, Icon, Pill, UsageMeter } from '../../ui/index.ts';
 
 const PROFILE_HELP: Record<ClaudeProfile, string> = {
   probe: 'Probe 전용 로그인. 개인 Claude Code의 설정·훅·MCP와 섞이지 않습니다.',
@@ -83,6 +83,7 @@ function ProfilePicker({ claude, locked }: { claude: ClaudeAgentStatus; locked: 
 
 function Account({ claude }: { claude: ClaudeAgentStatus }) {
   const a = claude.auth!;
+  const [confirming, setConfirming] = useState(false);
   return (
     <>
       <dl className="facts">
@@ -98,7 +99,7 @@ function Account({ claude }: { claude: ClaudeAgentStatus }) {
         <dd className="mono-wrap">{a.configDirectory ?? '—'}</dd>
       </dl>
       <div className="actions">
-        <button className="btn" onClick={() => void attempt(api.claudeLogout, '로그아웃했습니다')}>
+        <button className="btn" onClick={() => setConfirming(true)}>
           로그아웃
         </button>
         <button className="btn btn-quiet" onClick={() => void attempt(refreshClaude)}>
@@ -106,6 +107,12 @@ function Account({ claude }: { claude: ClaudeAgentStatus }) {
           새로고침
         </button>
       </div>
+      {confirming && (
+        <ConfirmModal title="로그아웃할까요?" confirm="로그아웃" onClose={() => setConfirming(false)} onConfirm={() => attempt(api.claudeLogout, '로그아웃했습니다')}>
+          {a.email ?? '이 계정'}에서 로그아웃합니다. 다시 로그인하기 전까지 학습과 테스트 작성을 할 수 없습니다.
+          {claude.profile === 'system' && ' 이 PC의 Claude Code 로그인을 쓰는 중이라 평소 쓰는 Claude Code도 함께 로그아웃됩니다.'}
+        </ConfirmModal>
+      )}
     </>
   );
 }
