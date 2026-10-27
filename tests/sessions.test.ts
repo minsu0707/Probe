@@ -71,8 +71,10 @@ test('mcp: source runs register plain node, the installed app adds ELECTRON_RUN_
   const script = winPath('C:', 'p', 'mcp', 'server.ts');
   assert.deepEqual(buildMcpAddArgs({ runtime: 'node', script, electron: false }), ['mcp', 'add', '--scope', 'user', 'probe', '--', 'node', script]);
   const app = buildMcpAddArgs({ runtime: winPath('C:', 'Probe', 'Probe.exe'), script, electron: true });
-  assert.deepEqual(app.slice(3, 7), ['user', '-e', 'ELECTRON_RUN_AS_NODE=1', 'probe']);
-  assert.equal(app.indexOf('--'), app.indexOf('probe') + 1); // everything after -- is the server command
+  // The name precedes -e (a variadic option that would otherwise swallow it); everything after -- is the server command.
+  assert.deepEqual(app.slice(3, 7), ['user', 'probe', '-e', 'ELECTRON_RUN_AS_NODE=1']);
+  assert.equal(app[7], '--');
+  assert.equal(app[8], winPath('C:', 'Probe', 'Probe.exe'));
 });
 
 test('mcp: the pasteable command quotes paths with spaces', () => {

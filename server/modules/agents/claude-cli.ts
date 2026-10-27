@@ -104,7 +104,8 @@ export const MCP_NAME = 'probe';
  * app's executable, which only acts as Node when ELECTRON_RUN_AS_NODE is set (so it is passed along).
  */
 export function buildMcpAddArgs(o: { runtime: string; script: string; electron: boolean }): string[] {
-  return ['mcp', 'add', '--scope', 'user', ...(o.electron ? ['-e', 'ELECTRON_RUN_AS_NODE=1'] : []), MCP_NAME, '--', o.runtime, o.script];
+  // The name must come before -e: -e takes any number of values, so `-e KEY=v probe` would read "probe" as a variable.
+  return ['mcp', 'add', '--scope', 'user', MCP_NAME, ...(o.electron ? ['-e', 'ELECTRON_RUN_AS_NODE=1'] : []), '--', o.runtime, o.script];
 }
 
 /** The same command as a line a person can paste into a terminal. */
