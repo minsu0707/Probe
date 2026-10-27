@@ -24,15 +24,13 @@ p {
   margin: 0;
 }
 h1 {
-  font-size: 19px;
-  font-weight: 650;
+  font-size: 22px;
   line-height: 1.3;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 h2 {
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 650;
-  letter-spacing: -0.005em;
 }
 h3 {
   font-size: 15px;

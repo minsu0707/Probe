@@ -16,6 +16,7 @@ export function ResultsPage() {
     <>
       <div className="page-head">
         <div>
+          <h1>결과 · 결함</h1>
           <p className="muted">{service.name}의 실행 기록과 발견된 결함입니다.</p>
         </div>
         <div className="seg-control" role="tablist">

@@ -1,29 +1,28 @@
-/* Design tokens. The look is a quiet instrument: warm paper, near-black ink, hairline rules, and
-   one warm signal colour (the "probe tip") reserved for what is live, selected or focused. Primary
-   buttons are ink, not the accent, so the accent stays meaningful. Pass/fail/warn keep their
-   conventional hues because results must read at a glance. Numbers and times use the mono face. */
+/* Layout: fixed left rail of five destinations, a thin top bar holding the service context
+   and the run control, and a single scrolling work area. Numbers and times are set in the
+   mono face so columns of counts read like instrument output. */
 
 :root {
-  --bg: #f5f4f0;
+  --bg: #edf0f3;
   --panel: #ffffff;
-  --sunken: #efeee9;
-  --line: #e3e1da;
-  --line-strong: #cdcac1;
-  --ink: #1c1d1f;
-  --muted: #686a6e;
-  --accent: #c2491d;
+  --sunken: #f3f5f8;
+  --line: #d9dee4;
+  --line-strong: #c3cad2;
+  --ink: #17212b;
+  --muted: #5d6b79;
+  --accent: #2554d8;
   --accent-ink: #ffffff;
-  --accent-soft: #f7ebe4;
-  --pass: #1a7a45;
-  --pass-soft: #e3f1e8;
-  --fail: #b8322a;
-  --fail-soft: #f8e4e1;
-  --warn: #8a5f00;
-  --warn-soft: #f6ecd0;
-  --shadow: none;
+  --accent-soft: #e5ecfb;
+  --pass: #17803f;
+  --pass-soft: #e0f2e7;
+  --fail: #c4302c;
+  --fail-soft: #fbe5e4;
+  --warn: #8f6200;
+  --warn-soft: #faefd2;
+  --shadow: 0 1px 2px rgb(20 30 40 / 0.06);
   --font: 'Segoe UI Variable Text', 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
   --mono: 'Cascadia Mono', 'D2Coding', Consolas, 'SF Mono', ui-monospace, monospace;
-  --radius: 5px;
+  --radius: 6px;
   /* Whole-UI size: text, icons and spacing shrink together. 1 = the original size. */
   --ui-scale: 0.92;
   color-scheme: light;
@@ -31,22 +30,24 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121211;
-    --panel: #1a1a19;
-    --sunken: #151514;
-    --line: #2b2a28;
-    --line-strong: #3b3a37;
-    --ink: #e9e8e4;
-    --muted: #96948e;
-    --accent: #ee8352;
-    --accent-ink: #1a0f08;
-    --accent-soft: #2a1f18;
-    --pass: #55c488;
-    --pass-soft: #14281d;
-    --fail: #ff8077;
-    --fail-soft: #331b19;
+    --bg: #0d1217;
+    --panel: #151c23;
+    --sunken: #10161c;
+    --line: #25303a;
+    --line-strong: #34414d;
+    --ink: #e3e8ed;
+    --muted: #8d9aa7;
+    --accent: #7f9cff;
+    --accent-ink: #0a1022;
+    --accent-soft: #1b2540;
+    --pass: #4cc380;
+    --pass-soft: #14291e;
+    --fail: #ff7b76;
+    --fail-soft: #331a1b;
     --warn: #e0b04f;
     --warn-soft: #2e2610;
+    --shadow: none;
     color-scheme: dark;
   }
 }
+

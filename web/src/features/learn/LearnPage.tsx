@@ -52,6 +52,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
     <>
       <div className="page-head">
         <div>
+          <h1>도메인 학습</h1>
           <p className="muted">{serviceName}의 기획서, 매뉴얼, 화면 설계서를 읽고 테스트에 쓸 지식 문서로 정리합니다.</p>
         </div>
         {learning ? (

@@ -35,6 +35,7 @@ function SessionsBody({ serviceId, serviceName, knowledgeCount }: { serviceId: s
     <>
       <div className="page-head">
         <div>
+          <h1>Claude 세션</h1>
           <p className="muted">{serviceName}의 테스트를 Claude에게 쓰게 하고, 대화로 고쳐 나갑니다.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setPicked(NEW)} disabled={!claudeReady}>
