@@ -44,7 +44,7 @@ ${explored}${existing}
 Write these files into ./knowledge (Markdown, in the language the source documents are written in):
 - overview.md: what the service is, who uses it, user roles, glossary of domain terms.
 - screens.md: menu and screen inventory. For each screen: purpose, main fields and actions, who can access it.
-- flows.md: business processes as numbered steps, with preconditions and the expected result of each step.
+- flows.md: business processes as numbered steps, with preconditions and the expected result of each step. Where a document holds a start-to-finish walkthrough with concrete input values and expected results (a guide, a POC or acceptance scenario), write it as its own named scenario here, in order, keeping those input values and expected results verbatim with their source. These scenarios are replayed as end-to-end tests, so do not summarise the numbers away.
 - rules.md: validation rules, permissions per role, calculations and formulas, status transitions, limits, and edge cases.
 - test-points.md: prioritized test points (P0/P1/P2), each with the risk it covers, and a pointer to the screen or flow it belongs to.
 - open-questions.md: contradictions between documents, gaps, and anything you could not determine.

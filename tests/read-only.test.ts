@@ -46,3 +46,12 @@ test('specs are organised by feature, numbered in process order, and tagged by p
   assert.match(p, /not by priority/);
   assert.match(p, /tag: '@P0'/);
 });
+
+test('the session is told to write end-to-end scenarios and that writes are the owner\'s call', () => {
+  const p = buildSystemPrompt({ serviceName: 'S', baseUrl: 'https://prod.example', envNames: [], knowledgeFiles: ['flows.md'] });
+  assert.match(p, /start to finish/);
+  assert.match(p, /e2e-01-<scenario>\.spec\.ts/);
+  assert.match(p, /mode: 'serial'/);
+  assert.match(p, /do not refuse or ask again/);
+  assert.match(p, /never enter wrong credentials/);
+});

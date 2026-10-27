@@ -102,7 +102,7 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean; w
       if (opts.writeTests) log.push('이어서 Claude 세션에서 기능별 테스트 케이스를 만듭니다. 진행은 Claude 세션 탭에서 볼 수 있습니다');
       finish(id, serviceId, log, 'done', summary);
       // After the job is closed, so a busy or signed-out Claude cannot turn a good learning run into a failed one.
-      if (opts.writeTests) void createSession(serviceId, { kind: 'write-tests', message: '학습한 내용 전체를 기능별로 나눠서 테스트 케이스를 만들어 주세요' }).catch(() => undefined);
+      if (opts.writeTests) void createSession(serviceId, { kind: 'write-tests', message: '학습한 내용으로 테스트 케이스를 만들어 주세요. 먼저 가이드나 시나리오 문서의 처음부터 끝까지 프로세스를 입력값과 기대 결과까지 그대로 따라가는 E2E 테스트를 만들고, 그다음 기능별 확인 테스트를 만들어 주세요' }).catch(() => undefined);
     });
 
   };
