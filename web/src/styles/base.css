@@ -16,6 +16,10 @@ body {
   color: var(--ink);
   font: 14px/1.5 var(--font);
   -webkit-font-smoothing: antialiased;
+  /* Korean wraps between words, never inside one (the browser default breaks anywhere); a token
+     that is too long for the line, like a path or URL, still breaks instead of overflowing. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 h1,
 h2,
@@ -52,6 +56,11 @@ a {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+p,
+.set-desc,
+.hint {
+  text-wrap: pretty;
 }
 .muted {
   color: var(--muted);
