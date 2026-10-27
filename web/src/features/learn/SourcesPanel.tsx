@@ -2,12 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { api, type Doc } from '../../core/api.ts';
 import { ago, bytes } from '../../core/format.ts';
 import { attempt, toast } from '../../core/store.ts';
-import { FileDrop, Icon, Pill, useNow } from '../../ui/index.ts';
+import { ConfirmModal, FileDrop, Icon, Pill, useNow } from '../../ui/index.ts';
 
 /** 자료: uploaded files and Drive links, and which of them Claude has already learned. */
 export function SourcesPanel({ serviceId, docs, supported }: { serviceId: string; docs: Doc[] | null; supported: string[] }) {
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState('');
+  const [deleting, setDeleting] = useState<Doc | null>(null);
   const now = useNow(30_000);
 
   /** Uploads one at a time so each file's error (wrong type, too big) is reported on its own. */
@@ -54,12 +55,19 @@ export function SourcesPanel({ serviceId, docs, supported }: { serviceId: string
                 <span className="muted small">{d.kind === 'drive' ? 'Google Drive' : bytes(d.size)}</span>
               </div>
               {d.learnedAt ? <Pill tone="pass">학습됨 · {ago(d.learnedAt, now)}</Pill> : <Pill tone="warn">새 자료</Pill>}
-              <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${d.name} 삭제`} onClick={() => void attempt(() => api.deleteDoc(serviceId, d.id))}>
+              <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${d.name} 삭제`} onClick={() => setDeleting(d)}>
                 <Icon name="trash" size={15} />
               </button>
             </li>
           ))}
         </ul>
+      )}
+
+      {deleting && (
+        <ConfirmModal title="자료 삭제" onConfirm={() => attempt(() => api.deleteDoc(serviceId, deleting.id))} onClose={() => setDeleting(null)}>
+          <b>{deleting.name}</b>
+          {deleting.kind === 'drive' ? ' 링크를 목록에서 지웁니다. Drive의 원본은 그대로입니다.' : ' 파일을 삭제합니다. 이미 학습한 내용은 지식 문서에 남지만, 이 파일은 다시 올려야 합니다.'}
+        </ConfirmModal>
       )}
 
       <p className="muted small">

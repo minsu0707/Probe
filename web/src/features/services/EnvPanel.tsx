@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, type SecretMeta, type ServiceOverview } from '../../core/api.ts';
 import { attempt, toast, useStore } from '../../core/store.ts';
-import { FileDrop, Icon } from '../../ui/index.ts';
+import { ConfirmModal, FileDrop, Icon } from '../../ui/index.ts';
 import { downloadText, looksEncrypted, safeFileName } from './envFile.ts';
 import { PassphraseModal } from './PassphraseModal.tsx';
 
@@ -13,6 +13,7 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
   /** Text of an .enc file waiting for its passphrase. */
   const [pendingEnc, setPendingEnc] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   // Refetch when the server says this service changed (version bump) or the selection changes.
   useEffect(() => {
@@ -64,7 +65,7 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
             <li key={k.key}>
               <code>{k.key}</code>
               <span className={k.sensitive ? 'masked' : 'plain'}>{k.sensitive ? '••••••••' : k.value}</span>
-              <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${k.key} 삭제`} onClick={() => void attempt(() => api.deleteSecret(service.id, k.key))}>
+              <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${k.key} 삭제`} onClick={() => setDeleting(k.key)}>
                 <Icon name="x" size={14} />
               </button>
             </li>
@@ -72,7 +73,12 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
         </ul>
       )}
 
-      {pendingEnc && <PassphraseModal title="암호화 파일 열기" confirm="가져오기" onClose={() => setPendingEnc(null)} onSubmit={(p) => importText(pendingEnc, p)} />}
+      {deleting && (
+        <ConfirmModal title="환경 변수 삭제" onConfirm={() => attempt(() => api.deleteSecret(service.id, deleting))} onClose={() => setDeleting(null)}>
+          <code>{deleting}</code> 변수를 삭제합니다. 값은 복구할 수 없어서 다시 쓰려면 파일을 다시 올려야 합니다.
+        </ConfirmModal>
+      )}
+      {pendingEnc &&<PassphraseModal title="암호화 파일 열기" confirm="가져오기" onClose={() => setPendingEnc(null)} onSubmit={(p) => importText(pendingEnc, p)} />}
       {exporting && (
         <PassphraseModal
           title="암호화 파일로 내보내기"

@@ -1,5 +1,6 @@
 /** Shared building blocks. Import from here: `import { Pill, Modal } from '../../ui/index.ts'`. */
 export { CopyButton } from './CopyButton.tsx';
+export { ConfirmModal } from './ConfirmModal.tsx';
 export { Empty } from './Empty.tsx';
 export { FileDrop } from './FileDrop.tsx';
 export { useNow } from './hooks.ts';

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api, type Session, type SessionMessage } from '../../core/api.ts';
 import { clock } from '../../core/format.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
-import { Icon, Markdown } from '../../ui/index.ts';
+import { ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
 
 const EMPTY: SessionMessage[] = [];
 
@@ -46,27 +46,24 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
             <Icon name="stop" size={12} />
             중단
           </button>
-        ) : confirmDelete ? (
-          <span className="actions">
-            <button
-              className="btn btn-danger btn-sm"
-              onClick={async () => {
-                await attempt(() => api.deleteSession(session.id));
-                onDeleted();
-              }}
-            >
-              삭제 확인
-            </button>
-            <button className="btn btn-sm" onClick={() => setConfirmDelete(false)}>
-              취소
-            </button>
-          </span>
         ) : (
           <button className="icon-btn" aria-label="세션 삭제" title="세션 삭제" onClick={() => setConfirmDelete(true)}>
             <Icon name="trash" size={16} />
           </button>
         )}
       </div>
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="세션 삭제"
+          onConfirm={async () => {
+            if (await attempt(() => api.deleteSession(session.id))) onDeleted();
+          }}
+          onClose={() => setConfirmDelete(false)}
+        >
+          <b>{session.title}</b> 대화를 삭제합니다. 대화 내용은 복구할 수 없습니다.
+        </ConfirmModal>
+      )}
 
       <div className="chat-log" role="log" aria-live="polite">
         {messages.map((m) => (

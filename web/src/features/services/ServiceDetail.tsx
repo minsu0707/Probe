@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { api, type ServiceOverview } from '../../core/api.ts';
 import { attempt } from '../../core/store.ts';
 import { goService } from '../../app/router.ts';
-import { Icon } from '../../ui/index.ts';
+import { ConfirmModal, Icon } from '../../ui/index.ts';
 import { EnvPanel } from './EnvPanel.tsx';
 
 /** Edit panel for the selected service: basic info, env variables, and deletion. */
@@ -51,20 +51,14 @@ export function ServiceDetail({ service }: { service: ServiceOverview }) {
       <section className="panel danger-zone">
         <h2>서비스 삭제</h2>
         <p className="muted small">등록 정보, 환경 변수, 올린 문서, 학습 결과, 테스트 코드와 실행 기록이 모두 삭제됩니다.</p>
-        {confirmDelete ? (
-          <div className="actions">
-            <button className="btn btn-danger" onClick={() => void attempt(() => api.deleteService(service.id), '삭제했습니다')}>
-              삭제 확인
-            </button>
-            <button className="btn" onClick={() => setConfirmDelete(false)}>
-              취소
-            </button>
-          </div>
-        ) : (
-          <button className="btn btn-danger-quiet" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash" size={16} />
-            {service.name} 삭제
-          </button>
+        <button className="btn btn-danger-quiet" onClick={() => setConfirmDelete(true)}>
+          <Icon name="trash" size={16} />
+          {service.name} 삭제
+        </button>
+        {confirmDelete && (
+          <ConfirmModal title="서비스 삭제" onConfirm={() => attempt(() => api.deleteService(service.id), '삭제했습니다')} onClose={() => setConfirmDelete(false)}>
+            <b>{service.name}</b>의 등록 정보, 환경 변수, 올린 문서, 학습 결과, 테스트 코드와 실행 기록이 모두 삭제됩니다. 되돌릴 수 없습니다.
+          </ConfirmModal>
         )}
       </section>
     </div>
