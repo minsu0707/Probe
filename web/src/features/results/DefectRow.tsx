@@ -1,12 +1,17 @@
 import { api, type Defect } from '../../core/api.ts';
-import { DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, severityTone } from '../../core/format.ts';
+import { goService } from '../../app/router.ts';
+import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, severityTone } from '../../core/format.ts';
 import { attempt } from '../../core/store.ts';
 import { Icon, Pill } from '../../ui/index.ts';
+import { analysisRequest } from './analysis.ts';
 
 /** One defect: a header you can expand to see the error, evidence and triage actions. */
-export function DefectRow({ defect: d, open, onToggle, now }: { defect: Defect; open: boolean; onToggle: () => void; now: number }) {
+export function DefectRow({ defect: d, open, onToggle, now, followedFrom }: { defect: Defect; open: boolean; onToggle: () => void; now: number; followedFrom?: string }) {
   const update = (patch: Parameters<typeof api.updateDefect>[1]) => void attempt(() => api.updateDefect(d.id, patch));
   const closed = d.status === 'fixed' || d.status === 'false_positive';
+  const analyze = async () => {
+    if (await attempt(() => api.createSession(d.serviceId, { kind: 'chat', message: analysisRequest(d, followedFrom) }))) goService(d.serviceId, 'sessions');
+  };
   const evidenceUrl = (file: string) => `/api/runs/${d.runId}/files/${file}`;
 
   return (
@@ -16,6 +21,11 @@ export function DefectRow({ defect: d, open, onToggle, now }: { defect: Defect; 
         <span className="defect-title">{d.title}</span>
         <span className="defect-meta">
           <Pill tone={severityTone(d.severity)}>{SEVERITY_LABEL[d.severity]}</Pill>
+          {d.cause !== 'unknown' && (
+            <span title={CAUSE_HINT[d.cause]}>
+              <Pill tone={d.cause === 'app' ? 'accent' : d.cause === 'env' ? 'warn' : 'neutral'}>{CAUSE_LABEL[d.cause]}</Pill>
+            </span>
+          )}
           <Pill tone={d.status === 'confirmed' ? 'accent' : d.status === 'fixed' ? 'pass' : 'neutral'}>{DEFECT_STATUS_LABEL[d.status]}</Pill>
           {d.occurrences > 1 && <span className="muted small tabular">{d.occurrences}회</span>}
           <span className="muted small">{ago(d.lastSeen, now)}</span>
@@ -25,6 +35,10 @@ export function DefectRow({ defect: d, open, onToggle, now }: { defect: Defect; 
 
       {open && (
         <div className="defect-body">
+          <p className="muted small">
+            <strong>{CAUSE_LABEL[d.cause]}</strong> · {CAUSE_HINT[d.cause]} 오류 문구만 보고 추정한 것이라 틀릴 수 있습니다.
+          </p>
+          {followedFrom && <p className="muted small">같은 파일에서 먼저 실패한 “{followedFrom}” 뒤에 이어서 실패했습니다. 앞의 원인을 고치면 같이 해결될 수 있습니다.</p>}
           <pre className="error-block">{d.error}</pre>
           <div className="evidence">
             {d.screenshot && (
@@ -45,6 +59,10 @@ export function DefectRow({ defect: d, open, onToggle, now }: { defect: Defect; 
             )}
           </div>
           <div className="actions">
+            <button className="btn btn-sm" onClick={() => void analyze()} title="실패 내용을 Claude 세션으로 보내 테스트 문제인지 앱 문제인지 판단하게 합니다">
+              <Icon name="learn" size={14} />
+              Claude에게 원인 분석 맡기기
+            </button>
             {d.status !== 'confirmed' && (
               <button className="btn btn-primary btn-sm" onClick={() => update({ status: 'confirmed' })}>
                 <Icon name="check" size={14} />

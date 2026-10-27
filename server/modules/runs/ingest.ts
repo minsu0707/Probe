@@ -8,6 +8,7 @@
 import { broadcast } from '../../core/hub.ts';
 import { HttpError } from '../../core/errors.ts';
 import type { IngestEvent } from '../../../shared/events.ts';
+import { guessCause, stripAnsi } from '../defects/classify.ts';
 import { recordFailure } from '../defects/service.ts';
 import { persist, writeLog } from './emit.ts';
 import { getLive, type LiveRun } from './live.ts';
@@ -27,7 +28,10 @@ export function ingestEvents(runId: string, token: string | undefined, events: I
 
   for (const l of logs) writeLog(run, l.kind, l.text, l.status);
   for (const f of failures) {
-    recordFailure({
+    // A later failure in a file that already failed is probably a knock-on, unless it shows a wrong value of its own.
+    const first = run.firstFailureByFile.get(f.file);
+    const defect = recordFailure({
+      followsId: first && guessCause(stripAnsi(f.end.error ?? '')) !== 'app' ? first : undefined,
       serviceId: run.summary.serviceId,
       runId,
       testTitle: f.title,
@@ -37,6 +41,7 @@ export function ingestEvents(runId: string, token: string | undefined, events: I
       screenshot: f.end.screenshot,
       trace: f.end.trace,
     });
+    if (!first) run.firstFailureByFile.set(f.file, defect.id);
   }
   if (runEnded) run.reporterFinished = true;
   persist(run);

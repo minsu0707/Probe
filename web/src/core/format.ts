@@ -1,5 +1,5 @@
 /** Display formatting and Korean labels. No React, no state. */
-import type { DefectStatus, RunStatus, Severity } from '../../../shared/models.ts';
+import type { DefectCause, DefectStatus, RunStatus, Severity } from '../../../shared/models.ts';
 
 /** 125000 → "2분 05초". Used for elapsed and total times. */
 export function duration(ms: number): string {
@@ -43,6 +43,13 @@ export const RUN_STATUS_LABEL: Record<RunStatus, string> = {
   error: '오류',
 };
 
+export const CAUSE_LABEL: Record<DefectCause, string> = { test: '테스트 문제 의심', app: '앱 동작 의심', env: '환경 문제 의심', unknown: '원인 불명' };
+export const CAUSE_HINT: Record<DefectCause, string> = {
+  test: '위치를 못 찾았거나 여러 개로 잡혔거나 기다리다 시간이 끝났습니다. 선택자나 기다림이 잘못됐을 가능성이 큽니다.',
+  app: '화면은 응답했지만 기대한 값과 다르게 나왔습니다. 문서와 실제 중 어느 쪽이 맞는지 확인해 볼 만합니다.',
+  env: '브라우저나 네트워크 문제, 또는 조회 전용으로 막은 쓰기 요청입니다.',
+  unknown: '오류 문구만으로는 구분하지 못했습니다.',
+};
 export const SEVERITY_LABEL: Record<Severity, string> = { critical: '치명', major: '주요', minor: '경미' };
 export const DEFECT_STATUS_LABEL: Record<DefectStatus, string> = { candidate: '확인 필요', confirmed: '확정', false_positive: '오탐', fixed: '수정됨' };
 

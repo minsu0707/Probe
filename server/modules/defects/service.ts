@@ -30,6 +30,8 @@ export interface FailureInput {
   /** Absolute paths from the reporter. */
   screenshot?: string;
   trace?: string;
+  /** The earlier failure in the same file and run that this one probably follows from. */
+  followsId?: string;
 }
 
 /** Create the defect, or add an occurrence to the open one with the same fingerprint. */
@@ -48,7 +50,7 @@ export function recordFailure(f: FailureInput): Defect {
   } else {
     repo.insert({
       id, serviceId: f.serviceId, runId: f.runId, fingerprint, title: f.testTitle[f.testTitle.length - 1], severity: guessSeverity(error), status: 'candidate',
-      page: f.page, feature: f.feature, error, screenshot, trace, firstSeen: now, lastSeen: now,
+      page: f.page, feature: f.feature, error, screenshot, trace, firstSeen: now, lastSeen: now, followsId: f.followsId ?? null,
     });
   }
   return publish(id);

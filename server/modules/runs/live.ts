@@ -21,6 +21,8 @@ export interface LiveRun extends RunState {
   outputTail: string[];
   /** Spellings of the service's secrets to mask in everything from the test process. */
   redactions: string[];
+  /** The first failure per spec file in this run: later failures in that file may only be knock-ons of it. */
+  firstFailureByFile: Map<string, string>;
 }
 
 const runs = new Map<string, LiveRun>();

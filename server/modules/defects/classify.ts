@@ -4,7 +4,7 @@
  * across runs possible.
  */
 import { createHash } from 'node:crypto';
-import type { Severity } from '../../../shared/models.ts';
+import type { DefectCause, Severity } from '../../../shared/models.ts';
 
 /** Playwright colours its error text; strip the escape codes before storing or hashing. */
 export const stripAnsi = (s: string): string => s.replace(/\u001b\[[0-9;]*m/g, '');
@@ -23,6 +23,19 @@ export function guessSeverity(error: string): Severity {
   if (/net::ERR_|status(?: code)?:?\s*5\d\d|TypeError|ReferenceError|Uncaught|crash/i.test(error)) return 'critical';
   if (/toHaveScreenshot|toHaveCSS|toHaveClass/.test(error)) return 'minor';
   return 'major';
+}
+
+/**
+ * A first guess at who is wrong, from the error text alone. Only a hint for the person triaging:
+ *   env      the browser or network failed, or Probe blocked a write on a read-only service
+ *   test     the test itself is the likely culprit: an ambiguous or missing locator, a wait that ran out
+ *   app      the page answered, but with something other than the expected value (Expected ... Received)
+ */
+export function guessCause(error: string): DefectCause {
+  if (/blockedbyclient|net::ERR_|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ERR_NAME_NOT_RESOLVED|browser has been closed|Target (?:page|closed)|status(?: code)?:?\s*50[234]/i.test(error)) return 'env';
+  if (/strict mode violation|element\(s\) not found|Test timeout of|is not a function|SyntaxError|Cannot find (?:module|name)|is not defined/i.test(error)) return 'test';
+  if (/Received/.test(error)) return 'app';
+  return 'unknown';
 }
 
 /**

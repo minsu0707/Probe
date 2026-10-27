@@ -1,5 +1,6 @@
 import { all, get, run } from '../../core/db.ts';
 import type { Defect } from '../../../shared/models.ts';
+import { guessCause } from './classify.ts';
 
 interface Row {
   id: string;
@@ -17,6 +18,7 @@ interface Row {
   occurrences: number;
   first_seen: number;
   last_seen: number;
+  follows_id: string | null;
 }
 
 const toDefect = (r: Row): Defect => ({
@@ -35,6 +37,8 @@ const toDefect = (r: Row): Defect => ({
   occurrences: r.occurrences,
   firstSeen: r.first_seen,
   lastSeen: r.last_seen,
+  cause: guessCause(r.error),
+  followsId: r.follows_id,
 });
 
 export const findById = (id: string): Defect | undefined => {
@@ -60,13 +64,13 @@ export function list(filter: { serviceId?: string; status?: string; runId?: stri
   return all<Row>(`SELECT * FROM defects ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY last_seen DESC LIMIT ${limit}`, ...args).map(toDefect);
 }
 
-export type NewDefect = Omit<Defect, 'occurrences'>;
+export type NewDefect = Omit<Defect, 'occurrences' | 'cause' | 'followsId'> & { followsId?: string | null };
 
 export function insert(d: NewDefect): void {
   run(
-    `INSERT INTO defects (id, service_id, run_id, fingerprint, title, severity, status, page, feature, error, screenshot, trace, occurrences, first_seen, last_seen)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)`,
-    d.id, d.serviceId, d.runId, d.fingerprint, d.title, d.severity, d.status, d.page, d.feature, d.error, d.screenshot, d.trace, d.firstSeen, d.lastSeen,
+    `INSERT INTO defects (id, service_id, run_id, fingerprint, title, severity, status, page, feature, error, screenshot, trace, occurrences, first_seen, last_seen, follows_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,?,?,?)`,
+    d.id, d.serviceId, d.runId, d.fingerprint, d.title, d.severity, d.status, d.page, d.feature, d.error, d.screenshot, d.trace, d.firstSeen, d.lastSeen, d.followsId ?? null,
   );
 }
 

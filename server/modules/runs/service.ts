@@ -86,6 +86,7 @@ export function startRun(serviceId: string, opts: StartOptions = {}): RunSummary
     reporterFinished: false,
     outputTail: [],
     redactions: redactionForms(sensitiveValues(serviceId)),
+    firstFailureByFile: new Map(),
   };
   addLive(run);
 

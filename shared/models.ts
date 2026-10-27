@@ -158,7 +158,13 @@ export interface Defect {
   occurrences: number;
   firstSeen: number;
   lastSeen: number;
+  /** A first guess at who is wrong, from the error text alone: the test, the app, or the environment. */
+  cause: DefectCause;
+  /** Failed after another test in the same file had already failed in that run: likely a knock-on of it. */
+  followsId: string | null;
 }
+
+export type DefectCause = 'test' | 'app' | 'env' | 'unknown';
 
 // -------------------------------------------------------------------- agents
 

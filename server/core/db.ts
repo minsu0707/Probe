@@ -16,6 +16,7 @@ const addColumn = (table: string, column: string, definition: string) => {
   if (!have) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
 };
 addColumn('services', 'read_only', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('defects', 'follows_id', 'TEXT');
 
 type Param = string | number | null;
 
