@@ -6,6 +6,17 @@ import { Icon, Logo } from '../ui/index.ts';
 import { serviceHref, settingsHref, type Route } from './router.ts';
 import type { ServiceOverview } from '../core/api.ts';
 
+/** The service's own favicon when it has one, else its first letter. A broken image falls back to the letter. */
+function ServiceAvatar({ service }: { service: ServiceOverview }) {
+  const [failed, setFailed] = useState<number | null>(null);
+  const showIcon = service.favicon !== null && failed !== service.favicon;
+  return (
+    <span className={`avatar${showIcon ? ' avatar-icon' : ''}`} aria-hidden="true">
+      {showIcon ? <img src={`/api/services/${encodeURIComponent(service.id)}/favicon?v=${service.favicon}`} alt="" onError={() => setFailed(service.favicon)} /> : [...service.name][0]?.toUpperCase()}
+    </span>
+  );
+}
+
 /** The one-line state under a service's name: what is happening there right now, else what needs attention. */
 function serviceStatus(s: ServiceOverview): { text: string; live: boolean } {
   if (s.activeRun) {
@@ -48,9 +59,7 @@ export function Sidebar({ route }: { route: Route }) {
           const on = openId ? s.id === openId : route.page === 'home' && s.id === currentId;
           return (
             <a key={s.id} href={serviceHref(s.id)} className={`svc${on ? ' svc-on' : ''}`} aria-current={on ? 'page' : undefined} title={s.name}>
-              <span className="avatar" aria-hidden="true">
-                {[...s.name][0]?.toUpperCase()}
-              </span>
+              <ServiceAvatar service={s} />
               <span className="svc-text">
                 <span className="svc-name">{s.name}</span>
                 <span className="svc-sub">

@@ -15,6 +15,8 @@ export interface Service {
 
 /** A service plus the counters the UI shows next to it. */
 export interface ServiceOverview extends Service {
+  /** Version of the service's own favicon (served at /api/services/:id/favicon), or null when it has none. */
+  favicon: number | null;
   secretCount: number;
   docCount: number;
   /** Documents added since the last successful learning job. */

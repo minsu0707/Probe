@@ -365,3 +365,18 @@
 .claude-off {
   color: var(--muted);
 }
+
+/* A service's own favicon replaces the letter; the tile stays light so any icon reads on it. */
+.avatar-icon,
+.svc-on .avatar-icon {
+  background: var(--panel);
+  border-color: var(--line);
+}
+.svc-on .avatar-icon {
+  border-color: var(--accent);
+}
+.avatar-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}

@@ -3,6 +3,7 @@ import { badRequest, conflict, notFound } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import { newId } from '../../core/ids.ts';
 import type { Service } from '../../../shared/models.ts';
+import { refreshFavicon } from './favicon.ts';
 import * as repo from './repository.ts';
 import { removeWorkspace, scaffoldWorkspace } from './workspace.ts';
 
@@ -41,6 +42,7 @@ export function createService(input: { name: string; baseUrl?: string; notes?: s
   repo.insert(service);
   scaffoldWorkspace(service.id);
   broadcast({ type: 'service', serviceId: service.id });
+  if (service.baseUrl) void refreshFavicon(service.id);
   return service;
 }
 
@@ -54,7 +56,9 @@ export function updateService(id: string, patch: { name?: string; baseUrl?: stri
     notes: patch.notes === undefined ? current.notes : patch.notes?.trim() || null,
   });
   broadcast({ type: 'service', serviceId: id });
-  return requireService(id);
+  const updated = requireService(id);
+  if (updated.baseUrl !== current.baseUrl) void refreshFavicon(id);
+  return updated;
 }
 
 /** Cascades to secrets, documents, runs, defects and jobs; the workspace folder goes too. */

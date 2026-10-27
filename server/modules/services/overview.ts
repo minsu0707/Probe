@@ -11,11 +11,13 @@ import { isLearning } from '../learning/service.ts';
 import { countSecrets } from '../secrets/service.ts';
 import { isSessionRunning } from '../sessions/service.ts';
 import { activeRun, listRuns } from '../runs/service.ts';
+import { faviconVersion } from './favicon.ts';
 import { requireService } from './service.ts';
 
 export function serviceOverview(id: string): ServiceOverview {
   return {
     ...requireService(id),
+    favicon: faviconVersion(id),
     secretCount: countSecrets(id),
     docCount: countDocs(id),
     unlearnedDocs: countUnlearnedDocs(id),

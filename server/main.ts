@@ -6,10 +6,12 @@ import { recoverInterrupted } from './core/db.ts';
 import { addSocket } from './core/hub.ts';
 import { allowedHosts } from './http/guard.ts';
 import { buildApp } from './http/app.ts';
+import { refreshMissingFavicons } from './modules/services/favicon.ts';
 import { scaffoldAllWorkspaces } from './modules/services/workspace.ts';
 
 recoverInterrupted();
 scaffoldAllWorkspaces();
+refreshMissingFavicons();
 
 const server = serve({ fetch: buildApp().fetch, port: PORT, hostname: '127.0.0.1' }, () => {
   console.log(`Probe is running at http://127.0.0.1:${PORT}`);

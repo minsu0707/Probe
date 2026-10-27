@@ -12,6 +12,7 @@ import { tx } from '../../core/db.ts';
 import { badRequest, unprocessable } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import type { SecretMeta } from '../../../shared/models.ts';
+import { refreshFavicon } from '../services/favicon.ts';
 import * as servicesRepo from '../services/repository.ts';
 import { normalizeUrl, requireService } from '../services/service.ts';
 import { BASE_URL_KEYS, MIN_REDACTABLE_LENGTH, isSensitiveKey } from './classify.ts';
@@ -53,7 +54,10 @@ function adoptBaseUrl(serviceId: string, entries: Record<string, string>): void 
   if (!raw) return;
   try {
     const url = normalizeUrl(raw);
-    if (url) servicesRepo.setBaseUrl(serviceId, url);
+    if (url) {
+      servicesRepo.setBaseUrl(serviceId, url);
+      void refreshFavicon(serviceId);
+    }
   } catch {
     /* ignore */
   }
