@@ -29,7 +29,7 @@ Use the `probe` MCP tools. If they are not available, tell the user to run:
 - Locators: roles, labels, and visible text first; test ids if the app has them; no positional CSS. No `waitForTimeout`; use web-first assertions.
 - Each test is independent and sets up its own state. Never hard-code credentials, tokens or personal data. Never print env values.
 - Expected values come from the knowledge files. If the live site disagrees with the knowledge, the test should fail on the documented expectation. Do not edit the expectation to match the site. If the knowledge is marked `(inferred)`, mention that when you report the failure.
-- Do not create, delete or modify real data on a production-looking URL without asking the user first.
+- On a production-looking URL, ask the user before writing specs that create, change or delete data; it is their call and they can say yes. If they do, prefix everything the test creates (for example `QA-AUTO-<yyyymmdd>-`), clean it up when the test ends, and never touch records the test did not create.
 
 ## Reading failures
 

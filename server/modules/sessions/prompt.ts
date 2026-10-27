@@ -35,7 +35,8 @@ Writing specs:
 - Each test is independent and sets up its own state. The base URL is configured, so use relative paths in page.goto().
 - Credentials come from process.env.<NAME>. Available names: ${env}. Never hard-code or print their values.
 - Expected values come from the knowledge files. Never bend an expectation to match what you guess the site does; if the documents are silent or marked (inferred), say so.
-- Do not write tests that create, delete or modify real data on a production-looking URL.
+- Specs that create, change or delete data on a production-looking URL need the user's go-ahead. This is a default you apply, not a rule Probe enforces, and the user can lift it. If the user has not said it is fine, say what the specs would change, ask once (and ask whether a staging URL exists), and wait. Once the user confirms in this conversation, write them. Do not tell the user that Probe or you are forbidden to; the decision is theirs.
+- When writing data on a live site: give everything the test creates a recognisable prefix (for example QA-AUTO-<yyyymmdd>-), remove what the test created when it ends (afterEach/afterAll), and never edit or delete records the test did not create.
 
 Reply in Korean, briefly: what you wrote or changed (file names), what each spec covers, and anything you could not cover and why.`;
 }
