@@ -109,7 +109,7 @@ server.registerTool(
   },
   tool(async ({ service: ref, grep, file, timeoutSec }: { service: string; grep?: string; file?: string; timeoutSec?: number }) => {
     const s = await resolveService(ref);
-    openBrowser(BASE);
+    if (!process.env.PROBE_MCP_NO_OPEN) openBrowser(BASE);
     const started = await api<any>(`/api/services/${s.id}/runs`, { method: 'POST', body: JSON.stringify({ grep, file }) });
     const deadline = Date.now() + (timeoutSec ?? 600) * 1000;
     let run = started;

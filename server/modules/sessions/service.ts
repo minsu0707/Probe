@@ -11,13 +11,14 @@
  */
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { serviceDir } from '../../config.ts';
+import { join } from 'node:path';
+import { HOME, PORT, ROOT, serviceDir } from '../../config.ts';
 import { conflict, notFound, unprocessable } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import { newId } from '../../core/ids.ts';
 import { killTree } from '../../core/process.ts';
 import type { Session, SessionKind, SessionMessage } from '../../../shared/models.ts';
-import { BACKGROUND_ALLOWED_TOOLS, BACKGROUND_DENIED_TOOLS } from '../agents/claude-cli.ts';
+import { BACKGROUND_ALLOWED_TOOLS, BACKGROUND_DENIED_TOOLS, SESSION_EXTRA_TOOLS } from '../agents/claude-cli.ts';
 import { requireClaudeReady } from '../agents/service.ts';
 import { recordUsage } from '../agents/usage.ts';
 import { listKnowledge } from '../learning/knowledge.ts';
@@ -162,6 +163,13 @@ function contextFor(serviceId: string) {
   return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name), readOnly: service.readOnly };
 }
 
+/** Probe's own MCP server for this session, so run_tests works whichever Claude login is in use. It must not open a browser tab: the app is already open. */
+function probeMcpConfig(): string {
+  const electron = Boolean(process.versions.electron);
+  const env = { PROBE_MCP_NO_OPEN: '1', PORT: String(PORT), PROBE_HOME: HOME, ...(electron ? { ELECTRON_RUN_AS_NODE: '1' } : {}) };
+  return JSON.stringify({ mcpServers: { probe: { command: process.execPath, args: [join(ROOT, 'mcp', 'server.ts')], env } } });
+}
+
 /** Same tool policy as every background job; see agents/claude-cli.ts for why it is explicit. */
 export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: boolean; system: string }): string[] {
   return [
@@ -176,8 +184,11 @@ export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: 
     o.system,
     '--permission-mode',
     'acceptEdits',
+    '--mcp-config',
+    probeMcpConfig(),
     '--allowedTools',
     ...BACKGROUND_ALLOWED_TOOLS,
+    ...SESSION_EXTRA_TOOLS,
     '--disallowedTools',
     ...BACKGROUND_DENIED_TOOLS,
   ];

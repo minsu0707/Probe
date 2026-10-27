@@ -13,6 +13,8 @@ import { envWithoutElectronFlag } from '../../core/process.ts';
  * Shown read-only in Settings → Agents.
  */
 export const BACKGROUND_ALLOWED_TOOLS = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'mcp__claude_ai_Google_Drive'];
+/** Added for chat sessions only: starting a run through Probe's own MCP server, and reading its defects. */
+export const SESSION_EXTRA_TOOLS = ['mcp__probe__run_tests', 'mcp__probe__list_defects'];
 export const BACKGROUND_DENIED_TOOLS = ['Bash', 'WebFetch', 'WebSearch'];
 
 /**

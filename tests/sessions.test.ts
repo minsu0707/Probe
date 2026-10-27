@@ -89,3 +89,12 @@ test('mcp: registered / current are read from `claude mcp get`', () => {
   assert.deepEqual(parseMcpGet(0, `probe:\n  Args: ${script.replaceAll(BS, BS + BS)}`, script), { registered: true, current: true }); // JSON-style doubled backslashes
   assert.deepEqual(parseMcpGet(0, `probe:\n  Args: ${winPath('D:', 'old', 'mcp', 'server.ts')}`, script), { registered: true, current: false });
 });
+
+test('background sessions may start runs through the probe MCP server, and it stays quiet about the browser', () => {
+  const args = buildArgs({ prompt: 'x', claudeSessionId: 'abc', resume: false, system: 's' });
+  const allowed = args.slice(args.indexOf('--allowedTools') + 1, args.indexOf('--disallowedTools'));
+  assert.ok(allowed.includes('mcp__probe__run_tests'));
+  const config = JSON.parse(args[args.indexOf('--mcp-config') + 1]);
+  assert.equal(config.mcpServers.probe.env.PROBE_MCP_NO_OPEN, '1');
+  assert.match(config.mcpServers.probe.args[0], /server\.ts$/);
+});
