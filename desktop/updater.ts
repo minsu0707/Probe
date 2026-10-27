@@ -62,7 +62,11 @@ export async function checkForUpdate(): Promise<UpdateState> {
 export async function installUpdate(): Promise<boolean> {
   if (state.phase !== 'ready') return false;
   if (!(await beforeInstall())) return false;
-  autoUpdater.quitAndInstall(true, true); // silent, and start the new version afterwards
+  log(`installing v${state.version}`);
+  // Not silent: unpacking the installer takes a minute or two (it is ~250 MB), and with no window at all
+  // it looks as if the app just vanished. The installer's own progress window shows it is working, and
+  // the new version starts by itself when it is done.
+  autoUpdater.quitAndInstall(false, true);
   return true;
 }
 
