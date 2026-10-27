@@ -34,6 +34,23 @@ export function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
   );
 }
 
+/** Stands for the Claude agent in the status bar: a radial burst of ten rays, coloured by the caller. */
+export function ClaudeMark({ size = 14 }: { size?: number }) {
+  const rays = Array.from({ length: 10 }, (_, i) => {
+    const a = (i * 36 - 90) * (Math.PI / 180);
+    const inner = 3;
+    const outer = i % 2 === 0 ? 10 : 8;
+    return { x1: 12 + inner * Math.cos(a), y1: 12 + inner * Math.sin(a), x2: 12 + outer * Math.cos(a), y2: 12 + outer * Math.sin(a) };
+  });
+  return (
+    <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      {rays.map((r, i) => (
+        <line key={i} {...r} />
+      ))}
+    </svg>
+  );
+}
+
 /** A probe tip: a ring with a crosshair and a centre dot. */
 export function Logo() {
   return (

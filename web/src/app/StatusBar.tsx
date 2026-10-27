@@ -1,6 +1,6 @@
 import { useUpdateState } from '../core/desktop.ts';
 import { useStore } from '../core/store.ts';
-import { UsageMeter } from '../ui/index.ts';
+import { ClaudeMark, UsageMeter } from '../ui/index.ts';
 import { goService, settingsHref } from './router.ts';
 
 /** Always-visible footer: is the server up, can Claude be used, is anything running. */
@@ -13,7 +13,10 @@ export function StatusBar() {
 
   const update = useUpdateState();
   const claudeOk = Boolean(claude?.installed && claude.auth?.loggedIn);
-  const claudeText = !claude ? 'Claude 확인 중…' : !claude.installed ? 'Claude Code 없음' : claude.auth?.loggedIn ? `Claude · ${claude.auth.email ?? '로그인됨'}${claude.auth.plan ? ` · ${claude.auth.plan}` : ''}` : 'Claude 로그인 필요';
+  // The icon already says "Claude", so the words only carry what differs: who is signed in, or what is wrong.
+  const claudeText = !claude?.installed ? '설치되어 있지 않음' : claude.auth?.loggedIn ? `${claude.auth.email ?? '로그인됨'}${claude.auth.plan ? ` · ${claude.auth.plan}` : ''}` : '로그인 필요';
+  const claudeTitle = !claude?.installed ? 'Claude Code가 설치되어 있지 않습니다' : claude.auth?.loggedIn ? 'Claude 로그인됨 · 에이전트 설정' : 'Claude 로그인이 필요합니다 · 에이전트 설정';
+  const claudeTone = claudeOk ? 'claude-ok' : claude?.installed ? 'claude-warn' : 'claude-off';
   const run = running?.activeRun;
 
   return (
@@ -23,8 +26,10 @@ export function StatusBar() {
         {connected ? '서버 연결됨' : '서버 연결 끊김 · 재연결 중'}
       </span>
       {claude && (
-        <a className="status-item status-link" href={settingsHref('agent')} title="에이전트 설정">
-          <span className={`dot ${claudeOk ? 'dot-ok' : 'dot-warn'}`} />
+        <a className="status-item status-link" href={settingsHref('agent')} title={claudeTitle} aria-label={`${claudeTitle}: ${claudeText}`}>
+          <span className={`claude-mark ${claudeTone}`}>
+            <ClaudeMark />
+          </span>
           {claudeText}
         </a>
       )}

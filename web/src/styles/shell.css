@@ -350,3 +350,18 @@
 .usage-hot {
   background: var(--fail);
 }
+
+/* The Claude icon in the status bar; its colour is the sign-in state. */
+.claude-mark {
+  display: inline-grid;
+  place-items: center;
+}
+.claude-ok {
+  color: #d97757;
+}
+.claude-warn {
+  color: var(--warn);
+}
+.claude-off {
+  color: var(--muted);
+}
