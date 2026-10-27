@@ -36,7 +36,6 @@ function MonitorBody({ serviceId, serviceName, runs }: { serviceId: string; serv
       <>
         <div className="page-head">
           <div>
-            <h1>실시간 모니터링</h1>
             <p className="muted">테스트가 실행되면 어떤 페이지와 기능을 보고 있는지 여기에 실시간으로 표시됩니다.</p>
           </div>
         </div>
@@ -59,7 +58,6 @@ function MonitorBody({ serviceId, serviceName, runs }: { serviceId: string; serv
     <>
       <div className="page-head">
         <div>
-          <h1>실시간 모니터링</h1>
           <p className="muted">{run.title}</p>
         </div>
         <label className="run-picker">
