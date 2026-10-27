@@ -26,6 +26,7 @@ import { listSecrets } from '../secrets/service.ts';
 import { requireService } from '../services/service.ts';
 import { buildSystemPrompt, openingMessage } from './prompt.ts';
 import * as repo from './repository.ts';
+import { sweepDeletedSpecs } from './sweep.ts';
 
 const STDERR_TAIL_CHARS = 2000;
 const TITLE_MAX = 40;
@@ -135,6 +136,8 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
     if (closed) return; // 'error' can be followed by 'close'
     closed = true;
     children.delete(id);
+    const removed = sweepDeletedSpecs(session.serviceId);
+    if (removed.length) say(id, 'tool', `삭제한 파일: ${removed.join(', ')}`);
     if (note) say(id, 'error', note);
     setStatus(id, status);
     broadcast({ type: 'service', serviceId: session.serviceId });
