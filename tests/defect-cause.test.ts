@@ -32,3 +32,19 @@ test('a failure that follows an earlier one in the same file is stored with a li
   assert.equal(second.cause, 'test');
   assert.deepEqual(listDefects({ serviceId: s.id }).map((d) => [d.title, d.followsId === first.id]).sort(), [['단계 1', false], ['단계 2', true]]);
 });
+
+test('a failure dismissed as a false alarm stays dismissed when the same failure comes back', async () => {
+  isolatedHome();
+  const { createService } = await import('../server/modules/services/service.ts');
+  const { recordFailure, listDefects, updateDefect } = await import('../server/modules/defects/service.ts');
+  const s = createService({ name: 'Dismissed' });
+  const input = { serviceId: s.id, runId: 'r1', testTitle: ['목록', '필터'], feature: '목록', page: null, error: 'Expected: 1\nReceived: 2' };
+  const first = recordFailure(input);
+  updateDefect(first.id, { status: 'false_positive' });
+  const again = recordFailure({ ...input, runId: 'r2' });
+
+  assert.equal(again.id, first.id);
+  assert.equal(again.status, 'false_positive');
+  assert.equal(again.occurrences, 2);
+  assert.equal(listDefects({ serviceId: s.id }).length, 1);
+});

@@ -46,9 +46,9 @@ export const findById = (id: string): Defect | undefined => {
   return row && toDefect(row);
 };
 
-/** The defect a new identical failure should be merged into: still open, most recently seen. */
+/** The defect a new identical failure should be merged into: still open or dismissed as a false alarm (so it stays dismissed), most recently seen. */
 export const findOpenByFingerprint = (serviceId: string, fingerprint: string): Defect | undefined => {
-  const row = get<Row>(`SELECT * FROM defects WHERE service_id = ? AND fingerprint = ? AND status IN ('candidate','confirmed') ORDER BY last_seen DESC LIMIT 1`, serviceId, fingerprint);
+  const row = get<Row>(`SELECT * FROM defects WHERE service_id = ? AND fingerprint = ? AND status IN ('candidate','confirmed','false_positive') ORDER BY last_seen DESC LIMIT 1`, serviceId, fingerprint);
   return row && toDefect(row);
 };
 
