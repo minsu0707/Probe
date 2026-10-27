@@ -17,6 +17,7 @@ import { requireClaudeReady } from '../agents/service.ts';
 import { recordUsage } from '../agents/usage.ts';
 import { listDocs, markLearned } from '../documents/service.ts';
 import { requireService } from '../services/service.ts';
+import { exploreService } from './explore.ts';
 import { countKnowledge } from './knowledge.ts';
 import { buildClaudeArgs, buildLearnPrompt } from './prompt.ts';
 import * as repo from './repository.ts';
@@ -31,26 +32,18 @@ const children = new Map<string, ChildProcess>();
 export const listJobs = (serviceId: string, limit = 10): Job[] => repo.recent(serviceId, limit);
 export const isLearning = repo.isLearning;
 
-export async function startLearn(serviceId: string): Promise<Job> {
+export async function startLearn(serviceId: string, opts: { explore?: boolean } = {}): Promise<Job> {
   const service = requireService(serviceId);
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service');
   const docs = listDocs(serviceId);
-  if (docs.length === 0) throw unprocessable('Add at least one document or Drive link first');
+  if (opts.explore && !service.baseUrl) throw unprocessable('서비스 주소를 먼저 입력해야 서비스를 둘러볼 수 있습니다');
+  if (docs.length === 0 && !opts.explore) throw unprocessable('Add at least one document or Drive link first');
   // Fail here with a clear message rather than as a cryptic exit code from the CLI.
   const env = await requireClaudeReady();
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service'); // re-check: the await above let another request in
 
   const id = newId();
   repo.insert(id, serviceId, Date.now());
-
-  const prompt = buildLearnPrompt({
-    serviceName: service.name,
-    baseUrl: service.baseUrl,
-    driveLinks: docs.filter((d) => d.kind === 'drive').map((d) => d.ref),
-    hasExistingKnowledge: countKnowledge(serviceId) > 0,
-  });
-  const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
-  children.set(id, child);
 
   const log: string[] = [];
   const note = (line: string) => {
@@ -59,41 +52,66 @@ export async function startLearn(serviceId: string): Promise<Job> {
     repo.saveLog(id, log);
     broadcast({ type: 'job', job: repo.findById(id)! });
   };
-  note(`자료 ${docs.length}개를 읽기 시작합니다`);
+  /** Phase two: Claude reads the documents (and what the exploration found) and writes the knowledge files. */
+  const begin = (explored: boolean) => {
+    const prompt = buildLearnPrompt({
+      serviceName: service.name,
+      baseUrl: service.baseUrl,
+      driveLinks: docs.filter((d) => d.kind === 'drive').map((d) => d.ref),
+      hasExistingKnowledge: countKnowledge(serviceId) > 0,
+      hasExploration: explored,
+    });
+    const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    children.set(id, child);
 
-  // Outcome is collected while streaming and decided once the process exits.
-  let summary: string | null = null;
-  let reportedError: string | null = null;
-  let stderrTail = '';
-  let pending = '';
+    if (docs.length) note(`자료 ${docs.length}개를 읽기 시작합니다`);
+    else note('올린 자료 없이 둘러본 내용만으로 정리합니다');
 
-  child.stderr!.on('data', (d: Buffer) => (stderrTail = (stderrTail + d.toString()).slice(-STDERR_TAIL_CHARS)));
-  child.stdout!.on('data', (d: Buffer) => {
-    pending += d.toString('utf8');
-    const lines = pending.split('\n');
-    pending = lines.pop() ?? ''; // the last piece may be half a line
-    for (const line of lines)
-      for (const ev of parseStreamLine(line)) {
-        if (ev.kind === 'progress') note(ev.text);
-        else if (ev.kind === 'usage') recordUsage(ev.usage);
-        else if (ev.kind === 'result') {
-          if (ev.ok) summary = ev.text;
-          else reportedError = ev.text;
+    // Outcome is collected while streaming and decided once the process exits.
+    let summary: string | null = null;
+    let reportedError: string | null = null;
+    let stderrTail = '';
+    let pending = '';
+
+    child.stderr!.on('data', (d: Buffer) => (stderrTail = (stderrTail + d.toString()).slice(-STDERR_TAIL_CHARS)));
+    child.stdout!.on('data', (d: Buffer) => {
+      pending += d.toString('utf8');
+      const lines = pending.split('\n');
+      pending = lines.pop() ?? ''; // the last piece may be half a line
+      for (const line of lines)
+        for (const ev of parseStreamLine(line)) {
+          if (ev.kind === 'progress') note(ev.text);
+          else if (ev.kind === 'usage') recordUsage(ev.usage);
+          else if (ev.kind === 'result') {
+            if (ev.ok) summary = ev.text;
+            else reportedError = ev.text;
+          }
         }
-      }
-  });
+    });
 
-  child.on('error', (e) => finish(id, serviceId, log, 'failed', null, `Could not start the claude CLI: ${e.message}`));
-  child.on('close', (code) => {
-    children.delete(id);
-    if (repo.findById(id)?.status === 'cancelled') return; // cancelLearn() already closed the job
-    if (reportedError || code !== 0 || summary === null) {
-      return finish(id, serviceId, log, 'failed', null, reportedError ?? `claude exited with code ${code}${stderrTail ? `: ${stderrTail.trim()}` : ''}`);
-    }
-    if (countKnowledge(serviceId) === 0) return finish(id, serviceId, log, 'failed', summary, 'Claude finished but wrote no knowledge files');
-    markLearned(serviceId);
-    finish(id, serviceId, log, 'done', summary);
-  });
+    child.on('error', (e) => finish(id, serviceId, log, 'failed', null, `Could not start the claude CLI: ${e.message}`));
+    child.on('close', (code) => {
+      children.delete(id);
+      if (repo.findById(id)?.status === 'cancelled') return; // cancelLearn() already closed the job
+      if (reportedError || code !== 0 || summary === null) {
+        return finish(id, serviceId, log, 'failed', null, reportedError ?? `claude exited with code ${code}${stderrTail ? `: ${stderrTail.trim()}` : ''}`);
+      }
+      if (countKnowledge(serviceId) === 0) return finish(id, serviceId, log, 'failed', summary, 'Claude finished but wrote no knowledge files');
+      markLearned(serviceId);
+      finish(id, serviceId, log, 'done', summary);
+    });
+
+  };
+
+  if (opts.explore) {
+    note('서비스를 직접 둘러보는 중입니다. 메뉴와 화면을 읽기만 하고 아무것도 저장하지 않습니다');
+    void exploreService(serviceId, service.baseUrl!, note, (c) => children.set(id, c)).then((r) => {
+      if (repo.findById(id)?.status !== 'running') return; // cancelled while exploring
+      note(r.note);
+      if (!r.ok && docs.length === 0) return finish(id, serviceId, log, 'failed', null, r.note);
+      begin(r.ok);
+    });
+  } else begin(false);
 
   return repo.findById(id)!;
 }

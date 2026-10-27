@@ -22,6 +22,11 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
   const [supported, setSupported] = useState<string[]>([]);
   const [knowledge, setKnowledge] = useState<KnowledgeFile[]>([]);
   const [lastJob, setLastJob] = useState<Job | null>(null);
+  const service = useStore((s) => s.services.find((x) => x.id === serviceId));
+  /** Also walk through the live service. On by default when the service has an address. */
+  const [explore, setExplore] = useState(true);
+  const canExplore = Boolean(service?.baseUrl);
+  const exploring = explore && canExplore;
   const job = liveJob ?? lastJob;
   const claude = useStore((s) => s.claude);
   /** Known to be unusable: not installed or signed out. While still loading (null) the button stays enabled. */
@@ -60,12 +65,24 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
             학습 중단
           </button>
         ) : (
-          <button className="btn btn-primary" disabled={!docs?.length || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId))}>
+          <button className="btn btn-primary" disabled={(!docs?.length && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring }))}>
             <Icon name="learn" size={16} />
             {learnLabel}
           </button>
         )}
       </div>
+
+      <label className={`check-field explore-option${canExplore ? '' : ' check-off'}`}>
+        <input type="checkbox" checked={exploring} disabled={!canExplore || learning} onChange={(e) => setExplore(e.target.checked)} />
+        <span>
+          <strong>서비스를 직접 둘러보며 학습</strong>
+          <span className="hint">
+            {canExplore
+              ? '로그인한 뒤 메뉴와 화면을 차례로 열어 보고(최대 약 60화면, 8분) 실제로 보이는 항목을 자료와 함께 학습합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다. 로그인에는 환경 변수의 ID/비밀번호 쌍(예: ADMIN_ID, ADMIN_PW)을 씁니다.'
+              : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
+          </span>
+        </span>
+      </label>
 
       {!claudeReady && (
         <div className="callout">

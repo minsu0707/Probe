@@ -835,3 +835,11 @@ table.runs .num {
   max-height: 160px;
   overflow: auto;
 }
+
+.explore-option {
+  padding: 0 4px 12px;
+}
+.check-off {
+  opacity: 0.6;
+  cursor: default;
+}

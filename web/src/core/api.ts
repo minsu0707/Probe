@@ -69,7 +69,7 @@ export const api = {
   deleteDoc: (id: string, docId: string) => call<void>(`/api/services/${id}/docs/${docId}`, json('DELETE')),
 
   // learning
-  learn: (id: string) => call<Job>(`/api/services/${id}/learn`, json('POST')),
+  learn: (id: string, b: { explore?: boolean } = {}) => call<Job>(`/api/services/${id}/learn`, json('POST', b)),
   cancelLearn: (id: string) => call<void>(`/api/services/${id}/learn/cancel`, json('POST')),
   jobs: (id: string) => call<Job[]>(`/api/services/${id}/jobs`),
   knowledge: (id: string) => call<KnowledgeFile[]>(`/api/services/${id}/knowledge`),

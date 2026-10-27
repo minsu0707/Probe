@@ -19,9 +19,11 @@ export interface PromptInput {
   driveLinks: string[];
   /** True when ./knowledge already has files from an earlier run. */
   hasExistingKnowledge: boolean;
+  /** Probe walked through the live service first; its notes are in ./explore. */
+  hasExploration?: boolean;
 }
 
-export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExistingKnowledge }: PromptInput): string {
+export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExistingKnowledge, hasExploration }: PromptInput): string {
   const drive = driveLinks.length
     ? `- Google Drive links (read them with the Google Drive tools; if a link is a folder, read its readable contents):\n${driveLinks.map((l) => `  - ${l}`).join('\n')}`
     : '- No Google Drive links were added.';
@@ -30,12 +32,15 @@ export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExisting
     ? '- ./knowledge already holds an earlier version. Read it first, keep what is still supported by the sources, and update it. Do not drop information the user may have edited by hand unless a source contradicts it.\n'
     : '';
 
+  const explored = hasExploration
+    ? `- ./explore holds what Probe saw when it walked through the live service in a browser (read-only; nothing was saved or changed). Read ./explore/pages.md in full: one section per screen with its address, headings, menus, table columns, input fields and buttons. ./explore/shots/NNN.jpg are screenshots of those screens (the number is the section number); open the landing page and at least one screen per menu group with the Read tool. This shows what the service really does, so cite it as [탐색: <address>] and treat it as a source equal to the documents. Where the live service and a document disagree, record both in open-questions.md. The exploration saw only what the sign-in could reach and stopped at a page limit, so say so in open-questions.md where it matters.\n`
+    : '';
   return `You are building the domain knowledge base for QA test automation of the service "${serviceName}"${baseUrl ? ` (${baseUrl})` : ''}.
 
 Source material:
 - Local files are in ./docs. For any file that has a sibling "<name>.extracted.txt", read that text file instead of the original. Read every file; images and PDFs are readable with the Read tool. Use Glob to list them.
 ${drive}
-${existing}
+${explored}${existing}
 Write these files into ./knowledge (Markdown, in the language the source documents are written in):
 - overview.md: what the service is, who uses it, user roles, glossary of domain terms.
 - screens.md: menu and screen inventory. For each screen: purpose, main fields and actions, who can access it.
@@ -49,7 +54,7 @@ Rules:
 2. Do not invent screens, fields, rules or numbers. If the documents are silent, put the question in open-questions.md.
 3. If two documents disagree, record both claims with their sources in open-questions.md and use the newer or more specific one only if the documents say which is newer.
 4. Do not include credentials, tokens or personal data that appear in the documents.
-5. Do not open or test the live service. This task is reading and writing files only.
+5. You cannot open or test the live service yourself. This task is reading and writing files only.
 6. Finish with a short summary written in Korean: what you read, what you wrote, and the three biggest gaps. If a document clearly belongs to a different service than "${serviceName}", say so first.`;
 }
 
