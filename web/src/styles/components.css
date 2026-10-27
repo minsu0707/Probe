@@ -491,3 +491,54 @@ input[aria-invalid='true'] {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* The command terminal in a modal (settings → 연동). */
+.term-screen {
+  max-height: none;
+  min-height: 96px;
+  outline: none;
+}
+.term-screen:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.term-prompt {
+  color: #7fd08f;
+}
+.term-out {
+  margin-top: 8px;
+  color: #aab6c2;
+}
+.term-fail {
+  color: #ff9d98;
+}
+.term-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 15px;
+  margin-top: 4px;
+  background: #d5dde5;
+  vertical-align: text-bottom;
+  animation: term-blink 1s steps(1) infinite;
+}
+@keyframes term-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .term-cursor {
+    animation: none;
+  }
+}
+kbd {
+  padding: 0 5px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--sunken);
+  font: 12px var(--mono);
+}
+.term-hint {
+  margin-top: 4px;
+}

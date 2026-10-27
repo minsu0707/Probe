@@ -37,7 +37,7 @@ export function AddServiceModal({ onClose }: { onClose: () => void }) {
       <form className="stack" onSubmit={submit}>
         <div className="field">
           <label htmlFor="add-name">이름</label>
-          <input id="add-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} required placeholder="예: 서울F&B 레시피 시스템" />
+          <input id="add-name" autoFocus value={name} onChange={(e) => setName(e.target.value)} required placeholder="예: 쇼핑몰 관리자 페이지" />
         </div>
         <div className="field">
           <label htmlFor="add-url">서비스 주소</label>

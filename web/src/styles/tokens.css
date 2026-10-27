@@ -23,6 +23,8 @@
   --font: 'Segoe UI Variable Text', 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
   --mono: 'Cascadia Mono', 'D2Coding', Consolas, 'SF Mono', ui-monospace, monospace;
   --radius: 6px;
+  /* Whole-UI size: text, icons and spacing shrink together. 1 = the original size. */
+  --ui-scale: 0.92;
   color-scheme: light;
 }
 

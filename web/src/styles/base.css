@@ -2,6 +2,9 @@
 * {
   box-sizing: border-box;
 }
+html {
+  zoom: var(--ui-scale);
+}
 html,
 body,
 #root {
