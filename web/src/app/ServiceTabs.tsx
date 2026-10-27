@@ -29,6 +29,11 @@ export function ServiceTabs({ service, tab }: { service: ServiceOverview; tab: T
     <header className="tabbar">
       <div className="tabbar-title">
         <strong className="ellipsis">{service.name}</strong>
+        {service.readOnly && (
+          <span className="pill pill-warn" title="이 서비스는 조회만 합니다. 쓰기 요청은 테스트 브라우저에서 막힙니다.">
+            조회 전용
+          </span>
+        )}
         {service.baseUrl && (
           <a className="url" href={service.baseUrl} target="_blank" rel="noreferrer noopener" title="서비스 열기">
             {service.baseUrl.replace(/^https?:\/\//, '')}

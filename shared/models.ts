@@ -10,6 +10,8 @@ export interface Service {
   name: string;
   baseUrl: string | null;
   notes: string | null;
+  /** 조회 전용: tests may only look (no creating, changing or deleting). Enforced in the prompt and in the test browser. */
+  readOnly: boolean;
   createdAt: number;
 }
 

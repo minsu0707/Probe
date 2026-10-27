@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { PORT, testsDir } from '../../config.ts';
 import { runtimeEnv } from '../secrets/service.ts';
+import { getService } from '../services/service.ts';
 import { detectBrowserChannel } from './browser.ts';
 
 const require = createRequire(import.meta.url);
@@ -49,6 +50,8 @@ export function launchPlaywright(o: LaunchOptions): ChildProcess {
       PROBE_RUN_ID: o.runId,
       PROBE_TOKEN: o.token,
       FORCE_COLOR: '0',
+      // Read by the fixture: a 조회 전용 service's browser may not send write requests.
+      PROBE_READ_ONLY: getService(o.serviceId)?.readOnly ? '1' : '',
       // Read by the generated playwright.config.ts; empty means Playwright's bundled Chromium.
       PROBE_BROWSER_CHANNEL: detectBrowserChannel() ?? '',
     },

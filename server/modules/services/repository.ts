@@ -6,10 +6,11 @@ interface Row {
   name: string;
   base_url: string | null;
   notes: string | null;
+  read_only: number;
   created_at: number;
 }
 
-const toService = (r: Row): Service => ({ id: r.id, name: r.name, baseUrl: r.base_url, notes: r.notes, createdAt: r.created_at });
+const toService = (r: Row): Service => ({ id: r.id, name: r.name, baseUrl: r.base_url, notes: r.notes, readOnly: r.read_only === 1, createdAt: r.created_at });
 
 export const findAll = (): Service[] => all<Row>('SELECT * FROM services ORDER BY created_at').map(toService);
 
@@ -22,11 +23,11 @@ export function findById(id: string): Service | undefined {
 export const nameTaken = (name: string): boolean => Boolean(get('SELECT 1 FROM services WHERE lower(name) = lower(?)', name));
 
 export function insert(s: Service): void {
-  run('INSERT INTO services (id, name, base_url, notes, created_at) VALUES (?,?,?,?,?)', s.id, s.name, s.baseUrl, s.notes, s.createdAt);
+  run('INSERT INTO services (id, name, base_url, notes, read_only, created_at) VALUES (?,?,?,?,?,?)', s.id, s.name, s.baseUrl, s.notes, s.readOnly ? 1 : 0, s.createdAt);
 }
 
-export function update(s: Pick<Service, 'id' | 'name' | 'baseUrl' | 'notes'>): void {
-  run('UPDATE services SET name = ?, base_url = ?, notes = ? WHERE id = ?', s.name, s.baseUrl, s.notes, s.id);
+export function update(s: Pick<Service, 'id' | 'name' | 'baseUrl' | 'notes' | 'readOnly'>): void {
+  run('UPDATE services SET name = ?, base_url = ?, notes = ?, read_only = ? WHERE id = ?', s.name, s.baseUrl, s.notes, s.readOnly ? 1 : 0, s.id);
 }
 
 /** Only sets the URL; used when an env file supplies BASE_URL for a service that has none. */

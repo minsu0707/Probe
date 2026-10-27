@@ -52,8 +52,8 @@ export const api = {
 
   // services
   services: () => call<ServiceOverview[]>('/api/services'),
-  createService: (b: { name: string; baseUrl?: string; notes?: string }) => call<ServiceOverview>('/api/services', json('POST', b)),
-  updateService: (id: string, b: { name?: string; baseUrl?: string | null; notes?: string | null }) => call<ServiceOverview>(`/api/services/${id}`, json('PATCH', b)),
+  createService: (b: { name: string; baseUrl?: string; notes?: string; readOnly?: boolean }) => call<ServiceOverview>('/api/services', json('POST', b)),
+  updateService: (id: string, b: { name?: string; baseUrl?: string | null; notes?: string | null; readOnly?: boolean }) => call<ServiceOverview>(`/api/services/${id}`, json('PATCH', b)),
   deleteService: (id: string) => call<void>(`/api/services/${id}`, json('DELETE')),
 
   // environment variables

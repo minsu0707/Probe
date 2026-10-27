@@ -10,6 +10,13 @@ import { SCHEMA } from './schema.ts';
 export const db = new DatabaseSync(DB_FILE);
 db.exec(SCHEMA);
 
+// Columns added after the first release. CREATE TABLE IF NOT EXISTS does not touch an existing table.
+const addColumn = (table: string, column: string, definition: string) => {
+  const have = (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column);
+  if (!have) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+};
+addColumn('services', 'read_only', 'INTEGER NOT NULL DEFAULT 0');
+
 type Param = string | number | null;
 
 export const all = <T>(sql: string, ...args: Param[]): T[] => db.prepare(sql).all(...args) as T[];

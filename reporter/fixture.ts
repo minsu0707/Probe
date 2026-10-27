@@ -1,4 +1,5 @@
 import { test as base, expect, type Page } from '@playwright/test';
+import { allowRequest } from './guard.ts';
 import { connected, send, sendFrame } from './transport.ts';
 
 /** Fallback polling, used only while the live stream is silent (and for engines without DevTools). */
@@ -69,6 +70,20 @@ async function startStream(page: Page): Promise<{ stop: () => void; lastFrameAt:
 export const test = base.extend<{ _probe: void }>({
   _probe: [
     async ({ page }, use, testInfo) => {
+      // 조회 전용 service: refuse requests that would change data. Applies to the whole context, so popups are covered too.
+      if (process.env.PROBE_READ_ONLY === '1') {
+        const blocked = new Set<string>();
+        await page.context().route('**/*', (route) => {
+          const r = route.request();
+          if (allowRequest(r.method(), r.url(), r.postData())) return route.fallback();
+          const what = `${r.method()} ${new URL(r.url()).pathname}`;
+          if (!blocked.has(what) && blocked.size < 20) {
+            blocked.add(what);
+            testInfo.annotations.push({ type: '조회 전용: 쓰기 요청 차단', description: what });
+          }
+          return route.abort('blockedbyclient');
+        });
+      }
       if (!connected) return use();
       const id = testInfo.testId;
       page.on('framenavigated', (frame) => {

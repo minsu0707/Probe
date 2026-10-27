@@ -683,3 +683,19 @@ kbd {
 .update-popup ~ .toasts {
   bottom: 190px;
 }
+
+/* A checkbox with a title and a hint beside it, used for service options. */
+.check-field {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.check-field input {
+  margin-top: 3px;
+}
+.check-field > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

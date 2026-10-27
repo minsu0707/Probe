@@ -153,7 +153,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
 
 function contextFor(serviceId: string) {
   const service = requireService(serviceId);
-  return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name) };
+  return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name), readOnly: service.readOnly };
 }
 
 /** Same tool policy as every background job; see agents/claude-cli.ts for why it is explicit. */

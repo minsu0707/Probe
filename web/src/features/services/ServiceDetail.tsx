@@ -11,12 +11,13 @@ export function ServiceDetail({ service }: { service: ServiceOverview }) {
   const [name, setName] = useState(service.name);
   const [url, setUrl] = useState(service.baseUrl ?? '');
   const [notes, setNotes] = useState(service.notes ?? '');
+  const [readOnly, setReadOnly] = useState(service.readOnly);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const dirty = name !== service.name || url !== (service.baseUrl ?? '') || notes !== (service.notes ?? '');
+  const dirty = name !== service.name || url !== (service.baseUrl ?? '') || notes !== (service.notes ?? '') || readOnly !== service.readOnly;
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
-    await attempt(() => api.updateService(service.id, { name, baseUrl: url.trim() || null, notes: notes.trim() || null }), '저장했습니다');
+    await attempt(() => api.updateService(service.id, { name, baseUrl: url.trim() || null, notes: notes.trim() || null, readOnly }), '저장했습니다');
   };
 
   return (
@@ -36,6 +37,13 @@ export function ServiceDetail({ service }: { service: ServiceOverview }) {
           <label htmlFor="svc-notes">메모</label>
           <textarea id="svc-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="테스트 계정 역할, 주의할 점 등" />
         </div>
+        <label className="check-field">
+          <input type="checkbox" checked={readOnly} onChange={(e) => setReadOnly(e.target.checked)} />
+          <span>
+            <strong>조회 전용</strong>
+            <span className="hint">켜면 Claude는 보기만 하는 테스트만 쓰고, 테스트 브라우저는 등록·수정·삭제 요청을 막습니다. 로그인과 조회는 그대로 됩니다. 이미 쓴 테스트에도 다음 실행부터 적용됩니다.</span>
+          </span>
+        </label>
         <div className="actions">
           <button className="btn btn-primary" disabled={!dirty}>
             저장

@@ -11,13 +11,14 @@ export function AddServiceModal({ onClose }: { onClose: () => void }) {
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<{ name: string; text: string } | null>(null);
   const [passphrase, setPassphrase] = useState('');
+  const [readOnly, setReadOnly] = useState(false);
   const [busy, setBusy] = useState(false);
   const encrypted = file ? looksEncrypted(file.name, file.text) : false;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const created = await attempt(() => api.createService({ name, baseUrl: url.trim() || undefined }));
+    const created = await attempt(() => api.createService({ name, baseUrl: url.trim() || undefined, readOnly }));
     if (created) {
       selectService(created.id);
       goService(created.id);
@@ -44,6 +45,13 @@ export function AddServiceModal({ onClose }: { onClose: () => void }) {
           <input id="add-url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" inputMode="url" />
           <span className="hint">비워두면 환경 파일의 BASE_URL을 사용합니다.</span>
         </div>
+        <label className="check-field">
+          <input type="checkbox" checked={readOnly} onChange={(e) => setReadOnly(e.target.checked)} />
+          <span>
+            <strong>조회 전용</strong>
+            <span className="hint">운영 데이터처럼 함부로 바꾸면 안 되는 서비스일 때 켜세요. 테스트가 보기만 하고, 등록·수정·삭제 요청은 테스트 브라우저에서 막습니다. 나중에 서비스 설정에서 바꿀 수 있습니다.</span>
+          </span>
+        </label>
         <div className="field">
           <span className="label">환경 파일 (선택)</span>
           {file ? (
