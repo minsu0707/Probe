@@ -31,6 +31,12 @@ import { sweepDeletedSpecs } from './sweep.ts';
 const STDERR_TAIL_CHARS = 2000;
 const TITLE_MAX = 40;
 
+/** Cut at TITLE_MAX characters and say so, instead of stopping mid-sentence. */
+const shorten = (text: string): string => {
+  const chars = [...text.trim()];
+  return chars.length > TITLE_MAX ? `${chars.slice(0, TITLE_MAX).join('').trimEnd()}…` : chars.join('');
+};
+
 /** Running children by session id, so cancel and delete can find the process. */
 const children = new Map<string, ChildProcess>();
 /** Sessions whose current turn was stopped by the user, so the exit isn't reported as a failure. */
@@ -54,7 +60,7 @@ export async function createSession(serviceId: string, input: { kind: SessionKin
   await assertCanRun(serviceId);
 
   const id = newId();
-  const title = input.kind === 'write-tests' ? '테스트 작성' : [...first].slice(0, TITLE_MAX).join('');
+  const title = input.kind === 'write-tests' ? '테스트 작성' : shorten(first);
   repo.insert({ id, serviceId, title, kind: input.kind, claudeSessionId: randomUUID(), now: Date.now() });
   broadcast({ type: 'session', session: repo.findById(id)! });
   // The transcript shows the user's own words, not the longer instruction behind the button.

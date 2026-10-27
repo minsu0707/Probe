@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { goService, settingsHref } from '../../app/router.ts';
 import { api, type Session, type SessionKind } from '../../core/api.ts';
+import { useDraft } from '../../core/drafts.ts';
 import { attempt, upsertSession } from '../../core/store.ts';
 import { Icon } from '../../ui/index.ts';
 
 /** Start a session: the "테스트 작성" shortcut, or a free conversation. */
 export function NewSession({ serviceId, knowledgeCount, claudeReady, onCreated }: { serviceId: string; knowledgeCount: number; claudeReady: boolean; onCreated: (s: Session) => void }) {
-  const [focus, setFocus] = useState('');
-  const [message, setMessage] = useState('');
+  const [focus, setFocus] = useDraft(`new-focus:${serviceId}`);
+  const [message, setMessage] = useDraft(`new-message:${serviceId}`);
   const [busy, setBusy] = useState<SessionKind | null>(null);
 
   const start = async (kind: SessionKind, text: string) => {
@@ -15,6 +16,7 @@ export function NewSession({ serviceId, knowledgeCount, claudeReady, onCreated }
     const session = await attempt(() => api.createSession(serviceId, { kind, message: text }));
     setBusy(null);
     if (session) {
+      if (kind === 'chat') setMessage('');
       upsertSession(session);
       onCreated(session);
     }

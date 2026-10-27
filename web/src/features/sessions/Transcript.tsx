@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api, type Session, type SessionMessage } from '../../core/api.ts';
 import { clock } from '../../core/format.ts';
+import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
 import { ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
 
@@ -9,7 +10,7 @@ const EMPTY: SessionMessage[] = [];
 /** One conversation: the messages so far, and a box to say the next thing. */
 export function Transcript({ session, claudeReady, onDeleted }: { session: Session; claudeReady: boolean; onDeleted: () => void }) {
   const messages = useStore((s) => s.transcripts[session.id] ?? EMPTY);
-  const [draft, setDraft] = useState('');
+  const [draft, setDraft] = useDraft(`session:${session.id}`);
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
