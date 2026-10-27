@@ -49,7 +49,7 @@ The installer is not code-signed, so Windows SmartScreen may warn about an unkno
 
 ## Updates
 
-The installed app checks GitHub Releases when it starts, every 30 minutes, and when you come back to the window (at most every 5 minutes), downloads a newer version in the background, and restarts into it by itself once nothing is running and the window is not in front (or when you press **설정 → 일반 → 재시작해서 설치**, or quit). Events are logged to `update.log` in the data folder. Your services and sign-ins live in `%APPDATA%\Probe` and are kept.
+The installed app checks GitHub Releases when it starts, every 5 minutes, and when you come back to the window (at most once a minute), downloads a newer version in the background, and restarts into it by itself once nothing is running and the window is not in front (or when you press **설정 → 일반 → 재시작해서 설치**, or quit). Events are logged to `update.log` in the data folder. Your services and sign-ins live in `%APPDATA%\Probe` and are kept.
 
 To publish a version (maintainers): commit your work, then `npm run release` (or `-- minor`, `-- major`, `-- 1.4.0`). It bumps the version, runs typecheck and tests, pushes, builds the installer and uploads it to a GitHub Release using your `gh` login.
 

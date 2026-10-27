@@ -18,9 +18,9 @@ import { briefError, reduceUpdate, type UpdateEvent } from './update-state.ts';
 const { autoUpdater } = electronUpdater;
 
 const FIRST_CHECK_DELAY_MS = 15_000; // let the window and server settle first
-const CHECK_EVERY_MS = 30 * 60 * 1000;
+const CHECK_EVERY_MS = 5 * 60 * 1000; // a release shows up without pressing anything; this is one small file from github.com
 /** Coming back to the window checks too (a release may have landed while it sat in the background), but not more often than this. */
-const FOCUS_CHECK_GAP_MS = 5 * 60 * 1000;
+const FOCUS_CHECK_GAP_MS = 60 * 1000;
 const IDLE_POLL_MS = 30_000;
 /** Lets the page paint its "installing" screen before the window goes away. */
 const PAINT_DELAY_MS = 1500;
