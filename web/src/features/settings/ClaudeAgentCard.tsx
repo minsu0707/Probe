@@ -4,8 +4,8 @@ import { attempt, refreshClaude, useStore } from '../../core/store.ts';
 import { CopyButton, Icon, Pill, UsageMeter } from '../../ui/index.ts';
 
 const PROFILE_HELP: Record<ClaudeProfile, string> = {
-  probe: 'Probe 안에서만 쓰는 별도 로그인입니다. 개인 Claude Code의 설정, 훅, MCP 서버와 섞이지 않아서 어느 PC에서나 같은 방식으로 동작합니다.',
-  system: '이 PC의 기존 Claude Code 로그인과 설정을 그대로 씁니다. 여기서 로그인하거나 로그아웃하면 평소 쓰는 Claude Code도 함께 바뀝니다.',
+  probe: 'Probe 전용 로그인. 개인 Claude Code의 설정·훅·MCP와 섞이지 않습니다.',
+  system: '이 PC의 Claude Code 로그인을 그대로 씁니다. 여기서 로그아웃하면 평소 쓰는 Claude Code도 로그아웃됩니다.',
 };
 
 const METHOD_LABEL: Record<string, string> = { 'claude.ai': 'Claude 구독', console: 'Anthropic Console (API 과금)', none: '로그인 안 됨' };
@@ -223,7 +223,7 @@ function Permissions({ claude }: { claude: ClaudeAgentStatus }) {
           </code>
         ))}
       </div>
-      <span className="hint">초록색은 허용, 빗금은 차단입니다. 백그라운드에서는 승인 버튼을 누를 사람이 없어서, 문서를 읽고 파일을 쓰는 도구만 미리 허용하고 셸 명령과 웹 접근은 막습니다.</span>
+      <span className="hint">초록은 허용, 빗금은 차단. 승인할 사람이 없는 백그라운드 작업이라 파일 읽기·쓰기만 허용하고 셸과 웹은 막습니다.</span>
     </div>
   );
 }
