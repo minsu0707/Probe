@@ -35,3 +35,10 @@ test('errors become one short line', () => {
   assert.equal(briefError(new Error('net::ERR_INTERNET_DISCONNECTED\n    at foo (bar.js:1)')), 'net::ERR_INTERNET_DISCONNECTED');
   assert.equal(briefError('plain').length > 0, true);
 });
+
+test('installing is reachable from ready and final', () => {
+  const ready: UpdateState = { phase: 'ready', currentVersion: '1.0.0', version: '1.1.0' };
+  const installing = reduceUpdate(ready, { type: 'installing', version: '1.1.0' });
+  assert.deepEqual(installing, { phase: 'installing', currentVersion: '1.0.0', version: '1.1.0' });
+  for (const ev of [{ type: 'checking' }, { type: 'none', at: 1 }, { type: 'error', message: 'x' }] as const) assert.deepEqual(reduceUpdate(installing, ev), installing);
+});

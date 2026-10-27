@@ -9,6 +9,7 @@ import { ServiceDetail } from '../features/services/ServiceDetail.tsx';
 import { Welcome } from '../features/services/Welcome.tsx';
 import { SettingsPage } from '../features/settings/SettingsPage.tsx';
 import { Toasts } from '../ui/index.ts';
+import { useUpdateState } from '../core/desktop.ts';
 import { useRoute } from './router.ts';
 import { ServiceTabs } from './ServiceTabs.tsx';
 import { Sidebar } from './Sidebar.tsx';
@@ -24,6 +25,7 @@ export function App() {
   const ready = useStore((s) => s.ready);
   const services = useStore((s) => s.services);
   const currentId = useStore((s) => s.currentId);
+  const update = useUpdateState();
   useEffect(() => void boot(), []);
 
   const routedId = route.page === 'service' ? route.serviceId : null;
@@ -73,6 +75,15 @@ export function App() {
       </div>
       <StatusBar />
       <Toasts />
+      {update?.phase === 'installing' && (
+        <div className="installing" role="alert">
+          <div className="installing-card">
+            <span className="spinner" aria-hidden="true" />
+            <h2>Probe {update.version}(으)로 업데이트하는 중</h2>
+            <p>이 창이 닫혔다가 1~2분 뒤 자동으로 다시 열립니다. 설치 진행 창이 뜨면 그대로 두세요.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

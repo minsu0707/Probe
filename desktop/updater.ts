@@ -8,9 +8,9 @@
  * PROBE_UPDATE_URL points the app at any folder or server that holds `latest.yml` and the
  * installer, which is how the update flow is tested without publishing a release.
  */
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { app, ipcMain, type BrowserWindow } from 'electron';
+import { app, ipcMain, Notification, type BrowserWindow } from 'electron';
 import electronUpdater from 'electron-updater';
 import type { UpdateState } from '../shared/models.ts';
 import { briefError, reduceUpdate, type UpdateEvent } from './update-state.ts';
@@ -20,6 +20,8 @@ const { autoUpdater } = electronUpdater;
 const FIRST_CHECK_DELAY_MS = 15_000; // let the window and server settle first
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
 const IDLE_POLL_MS = 30_000;
+/** Lets the page paint its "installing" screen before the window goes away. */
+const PAINT_DELAY_MS = 1500;
 
 const testFeed = process.env.PROBE_UPDATE_URL;
 /** Dev runs have no installer to replace; a test feed makes the flow testable anywhere. */
@@ -62,7 +64,12 @@ export async function checkForUpdate(): Promise<UpdateState> {
 export async function installUpdate(): Promise<boolean> {
   if (state.phase !== 'ready') return false;
   if (!(await beforeInstall())) return false;
-  log(`installing v${state.version}`);
+  const version = state.version;
+  log(`installing v${version}`);
+  apply({ type: 'installing', version });
+  // The window may be hidden (auto-update while it sits in the tray), so say it in a notification too.
+  new Notification({ title: 'Probe를 업데이트하는 중', body: `v${version}을(를) 설치합니다. 1~2분 걸리고, 끝나면 자동으로 다시 열립니다.` }).show();
+  await new Promise((r) => setTimeout(r, PAINT_DELAY_MS));
   // Not silent: unpacking the installer takes a minute or two (it is ~250 MB), and with no window at all
   // it looks as if the app just vanished. The installer's own progress window shows it is working, and
   // the new version starts by itself when it is done.
@@ -82,6 +89,26 @@ async function installWhenSafe(): Promise<void> {
       if (await installUpdate()) return;
     }
     await new Promise((r) => setTimeout(r, IDLE_POLL_MS));
+  }
+}
+
+/** After an update the new version opens by itself; say so, once, so it is clear the update worked. */
+function announceUpdateDone(): void {
+  const file = join(process.env.PROBE_HOME ?? app.getPath('userData'), 'last-version');
+  let previous = '';
+  try {
+    previous = readFileSync(file, 'utf8').trim();
+  } catch {
+    /* first run */
+  }
+  try {
+    writeFileSync(file, app.getVersion());
+  } catch {
+    return;
+  }
+  if (previous && previous !== app.getVersion()) {
+    log(`updated ${previous} -> ${app.getVersion()}`);
+    new Notification({ title: 'Probe가 업데이트되었습니다', body: `v${previous} → v${app.getVersion()}` }).show();
   }
 }
 
@@ -113,6 +140,7 @@ export function initUpdater(opts: { window: () => BrowserWindow | null; confirmI
   autoUpdater.on('error', (e) => apply({ type: 'error', message: briefError(e) }));
 
   log(`start v${app.getVersion()}${testFeed ? ` (test feed ${testFeed})` : ''}`);
+  announceUpdateDone();
   setTimeout(() => void checkForUpdate(), FIRST_CHECK_DELAY_MS);
   setInterval(() => void checkForUpdate(), CHECK_EVERY_MS);
 }

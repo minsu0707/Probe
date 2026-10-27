@@ -239,4 +239,6 @@ export type UpdateState =
   | { phase: 'downloading'; currentVersion: string; version: string; percent: number }
   /** Downloaded; it installs when the app restarts. */
   | { phase: 'ready'; currentVersion: string; version: string }
+  /** The installer is about to take over: the window closes and the new version opens by itself. */
+  | { phase: 'installing'; currentVersion: string; version: string }
   | { phase: 'error'; currentVersion: string; message: string };

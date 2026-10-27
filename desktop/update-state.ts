@@ -10,12 +10,14 @@ export type UpdateEvent =
   | { type: 'none'; at: number }
   | { type: 'progress'; percent: number }
   | { type: 'downloaded'; version: string }
+  | { type: 'installing'; version: string }
   | { type: 'error'; message: string };
 
 export function reduceUpdate(state: UpdateState, ev: UpdateEvent): UpdateState {
   const currentVersion = state.currentVersion;
   // A downloaded update stays the answer: a later check failing (offline) must not hide it.
-  if (state.phase === 'ready' && ev.type !== 'downloaded') return state;
+  if (state.phase === 'installing') return state; // nothing changes the story once the installer has started
+  if (state.phase === 'ready' && ev.type !== 'downloaded' && ev.type !== 'installing') return state;
   switch (ev.type) {
     case 'checking':
       return { phase: 'checking', currentVersion };
@@ -27,6 +29,8 @@ export function reduceUpdate(state: UpdateState, ev: UpdateEvent): UpdateState {
       return state.phase === 'downloading' ? { ...state, percent: Math.max(0, Math.min(100, Math.round(ev.percent))) } : state;
     case 'downloaded':
       return { phase: 'ready', currentVersion, version: ev.version };
+    case 'installing':
+      return { phase: 'installing', currentVersion, version: ev.version };
     case 'error':
       return { phase: 'error', currentVersion, message: ev.message };
   }

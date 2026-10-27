@@ -10,7 +10,11 @@ export function UpdateCard({ version }: { version: string | undefined }) {
   const update = useUpdateState();
   const [busy, setBusy] = useState(false);
 
-  const status = !update ? null : update.phase === 'ready' ? (
+  const status = !update ? null : update.phase === 'installing' ? (
+    <Pill tone="run" dot>
+      설치 중
+    </Pill>
+  ) : update.phase === 'ready' ? (
     <Pill tone="pass">새 버전 {update.version} 준비됨</Pill>
   ) : update.phase === 'downloading' ? (
     <Pill tone="run" dot>

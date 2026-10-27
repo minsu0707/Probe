@@ -60,6 +60,10 @@
     "productName": "Probe",
     "artifactName": "Probe-Setup-${version}.exe",
     "asar": false,
+    "electronLanguages": [
+      "en-US",
+      "ko"
+    ],
     "directories": {
       "output": "release"
     },
@@ -72,7 +76,9 @@
       "scripts/**/*",
       "dist/**/*",
       "package.json",
-      "!**/*.map"
+      "!**/*.map",
+      "!**/node_modules/**/*.{md,d.ts,d.mts,d.cts,markdown}",
+      "!**/node_modules/**/{test,tests,docs,example,examples,.github}/**"
     ],
     "win": {
       "target": [
