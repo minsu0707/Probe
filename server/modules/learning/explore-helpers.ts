@@ -30,7 +30,7 @@ export function pickLogin(names: string[]): LoginPair | null {
 }
 
 /** Things that must never be followed or clicked, even though following them only sends a GET. */
-const DANGEROUS_TEXT = /로그아웃|log ?out|sign ?out|탈퇴|withdraw|삭제|delete|remove|초기화|reset|파기|destroy/i;
+const DANGEROUS_TEXT = /로그아웃|log ?out|sign ?out|탈퇴|withdraw|삭제|delete|remove|초기화|reset|파기|destroy|재인증|re-?auth/i;
 const DANGEROUS_PATH = /(^|[/_-])(log-?out|sign-?out|withdraw|delete|remove|destroy|unsubscribe)([/_.?-]|$)/i;
 
 export const isDangerousLabel = (text: string): boolean => DANGEROUS_TEXT.test(text);

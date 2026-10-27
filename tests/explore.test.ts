@@ -83,3 +83,40 @@ test('the explorer signs in, walks the menus, writes notes, and never writes or 
     site.close();
   }
 });
+
+test('a single-page app whose menus are buttons (no links) is walked screen by screen', async () => {
+  isolatedHome();
+  const hits: string[] = [];
+  const html = `<!doctype html><html><head><title>SPA</title></head><body>
+    <header><button id="out">로그아웃</button></header>
+    <nav><button data-v="home">M0 홈</button><button data-v="dev">M1 제품 개발</button><button data-v="mat">M2 원료·기준정보</button></nav>
+    <div id="sub"></div><main id="view"><h1>홈</h1><p>여기서 일을 시작합니다</p></main>
+    <script>
+      const views = { home: '<h1>홈</h1><p>여기서 일을 시작합니다</p>', dev: '<h1>제품 개발</h1><p>제품 목록과 배합비를 관리합니다. 제품명 코드 상태 담당자</p>', mat: '<h1>원료 기준정보</h1><p>원료명 규격 공급사 ERP 코드를 관리합니다</p>', list: '<h1>제품 목록</h1><table><thead><tr><th>제품명</th><th>상태</th></tr></thead></table>' };
+      document.querySelectorAll('nav button').forEach((b) => b.addEventListener('click', () => {
+        document.getElementById('view').innerHTML = views[b.dataset.v];
+        document.getElementById('sub').innerHTML = b.dataset.v === 'dev' ? '<nav><button data-sub="list">M1-1 제품 목록</button></nav>' : '';
+        document.querySelectorAll('#sub button').forEach((s) => s.addEventListener('click', () => (document.getElementById('view').innerHTML = views[s.dataset.sub])));
+      }));
+      document.getElementById('out').addEventListener('click', () => fetch('/logout', { method: 'POST' }));
+    </script></body></html>`;
+  const site = http.createServer((req, res) => {
+    hits.push(`${req.method} ${req.url}`);
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(html);
+  });
+  await new Promise<void>((r) => site.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${(site.address() as AddressInfo).port}`;
+  try {
+    const services = await import('../server/modules/services/service.ts');
+    const { exploreService, exploreDir } = await import('../server/modules/learning/explore.ts');
+    const s = services.createService({ name: 'Spa', baseUrl: url });
+    const result = await exploreService(s.id, url, () => undefined, () => undefined);
+    assert.equal(result.ok, true, result.note);
+    const md = readFileSync(join(exploreDir(s.id), 'pages.md'), 'utf8');
+    for (const expected of ['제품 개발', '원료 기준정보', '제품 목록', '제품명 \| 상태']) assert.match(md, new RegExp(expected), expected);
+    assert.ok(result.pages >= 4, `expected at least 4 screens, got ${result.pages}`);
+    assert.ok(!hits.some((h) => h.startsWith('POST')), 'the logout button was not clicked');
+  } finally {
+    site.close();
+  }
+});

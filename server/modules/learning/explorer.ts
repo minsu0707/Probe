@@ -20,7 +20,14 @@ const MAX_PAGES = Number(process.env.PROBE_EXPLORE_MAX_PAGES ?? 60);
 const MAX_MS = Number(process.env.PROBE_EXPLORE_MAX_MS ?? 8 * 60_000);
 const SAMPLES_PER_PATTERN = 2;
 const CLICK_PAGES = 3; // menus are explored by clicking only on the first few screens
-const MAX_CLICKS_PER_PAGE = 40;
+const MAX_CLICKS = 90;
+const MENU_SELECTOR = [
+  'nav button', 'nav [role=button]', 'nav li', 'nav a:not([href])', 'nav [role=menuitem]',
+  'aside button', 'aside li', 'aside a:not([href])',
+  'header button', 'header [role=tab]',
+  '[role=menuitem]', '[role=tab]', '[role=treeitem]',
+  '.sidebar li', '.sidebar button', '.gnb li', '.gnb button', '.lnb li', '.lnb button',
+].join(', ');
 
 const say = (text: string) => console.log(JSON.stringify({ type: 'progress', text }));
 const started = Date.now();
@@ -160,30 +167,58 @@ try {
   say(`화면 ${visitedCount}: ${page.url()}`);
   await links();
 
-  /** Menus that are not links (single-page apps): click each, and keep what is new. */
-  const clickMenus = async (): Promise<void> => {
-    const menu = page.locator('nav li, nav [role=menuitem], aside li, aside a:not([href]), [role=menuitem], [role=tab], .sidebar li, .gnb li, .lnb li');
-    const total = Math.min(await menu.count(), MAX_CLICKS_PER_PAGE);
-    const clicked = new Set<string>();
-    for (let i = 0; i < total && visitedCount < MAX_PAGES && !timeUp(); i++) {
-      const item = menu.nth(i);
-      const label = ((await item.textContent({ timeout: 1500 }).catch(() => '')) ?? '').replace(/\s+/g, ' ').trim();
-      if (!label || label.length > 40 || clicked.has(label) || isDangerousLabel(label) || !(await item.isVisible().catch(() => false))) continue;
-      clicked.add(label);
-      const before = page.url();
-      const textBefore = await page.evaluate(() => document.body?.innerText.length ?? 0);
-      await item.click({ timeout: 2500 }).catch(() => undefined);
-      await settle(page, 4000);
-      const key = pageKey(page.url(), origin);
-      if (page.url() !== before && key && !seenKeys.has(key)) {
-        seenKeys.add(key);
-        perPattern.set(pagePattern(key), (perPattern.get(pagePattern(key)) ?? 0) + 1);
-        await snapshot(page, ++visitedCount);
-        say(`화면 ${visitedCount}: ${page.url()}`);
-        await links();
-      } else if (page.url() === before && Math.abs((await page.evaluate(() => document.body?.innerText.length ?? 0)) - textBefore) > 80) {
-        await snapshot(page, ++visitedCount, label);
-        say(`화면 ${visitedCount}: ${label}`);
+  /**
+   * Menus that are not links (single-page apps and button bars): click each, and keep a screen when
+   * what the page shows changed. Clicking can open submenus, a submenu that appears is walked
+   * right away (up to three levels deep). Only navigation areas are clicked; a click that would write is
+   * refused by the request guard anyway.
+   */
+  const signature = () => page.evaluate(() => `${location.href}|${(document.body?.innerText ?? '').replace(/\s+/g, ' ').slice(0, 1500)}`);
+  const seenSignatures = new Set<string>();
+  const clickedLabels = new Set<string>();
+  let totalClicks = 0;
+  const menuLabels = async (): Promise<Set<string>> => {
+    const texts = await page.locator(MENU_SELECTOR).evaluateAll((els) => els.map((e) => (e.textContent ?? '').replace(/s+/g, ' ').trim()));
+    return new Set(texts.filter(Boolean));
+  };
+  /** `only`: just these labels (the submenu a click opened), so a sibling click cannot close it first. */
+  const clickMenus = async (depth = 0, only?: Set<string>): Promise<void> => {
+    seenSignatures.add(await signature());
+    {
+      const menu = page.locator(MENU_SELECTOR);
+      const count = Math.min(await menu.count(), 150);
+      for (let i = 0; i < count && visitedCount < MAX_PAGES && totalClicks < MAX_CLICKS && !timeUp(); i++) {
+        const item = menu.nth(i);
+        const label = ((await item.textContent({ timeout: 1500 }).catch(() => '')) ?? '').replace(/\s+/g, ' ').trim();
+        if (!label || label.length > 40 || (only && !only.has(label)) || clickedLabels.has(label) || isDangerousLabel(label) || !(await item.isVisible().catch(() => false))) continue;
+        clickedLabels.add(label);
+        totalClicks++;
+        const before = page.url();
+        const labelsBefore = depth < 3 ? await menuLabels() : new Set<string>();
+        await item.click({ timeout: 2500 }).catch(() => undefined);
+        await settle(page, 4000);
+        // Left the service (an external link) or opened a dialog: undo that and carry on.
+        if (!pageKey(page.url(), origin)) await page.goBack().catch(() => undefined);
+        else await page.keyboard.press('Escape').catch(() => undefined);
+        const key = pageKey(page.url(), origin);
+        const sig = await signature();
+        if (page.url() !== before && key && !seenKeys.has(key)) {
+          seenKeys.add(key);
+          perPattern.set(pagePattern(key), (perPattern.get(pagePattern(key)) ?? 0) + 1);
+          seenSignatures.add(sig);
+          await snapshot(page, ++visitedCount);
+          say(`화면 ${visitedCount}: ${page.url()}`);
+          await links();
+        } else if (!seenSignatures.has(sig)) {
+          seenSignatures.add(sig);
+          await snapshot(page, ++visitedCount, label);
+          say(`화면 ${visitedCount}: ${label}`);
+        }
+        // The click opened a submenu: go through it now, before the next top-level click closes it again.
+        if (depth < 3) {
+          const opened = new Set([...(await menuLabels())].filter((l) => !labelsBefore.has(l)));
+          if (opened.size) await clickMenus(depth + 1, opened);
+        }
       }
     }
   };
