@@ -71,7 +71,7 @@ export function Sidebar({ route }: { route: Route }) {
           aria-label="설정"
           title={updateReady ? '설정 · 새 버전 준비됨' : '설정'}
         >
-          <Icon name="settings" size={20} />
+          <Icon name="gear" size={20} />
           {updateReady && <span className="icon-badge" aria-hidden="true" />}
         </a>
       </div>
