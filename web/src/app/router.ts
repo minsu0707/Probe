@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
  *   #/settings/<section>       the settings page, one of its sections
  *   (anything else)            home: the first service, or a welcome page
  */
-export const TABS = ['overview', 'learn', 'sessions', 'monitor', 'results'] as const;
+export const TABS = ['overview', 'learn', 'sessions', 'cases', 'monitor', 'results'] as const;
 export type Tab = (typeof TABS)[number];
 
 export const SETTINGS_SECTIONS = ['agent', 'security', 'browser', 'general', 'integrations'] as const;

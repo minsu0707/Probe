@@ -30,6 +30,21 @@ export interface ServiceOverview extends Service {
   claudeWorking: boolean;
 }
 
+/** One Playwright test, as listed for the 테스트 케이스 tab. */
+export interface TestCase {
+  /** "file:line": what Playwright takes to run exactly this test. */
+  id: string;
+  /** Path under tests/specs/. */
+  file: string;
+  line: number;
+  title: string;
+  /** The describe blocks around it, joined with " › ". */
+  feature: string;
+  tags: string[];
+  /** The comment above the test, where the expectation cites its document. */
+  source: string | null;
+}
+
 /** An environment variable as shown to the UI. Sensitive values are never included. */
 export interface SecretMeta {
   key: string;

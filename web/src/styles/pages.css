@@ -748,3 +748,90 @@ table.runs .num {
 .fold-item > .md {
   padding: 0 4px 14px 22px;
 }
+
+/* 테스트 케이스 tab: a selection bar, then one collapsible card per feature. */
+.case-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 4px;
+}
+.case-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+  min-width: 96px;
+}
+.case-search {
+  width: min(320px, 100%);
+}
+.case-group > summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.case-group > summary::-webkit-details-marker {
+  display: none;
+}
+.case-group > summary .icon {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.12s;
+}
+.case-group[open] > summary .icon {
+  transform: rotate(90deg);
+}
+.case-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.case-list li + li {
+  border-top: 1px solid var(--line);
+}
+.case-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+.case-row:hover {
+  background: var(--sunken);
+}
+.case-row input {
+  margin-top: 3px;
+}
+.case-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.case-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.case-source {
+  color: var(--muted);
+  font-size: 12px;
+}
+.case-file {
+  flex: none;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.case-error {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  max-height: 160px;
+  overflow: auto;
+}

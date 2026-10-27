@@ -22,6 +22,8 @@ export interface LaunchOptions {
   token: string;
   grep?: string;
   file?: string;
+  /** Exactly these tests (file + line), instead of everything. */
+  tests?: { file: string; line: number }[];
   headed?: boolean;
 }
 
@@ -36,6 +38,7 @@ export function launchPlaywright(o: LaunchOptions): ChildProcess {
   if (o.grep) args.push('--grep', o.grep);
   if (o.headed) args.push('--headed');
   if (o.file) args.push(o.file);
+  for (const t of o.tests ?? []) args.push(`${t.file}:${t.line}`);
 
   return spawn(process.execPath, args, {
     cwd: dir,

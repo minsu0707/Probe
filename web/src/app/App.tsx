@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { boot } from '../core/socket.ts';
 import { selectService, useStore } from '../core/store.ts';
+import { CasesPage } from '../features/cases/CasesPage.tsx';
 import { LearnPage } from '../features/learn/LearnPage.tsx';
 import { MonitorPage } from '../features/monitor/MonitorPage.tsx';
 import { ResultsPage } from '../features/results/ResultsPage.tsx';
@@ -62,6 +63,8 @@ export function App() {
               <LearnPage />
             ) : route.tab === 'sessions' ? (
               <SessionsPage />
+            ) : route.tab === 'cases' ? (
+              <CasesPage />
             ) : route.tab === 'monitor' ? (
               <MonitorPage />
             ) : route.tab === 'results' ? (

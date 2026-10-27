@@ -16,6 +16,7 @@ const TAB_DEFS: TabDef[] = [
   { id: 'overview', label: '개요' },
   { id: 'learn', label: '도메인 학습', badge: (s) => (s.learning ? { live: true } : s.unlearnedDocs ? { text: String(s.unlearnedDocs) } : null) },
   { id: 'sessions', label: 'Claude 세션', badge: (s) => (s.claudeWorking ? { live: true } : null) },
+  { id: 'cases', label: '테스트 케이스' },
   { id: 'monitor', label: '실시간 모니터링', badge: (s) => (s.activeRun ? { live: true } : null) },
   { id: 'results', label: '결과 · 결함', badge: (s) => (s.openDefects ? { text: String(s.openDefects), tone: 'fail' } : null) },
 ];

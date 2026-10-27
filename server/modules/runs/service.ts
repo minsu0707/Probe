@@ -29,6 +29,7 @@ import * as repo from './repository.ts';
 export interface StartOptions {
   grep?: string;
   file?: string;
+  tests?: { file: string; line: number }[];
   headed?: boolean;
   title?: string;
 }
@@ -89,7 +90,7 @@ export function startRun(serviceId: string, opts: StartOptions = {}): RunSummary
   addLive(run);
 
   try {
-    run.proc = launchPlaywright({ serviceId, runId: summary.id, token: run.token, grep: opts.grep, file: opts.file, headed: opts.headed });
+    run.proc = launchPlaywright({ serviceId, runId: summary.id, token: run.token, grep: opts.grep, file: opts.file, tests: opts.tests, headed: opts.headed });
   } catch (e) {
     // Without this the run would sit in "starting" forever and block the next one.
     finishRun(run, 'error', `Could not start Playwright: ${e instanceof Error ? e.message : String(e)}`);

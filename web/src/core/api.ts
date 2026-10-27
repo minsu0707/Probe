@@ -2,9 +2,9 @@
  * Typed client for the Probe HTTP API. Every call returns parsed JSON (or text for the .enc
  * export) and throws `ApiError` with a message safe to show the user.
  */
-import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, UsageWindow } from '../../../shared/models.ts';
+import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, TestCase, UsageWindow } from '../../../shared/models.ts';
 
-export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, UsageWindow };
+export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, TestCase, UsageWindow };
 
 export interface McpStatus {
   installed: boolean;
@@ -91,7 +91,8 @@ export const api = {
   // runs
   runs: (serviceId?: string) => call<RunSummary[]>(`/api/runs${serviceId ? `?serviceId=${serviceId}` : ''}`),
   run: (id: string) => call<{ run: RunSummary; log: LogLine[] }>(`/api/runs/${id}`),
-  startRun: (id: string, b: { grep?: string; headed?: boolean } = {}) => call<RunSummary>(`/api/services/${id}/runs`, json('POST', b)),
+  startRun: (id: string, b: { grep?: string; tests?: { file: string; line: number }[]; title?: string; headed?: boolean } = {}) => call<RunSummary>(`/api/services/${id}/runs`, json('POST', b)),
+  testCases: (id: string) => call<{ cases: TestCase[]; errors: string[] }>(`/api/services/${id}/tests`),
   stopRun: (id: string) => call<void>(`/api/runs/${id}/stop`, json('POST')),
 
   // defects

@@ -6,6 +6,7 @@ import { notFound } from '../../core/errors.ts';
 import { runDir } from '../../config.ts';
 import type { IngestEvent } from '../../../shared/events.ts';
 import { parseBody } from '../../http/validate.ts';
+import { listTestCases } from './cases.ts';
 import { ingestEvents, ingestFrame } from './ingest.ts';
 import { activeRun, getRun, listRuns, liveFrame, runLog, startRun, stopRun } from './service.ts';
 
@@ -16,9 +17,10 @@ export const runsRoutes = new Hono()
   .get('/runs/active', (c) => c.json(activeRun(c.req.query('serviceId')) ?? null))
   .get('/runs/:id', (c) => c.json({ run: getRun(c.req.param('id')), log: runLog(c.req.param('id'), Number(c.req.query('after') ?? 0), 2000) }))
   .post('/services/:id/runs', async (c) => {
-    const body = await parseBody(c, z.object({ grep: z.string().optional(), file: z.string().optional(), headed: z.boolean().optional(), title: z.string().optional() }));
+    const body = await parseBody(c, z.object({ grep: z.string().optional(), file: z.string().optional(), tests: z.array(z.object({ file: z.string().regex(/^[\w@.\/-]+$/).refine((f) => !f.startsWith('-') && !f.includes('..')), line: z.number().int().positive() })).min(1).max(500).optional(), headed: z.boolean().optional(), title: z.string().optional() }));
     return c.json(startRun(c.req.param('id'), body), 202);
   })
+  .get('/services/:id/tests', async (c) => c.json(await listTestCases(c.req.param('id'))))
   .post('/runs/:id/stop', (c) => (stopRun(c.req.param('id')), c.body(null, 204)))
 
   // Latest browser frame. 204 means "none yet", which the UI treats as "still starting".
