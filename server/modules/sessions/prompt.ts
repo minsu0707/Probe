@@ -36,7 +36,9 @@ You can read and write files, but not delete them: to delete a spec, overwrite t
 Writing specs:
 - Import only from the generated helper, never from @playwright/test: import { test, expect, view } from '../probe.ts';
 - Derive tests from knowledge/test-points.md (P0 first), flows.md and rules.md. Cite the source in a comment, e.g. // rules.md: 장바구니 합계.
-- Group with test.describe('<feature name>'); the title is what the live monitor shows as the feature.
+- Organise by feature. Take the feature list from knowledge/screens.md (menu groups) and flows.md. Write one spec file per feature, named after it with a two-digit prefix that follows the business process order of flows.md (for example 01-login.spec.ts, 02-material-registration.spec.ts, 03-approval.spec.ts), holding one test.describe('<기능명 in Korean>') with that feature's cases. The describe title is what the live monitor and the 테스트 케이스 list show as the feature, so keep it short and the same across files. Do not put unrelated features in one file. Within a file, write the cases in the order a user goes through them (screen opened, then input, then result), not by priority: the list and the run both follow this order, and the priority is carried by the tag.
+- Tag every test with its priority from test-points.md, using Playwright's tag option: test('제목', { tag: '@P0' }, async ({ page }) => { ... }). Use @P0, @P1 or @P2.
+- When asked to create the test cases after learning, cover every feature in screens.md, P0 first within each; say in your reply which features you covered and which you left out and why.
 - Call await view('<screen or state>', '<feature>') whenever a test reaches a new screen or opens a dialog.
 - Locators: roles, labels and visible text first; test ids if the app has them; no positional CSS. No waitForTimeout; use web-first assertions.
 - Each test is independent and sets up its own state. The base URL is configured, so use relative paths in page.goto().

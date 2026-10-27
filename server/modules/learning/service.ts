@@ -17,6 +17,7 @@ import { requireClaudeReady } from '../agents/service.ts';
 import { recordUsage } from '../agents/usage.ts';
 import { listDocs, markLearned } from '../documents/service.ts';
 import { requireService } from '../services/service.ts';
+import { createSession } from '../sessions/service.ts';
 import { exploreService } from './explore.ts';
 import { countKnowledge } from './knowledge.ts';
 import { buildClaudeArgs, buildLearnPrompt } from './prompt.ts';
@@ -32,7 +33,7 @@ const children = new Map<string, ChildProcess>();
 export const listJobs = (serviceId: string, limit = 10): Job[] => repo.recent(serviceId, limit);
 export const isLearning = repo.isLearning;
 
-export async function startLearn(serviceId: string, opts: { explore?: boolean } = {}): Promise<Job> {
+export async function startLearn(serviceId: string, opts: { explore?: boolean; writeTests?: boolean } = {}): Promise<Job> {
   const service = requireService(serviceId);
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service');
   const docs = listDocs(serviceId);
@@ -98,7 +99,10 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean } 
       }
       if (countKnowledge(serviceId) === 0) return finish(id, serviceId, log, 'failed', summary, 'Claude finished but wrote no knowledge files');
       markLearned(serviceId);
+      if (opts.writeTests) log.push('이어서 Claude 세션에서 기능별 테스트 케이스를 만듭니다. 진행은 Claude 세션 탭에서 볼 수 있습니다');
       finish(id, serviceId, log, 'done', summary);
+      // After the job is closed, so a busy or signed-out Claude cannot turn a good learning run into a failed one.
+      if (opts.writeTests) void createSession(serviceId, { kind: 'write-tests', message: '학습한 내용 전체를 기능별로 나눠서 테스트 케이스를 만들어 주세요' }).catch(() => undefined);
     });
 
   };

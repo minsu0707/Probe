@@ -38,3 +38,11 @@ test('the Claude session is told when a service is read-only', () => {
   assert.match(p, /조회 전용 \(read-only\)/);
   assert.match(p, /조회 전용이라 제외/);
 });
+
+test('specs are organised by feature, numbered in process order, and tagged by priority', () => {
+  const p = buildSystemPrompt({ serviceName: 'S', baseUrl: null, envNames: [], knowledgeFiles: ['screens.md'] });
+  assert.match(p, /one spec file per feature/);
+  assert.match(p, /01-login\.spec\.ts/);
+  assert.match(p, /not by priority/);
+  assert.match(p, /tag: '@P0'/);
+});

@@ -25,6 +25,8 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
   const service = useStore((s) => s.services.find((x) => x.id === serviceId));
   /** Also walk through the live service. On by default when the service has an address. */
   const [explore, setExplore] = useState(true);
+  /** After learning, Claude writes the test cases, grouped by feature. */
+  const [writeTests, setWriteTests] = useState(true);
   const canExplore = Boolean(service?.baseUrl);
   const exploring = explore && canExplore;
   const job = liveJob ?? lastJob;
@@ -65,7 +67,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
             학습 중단
           </button>
         ) : (
-          <button className="btn btn-primary" disabled={(!docs?.length && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring }))}>
+          <button className="btn btn-primary" disabled={(!docs?.length && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring, writeTests }))}>
             <Icon name="learn" size={16} />
             {learnLabel}
           </button>
@@ -81,6 +83,14 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
               ? '로그인한 뒤 메뉴와 화면을 차례로 열어 보고(최대 약 60화면, 8분) 실제로 보이는 항목을 자료와 함께 학습합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다. 로그인에는 환경 변수의 ID/비밀번호 쌍(예: ADMIN_ID, ADMIN_PW)을 씁니다.'
               : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
           </span>
+        </span>
+      </label>
+
+      <label className="check-field explore-option">
+        <input type="checkbox" checked={writeTests} disabled={learning} onChange={(e) => setWriteTests(e.target.checked)} />
+        <span>
+          <strong>학습이 끝나면 테스트 케이스도 자동으로 만들기</strong>
+          <span className="hint">학습한 기능을 기준으로 기능별 테스트를 작성하고 우선순위(P0~P2)를 붙입니다. 결과는 테스트 케이스 탭에서 확인하고 골라서 실행할 수 있습니다.</span>
         </span>
       </label>
 
