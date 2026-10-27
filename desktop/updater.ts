@@ -18,7 +18,9 @@ import { briefError, reduceUpdate, type UpdateEvent } from './update-state.ts';
 const { autoUpdater } = electronUpdater;
 
 const FIRST_CHECK_DELAY_MS = 15_000; // let the window and server settle first
-const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
+const CHECK_EVERY_MS = 30 * 60 * 1000;
+/** Coming back to the window checks too (a release may have landed while it sat in the background), but not more often than this. */
+const FOCUS_CHECK_GAP_MS = 5 * 60 * 1000;
 const IDLE_POLL_MS = 30_000;
 /** Lets the page paint its "installing" screen before the window goes away. */
 const PAINT_DELAY_MS = 1500;
@@ -50,7 +52,7 @@ function apply(ev: UpdateEvent): void {
 export const updateState = (): UpdateState => state;
 
 export async function checkForUpdate(): Promise<UpdateState> {
-  if (!enabled || state.phase === 'checking' || state.phase === 'downloading') return state;
+  if (!enabled || state.phase === 'checking' || state.phase === 'downloading' || state.phase === 'ready' || state.phase === 'installing') return state;
   apply({ type: 'checking' });
   try {
     await autoUpdater.checkForUpdates();
@@ -143,4 +145,10 @@ export function initUpdater(opts: { window: () => BrowserWindow | null; confirmI
   announceUpdateDone();
   setTimeout(() => void checkForUpdate(), FIRST_CHECK_DELAY_MS);
   setInterval(() => void checkForUpdate(), CHECK_EVERY_MS);
+  let lastCheckAt = Date.now();
+  app.on('browser-window-focus', () => {
+    if (Date.now() - lastCheckAt < FOCUS_CHECK_GAP_MS) return;
+    lastCheckAt = Date.now();
+    void checkForUpdate();
+  });
 }
