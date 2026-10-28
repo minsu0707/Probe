@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import type { Defect } from '../../core/api.ts';
 import { useStore } from '../../core/store.ts';
 import { CAUSE_LABEL } from '../../core/format.ts';
@@ -39,26 +39,24 @@ export function DefectList({ serviceId }: { serviceId: string }) {
 
   return (
     <>
-      <div className="filters" role="group" aria-label="결함 필터">
-        {FILTERS.map(([f, label]) => (
-          <Fragment key={f}>
-            <button className={`filter${filter === f ? ' on' : ''}`} aria-pressed={filter === f} onClick={() => setFilter(f)}>
+      <div className="defect-bar">
+        <div className="tabs-text" role="group" aria-label="결함 필터">
+          {FILTERS.map(([f, label]) => (
+            <button key={f} className={filter === f ? 'on' : ''} aria-pressed={filter === f} onClick={() => setFilter(f)}>
               {label} <span className="tabular">{mine.filter((d) => matches(d, f)).length}</span>
             </button>
-            {f === 'all' && <span className="filter-sep" aria-hidden="true" />}
-          </Fragment>
-        ))}
-      </div>
-
-      <div className="filters" role="group" aria-label="원인 추정 필터">
-        {(['all', 'app', 'test', 'env', 'unknown'] as const).map((c) => (
-          <Fragment key={c}>
-            <button className={`filter${cause === c ? ' on' : ''}`} aria-pressed={cause === c} onClick={() => setCause(c)}>
-              {c === 'all' ? '원인 전체' : CAUSE_LABEL[c]} <span className="tabular">{mine.filter((d) => matches(d, filter) && (c === 'all' || d.cause === c)).length}</span>
-            </button>
-            {c === 'all' && <span className="filter-sep" aria-hidden="true" />}
-          </Fragment>
-        ))}
+          ))}
+        </div>
+        <label className="inline-select">
+          <span className="muted small">원인 추정</span>
+          <select value={cause} onChange={(e) => setCause(e.target.value as Defect['cause'] | 'all')}>
+            {(['all', 'app', 'test', 'env', 'unknown'] as const).map((c) => (
+              <option key={c} value={c}>
+                {c === 'all' ? '전체' : CAUSE_LABEL[c]} ({mine.filter((d) => matches(d, filter) && (c === 'all' || d.cause === c)).length})
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {shown.length === 0 ? (

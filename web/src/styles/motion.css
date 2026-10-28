@@ -133,9 +133,6 @@
 .filter:hover:not(.on) {
   transform: translateY(-1px);
 }
-.defect-item:hover:not(.selected) {
-  transform: translateX(2px);
-}
 .svc:hover:not(.svc-on) {
   transform: translateX(2px);
 }

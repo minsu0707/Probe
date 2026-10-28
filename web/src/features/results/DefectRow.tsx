@@ -1,29 +1,25 @@
 import { explainCause } from '../../../../shared/cause.ts';
 import { api, type Defect } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
-import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, severityTone } from '../../core/format.ts';
+import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago } from '../../core/format.ts';
 import { attempt } from '../../core/store.ts';
-import { Icon, Pill } from '../../ui/index.ts';
+import { Icon } from '../../ui/index.ts';
 import { AnswerPanel } from './AnswerPanel.tsx';
 import { analysisRequest } from './analysis.ts';
 
-const causeTone = (c: Defect['cause']) => (c === 'app' ? 'accent' : c === 'env' ? 'warn' : 'neutral');
-
-/** One line-pair in the list: title, then where it is and how it stands. Selecting it shows the detail beside the list. */
+/** One row in the list: severity dot and title, where it is, and one quiet line of facts. */
 export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Defect; selected: boolean; onSelect: () => void; now: number }) {
   const closed = d.status === 'fixed' || d.status === 'false_positive';
+  const facts = [d.status !== 'candidate' ? DEFECT_STATUS_LABEL[d.status] : null, d.cause !== 'unknown' ? CAUSE_LABEL[d.cause] : null, d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회` : null, ago(d.lastSeen, now)].filter(Boolean);
   return (
-    <li className={`defect-item sev-${d.severity}${closed ? ' defect-done' : ''}${selected ? ' selected' : ''}`}>
+    <li className={`defect-item${closed ? ' defect-done' : ''}${selected ? ' selected' : ''}`}>
       <button onClick={onSelect} aria-current={selected}>
-        <span className="defect-title">{d.title}</span>
-        <span className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</span>
-        <span className="defect-meta">
-          <Pill tone={severityTone(d.severity)}>{SEVERITY_LABEL[d.severity]}</Pill>
-          {d.cause !== 'unknown' && <Pill tone={causeTone(d.cause)}>{CAUSE_LABEL[d.cause]}</Pill>}
-          <Pill tone={d.status === 'confirmed' ? 'accent' : d.status === 'fixed' ? 'pass' : 'neutral'}>{DEFECT_STATUS_LABEL[d.status]}</Pill>
-          {d.occurrences > 1 && <span className="muted small tabular">{d.occurrences}회</span>}
-          <span className="muted small">{ago(d.lastSeen, now)}</span>
+        <span className="defect-title">
+          <span className={`sev sev-${d.severity}`} role="img" aria-label={`심각도 ${SEVERITY_LABEL[d.severity]}`} title={`심각도 ${SEVERITY_LABEL[d.severity]}`} />
+          {d.title}
         </span>
+        <span className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</span>
+        <span className="muted small">{facts.join(' · ')}</span>
       </button>
     </li>
   );
@@ -44,22 +40,14 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
       <div className="defect-detail-head">
         <h3>{d.title}</h3>
         <div className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</div>
-        <div className="defect-meta">
-          <Pill tone={severityTone(d.severity)}>{SEVERITY_LABEL[d.severity]}</Pill>
-          <Pill tone={d.status === 'confirmed' ? 'accent' : d.status === 'fixed' ? 'pass' : 'neutral'}>{DEFECT_STATUS_LABEL[d.status]}</Pill>
-          {d.answer && <Pill tone="accent">답변함</Pill>}
-          {d.occurrences > 1 && <span className="muted small tabular">{d.occurrences}회 발생</span>}
+        <div className="muted small">
+          {[SEVERITY_LABEL[d.severity], DEFECT_STATUS_LABEL[d.status], d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회 발생` : null].filter(Boolean).join(' · ')}
         </div>
       </div>
 
       <div className="actions">
-        <button className="btn btn-sm" onClick={() => void analyze()} title="실패 내용을 Claude 세션으로 보내 테스트 문제인지 앱 문제인지 판단하게 합니다">
-          <Icon name="learn" size={14} />
-          Claude에게 원인 분석 맡기기
-        </button>
         {d.status !== 'confirmed' && (
           <button className="btn btn-primary btn-sm" onClick={() => update({ status: 'confirmed' })}>
-            <Icon name="check" size={14} />
             결함 확정
           </button>
         )}
@@ -78,6 +66,9 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
             다시 열기
           </button>
         )}
+        <button className="btn btn-quiet btn-sm" onClick={() => void analyze()} title="실패 내용을 Claude 세션으로 보내 테스트 문제인지 앱 문제인지 판단하게 합니다">
+          Claude에게 원인 분석 맡기기
+        </button>
         <label className="inline-select">
           <span className="muted small">심각도</span>
           <select value={d.severity} onChange={(e) => update({ severity: e.target.value as Defect['severity'] })}>
@@ -90,7 +81,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
 
       <div className="cause">
         <p className="muted small">
-          <Pill tone={causeTone(d.cause)}>{CAUSE_LABEL[d.cause]}</Pill> {guess.why ?? CAUSE_HINT[d.cause]}
+          <strong>{CAUSE_LABEL[d.cause]}</strong> · {guess.why ?? CAUSE_HINT[d.cause]}
         </p>
         {guess.matched && (
           <p className="muted small">

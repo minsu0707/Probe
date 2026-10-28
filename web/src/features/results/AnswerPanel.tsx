@@ -39,9 +39,9 @@ export function AnswerPanel({ defect: d }: { defect: Defect }) {
   return (
     <section className="answer" aria-label="이 결과를 판단해 주세요">
       <h4>화면을 보고 판단해 주세요</h4>
-      <div className="answer-choices" role="radiogroup">
+      <div className="seg-control answer-choices" role="radiogroup">
         {CHOICES.map((c) => (
-          <button key={c.value} className={`answer-choice${verdict === c.value ? ' on' : ''}`} role="radio" aria-checked={verdict === c.value} title={c.hint} onClick={() => setVerdict(c.value)}>
+          <button key={c.value} className={verdict === c.value ? 'on' : ''} role="radio" aria-checked={verdict === c.value} title={c.hint} onClick={() => setVerdict(c.value)}>
             {c.label}
           </button>
         ))}
