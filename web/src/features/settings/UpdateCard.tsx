@@ -25,7 +25,10 @@ export function UpdateRows({ version }: { version: string | undefined }) {
     update.checkedAt ? `최신 버전 · ${when(update.checkedAt)} 확인` : '아직 확인 전';
 
   return (
-    <Row title={`버전 ${current}`} desc={<>{line}. 새 버전은 내려받아 두고, 설치는 자동 설치 설정에 따릅니다.</>}>
+    <Row title={`버전 ${current}`} desc={<>
+      {line}
+      <br />새 버전은 내려받아 두고, 설치는 자동 설치 설정에 따릅니다.
+    </>}>
       {update.phase === 'ready' ? (
         <button className="btn btn-primary" onClick={() => void attempt(async () => installUpdate())}>
           재시작해서 설치
