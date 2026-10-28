@@ -51,7 +51,7 @@ function SessionsBody({ serviceId, serviceName, conventions, knowledgeCount }: {
             컨벤션{conventions.trim() ? ' · 적용 중' : ''}
           </button>
           <button className="btn btn-primary" onClick={() => setPicked(NEW)} disabled={!claudeReady}>
-            <Icon name="plus" size={16} />새 세션
+            새 세션
           </button>
         </div>
       </div>

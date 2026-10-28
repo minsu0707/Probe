@@ -3,6 +3,7 @@
  * export) and throws `ApiError` with a message safe to show the user.
  */
 import type { SessionPrefs } from '../../../shared/session-prefs.ts';
+import type { AnswerVerdict } from '../../../shared/models.ts';
 import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, QueuedMessage, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, TestCase, UsageWindow } from '../../../shared/models.ts';
 
 export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, QueuedMessage, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, TestCase, UsageWindow };
@@ -107,5 +108,7 @@ export const api = {
 
   // defects
   defects: (serviceId?: string) => call<Defect[]>(`/api/defects${serviceId ? `?serviceId=${serviceId}` : ''}`),
+  answerDefect: (id: string, b: { verdict: AnswerVerdict; note?: string }) => call<Defect>(`/api/defects/${id}/answer`, json('PUT', b)),
+  clearAnswer: (id: string) => call<Defect>(`/api/defects/${id}/answer`, json('DELETE')),
   updateDefect: (id: string, b: { status?: DefectStatus; severity?: Severity; title?: string }) => call<Defect>(`/api/defects/${id}`, json('PATCH', b)),
 };

@@ -13,17 +13,20 @@ const after = (args: string[], flag: string) => args[args.indexOf(flag) + 1];
 test('the choice is kept per service and starts from the safe defaults', () => {
   const a = services.createService({ name: 'PrefA' });
   const b = services.createService({ name: 'PrefB' });
-  assert.deepEqual(prefs.getPrefs(a.id), { mode: 'acceptEdits', model: 'default', effort: 'default' });
+  assert.deepEqual(prefs.getPrefs(a.id), { mode: 'acceptEdits', model: 'sonnet', effort: 'medium' });
   prefs.setPrefs(a.id, { model: 'opus' });
   prefs.setPrefs(a.id, { mode: 'plan' });
-  assert.deepEqual(prefs.getPrefs(a.id), { mode: 'plan', model: 'opus', effort: 'default' }, 'a later change keeps the earlier ones');
-  assert.equal(prefs.getPrefs(b.id).model, 'default', 'another service is untouched');
+  assert.deepEqual(prefs.getPrefs(a.id), { mode: 'plan', model: 'opus', effort: 'medium' }, 'a later change keeps the earlier ones');
+  assert.equal(prefs.getPrefs(b.id).model, 'sonnet', 'another service is untouched');
 });
 
 test('mode, model and effort reach the command line only when chosen', () => {
   const plain = buildArgs(base);
   assert.equal(after(plain, '--permission-mode'), 'acceptEdits');
-  assert.ok(!plain.includes('--model') && !plain.includes('--effort'));
+  assert.equal(after(plain, '--model'), 'sonnet');
+  assert.equal(after(plain, '--effort'), 'medium');
+  const cli = buildArgs({ ...base, prefs: { mode: 'acceptEdits', model: 'default', effort: 'default' } });
+  assert.ok(!cli.includes('--model') && !cli.includes('--effort'), '"Default" leaves it to the CLI');
   const chosen = buildArgs({ ...base, prefs: { mode: 'plan', model: 'sonnet', effort: 'high' } });
   assert.equal(after(chosen, '--permission-mode'), 'plan');
   assert.equal(after(chosen, '--model'), 'sonnet');

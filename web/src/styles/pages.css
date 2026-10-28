@@ -1607,3 +1607,52 @@ table.runs .num {
   max-width: 260px;
   min-height: 3.6em;
 }
+
+/* the owner's verdict on a failure */
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--sunken);
+}
+.answer h4 {
+  margin: 0;
+  font-size: 13px;
+}
+.answer-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.answer-choice {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.answer-choice:hover {
+  background: var(--accent-soft);
+}
+.answer-choice.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.answer-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.answer-foot .muted {
+  margin-right: auto;
+}

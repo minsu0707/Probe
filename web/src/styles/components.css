@@ -101,6 +101,15 @@
 .btn-danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--fail) 88%, #000);
 }
+/* Stopping something running: an outline that turns red on hover, not a red block that shouts all the time. */
+.btn-stop {
+  color: var(--fail);
+  border-color: color-mix(in srgb, var(--fail) 45%, var(--line));
+  background: transparent;
+}
+.btn-stop:hover:not(:disabled) {
+  background: var(--fail-soft);
+}
 .btn-danger-quiet {
   color: var(--fail);
   border-color: color-mix(in srgb, var(--fail) 40%, var(--line));

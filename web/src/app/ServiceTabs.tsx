@@ -57,8 +57,7 @@ export function ServiceTabs({ service, tab }: { service: ServiceOverview; tab: T
 
       <div className="spacer" />
       {active ? (
-        <button className="btn btn-danger" onClick={() => void attempt(() => api.stopRun(active.id))}>
-          <Icon name="stop" size={14} />
+        <button className="btn btn-stop" onClick={() => void attempt(() => api.stopRun(active.id))}>
           중단
         </button>
       ) : (

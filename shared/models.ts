@@ -166,6 +166,18 @@ export interface Defect {
   cause: DefectCause;
   /** Failed after another test in the same file had already failed in that run: likely a knock-on of it. */
   followsId: string | null;
+  /** The owner's answer to "is this a bug?", kept for this failure and shown to every Claude session of the service. */
+  answer: DefectAnswer | null;
+}
+
+/** What the owner decided after looking at the screenshot. */
+export type AnswerVerdict = 'app' | 'intended' | 'test' | 'env';
+
+export interface DefectAnswer {
+  verdict: AnswerVerdict;
+  /** The owner's own words: why, or what the right behaviour is. */
+  note: string;
+  answeredAt: number;
 }
 
 export type DefectCause = 'test' | 'app' | 'env' | 'unknown';

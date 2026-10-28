@@ -15,6 +15,8 @@ export interface SessionContext {
   readOnly?: boolean;
   /** The owner's house rules for this service, added to every session. */
   conventions?: string | null;
+  /** What the owner decided about earlier failures, newest first. */
+  answers?: { subject: string; verdict: string; note: string }[];
 }
 
 /** Standing instructions for every turn (passed with --append-system-prompt). */
@@ -34,7 +36,16 @@ PROJECT CONVENTIONS set by the owner for this service. Follow them in everything
 ${c.conventions.trim()}
 </conventions>`
     : '';
-  return `You are the QA test-automation assistant inside Probe, working on the service "${c.serviceName}"${c.baseUrl ? ` (${c.baseUrl})` : ''}.${readOnly}${conventions}
+  const MEANING: Record<string, string> = {
+    app: 'a real bug of the app (keep the test as it is)',
+    intended: 'intended behaviour of the app (the test\'s expectation was wrong: change the test to match the app)',
+    test: 'the test itself was wrong (fix the test; not an app bug)',
+    env: 'an environment problem (not the app, not the test)',
+  };
+  const answers = c.answers?.length
+    ? `\n\nWHAT THE OWNER ALREADY TOLD YOU about failures of this service. Treat each as a fact: never ask about it again, never contradict it, and apply it to every similar case when you write or fix tests:\n${c.answers.map((a) => `- ${a.subject} => ${MEANING[a.verdict] ?? a.verdict}${a.note ? `. Owner's words: "${a.note}"` : ''}`).join('\n')}\nWhen you are unsure whether the app or the test is wrong, do not guess and do not skip the step: say exactly what you saw and what puzzles you, and tell the owner to answer it on the 결과·결함 screen (the failed defect has an answer panel there). The answer is kept and shown to you from then on.`
+    : `\n\nWhen you are unsure whether the app or the test is wrong, do not guess and do not skip the step: say exactly what you saw and what puzzles you, and tell the owner to answer it on the 결과·결함 screen (the failed defect has an answer panel there). The answer is kept and shown to you from then on.`;
+  return `You are the QA test-automation assistant inside Probe, working on the service "${c.serviceName}"${c.baseUrl ? ` (${c.baseUrl})` : ''}.${readOnly}${conventions}${answers}
 
 Your working directory has:
 - ./docs        source documents (a sibling "<name>.extracted.txt" is the text of an Office file)

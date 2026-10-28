@@ -18,7 +18,8 @@ export interface SessionPrefs {
   effort: SessionEffort;
 }
 
-export const DEFAULT_PREFS: SessionPrefs = { mode: 'acceptEdits', model: 'default', effort: 'default' };
+/** What a service starts with until the owner chooses: Sonnet at medium effort ("default" in the menus means the CLI's own setting). */
+export const DEFAULT_PREFS: SessionPrefs = { mode: 'acceptEdits', model: 'sonnet', effort: 'medium' };
 
 export const MODE_INFO: Record<SessionMode, { label: string; tip: string; risky?: boolean }> = {
   acceptEdits: { label: 'Accept edits', tip: '파일 읽기·쓰기는 묻지 않고 처리합니다. 셸 명령과 웹 접근은 막혀 있습니다. 기본값입니다.' },
@@ -28,7 +29,7 @@ export const MODE_INFO: Record<SessionMode, { label: string; tip: string; risky?
 };
 
 export const MODEL_INFO: Record<SessionModel, { label: string; tip: string }> = {
-  default: { label: 'Default', tip: 'Claude 설정의 기본 모델을 씁니다.' },
+  default: { label: 'Default', tip: 'Probe가 모델을 지정하지 않고 Claude CLI의 설정을 따릅니다.' },
   fable: { label: 'Fable', tip: '가장 높은 성능의 모델입니다. 복잡한 E2E 시나리오처럼 어려운 작업에 적합합니다.' },
   opus: { label: 'Opus', tip: '깊이 있는 추론이 필요한 작업에 좋은 고성능 모델입니다.' },
   sonnet: { label: 'Sonnet', tip: '속도와 성능의 균형이 좋은 모델입니다. 일반적인 테스트 작성에 적합합니다.' },

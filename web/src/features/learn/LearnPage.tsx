@@ -62,8 +62,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
           <p className="muted">{serviceName}의 기획서, 매뉴얼, 화면 설계서를 읽고 테스트에 쓸 지식 문서로 정리합니다.</p>
         </div>
         {learning ? (
-          <button className="btn btn-danger" onClick={() => void attempt(() => api.cancelLearn(serviceId))}>
-            <Icon name="stop" size={14} />
+          <button className="btn btn-stop" onClick={() => void attempt(() => api.cancelLearn(serviceId))}>
             학습 중단
           </button>
         ) : (

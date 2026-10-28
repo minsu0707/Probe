@@ -55,8 +55,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
       <div className="panel-head">
         <h2 className="ellipsis">{session.title}</h2>
         {running ? (
-          <button className="btn btn-danger btn-sm" onClick={() => setConfirmStop(true)}>
-            <Icon name="stop" size={12} />
+          <button className="btn btn-stop btn-sm" onClick={() => setConfirmStop(true)}>
             중단
           </button>
         ) : (

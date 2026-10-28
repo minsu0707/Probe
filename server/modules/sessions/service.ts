@@ -26,6 +26,7 @@ import { parseStreamLine } from '../learning/stream.ts';
 import { listSecrets } from '../secrets/service.ts';
 import { requireService } from '../services/service.ts';
 import { DEFAULT_PREFS, type SessionPrefs } from '../../../shared/session-prefs.ts';
+import { recentAnswers } from '../defects/service.ts';
 import { getPrefs } from './prefs.ts';
 import { buildSystemPrompt, openingMessage } from './prompt.ts';
 import * as repo from './repository.ts';
@@ -215,7 +216,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
 
 function contextFor(serviceId: string) {
   const service = requireService(serviceId);
-  return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name), readOnly: service.readOnly, conventions: service.conventions };
+  return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name), readOnly: service.readOnly, conventions: service.conventions, answers: recentAnswers(serviceId, 40) };
 }
 
 /** Probe's own MCP server for this session, so run_tests works whichever Claude login is in use. It must not open a browser tab: the app is already open. */

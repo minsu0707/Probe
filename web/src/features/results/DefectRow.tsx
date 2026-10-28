@@ -4,6 +4,7 @@ import { goService } from '../../app/router.ts';
 import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, severityTone } from '../../core/format.ts';
 import { attempt } from '../../core/store.ts';
 import { Icon, Pill } from '../../ui/index.ts';
+import { AnswerPanel } from './AnswerPanel.tsx';
 import { analysisRequest } from './analysis.ts';
 
 const causeTone = (c: Defect['cause']) => (c === 'app' ? 'accent' : c === 'env' ? 'warn' : 'neutral');
@@ -46,6 +47,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
         <div className="defect-meta">
           <Pill tone={severityTone(d.severity)}>{SEVERITY_LABEL[d.severity]}</Pill>
           <Pill tone={d.status === 'confirmed' ? 'accent' : d.status === 'fixed' ? 'pass' : 'neutral'}>{DEFECT_STATUS_LABEL[d.status]}</Pill>
+          {d.answer && <Pill tone="accent">답변함</Pill>}
           {d.occurrences > 1 && <span className="muted small tabular">{d.occurrences}회 발생</span>}
         </div>
       </div>
@@ -96,6 +98,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
           </p>
         )}
       </div>
+      <AnswerPanel key={`${d.id}:${d.answer?.answeredAt ?? 0}`} defect={d} />
       {followedFrom && <p className="muted small">같은 파일에서 먼저 실패한 “{followedFrom}” 뒤에 이어서 실패했습니다. 앞의 원인을 고치면 같이 해결될 수 있습니다.</p>}
 
       {d.screenshot && (

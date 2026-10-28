@@ -79,6 +79,18 @@ export const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS defects_fp ON defects(service_id, fingerprint);
 
+  -- What the owner told Probe about a failure ("this is intended", "the test is wrong"). Keyed by
+  -- the failure's fingerprint so the answer holds for every later recurrence, and fed to Claude.
+  CREATE TABLE IF NOT EXISTS defect_answers (
+    service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    fingerprint TEXT NOT NULL,
+    verdict TEXT NOT NULL,
+    note TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    answered_at INTEGER NOT NULL,
+    PRIMARY KEY (service_id, fingerprint)
+  );
+
   -- Small app-wide preferences (e.g. which Claude profile to use).
   CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,

@@ -1,5 +1,5 @@
 import { all, get, run } from '../../core/db.ts';
-import type { Defect } from '../../../shared/models.ts';
+import type { AnswerVerdict, Defect, DefectAnswer } from '../../../shared/models.ts';
 import { guessCause } from './classify.ts';
 
 interface Row {
@@ -21,7 +21,7 @@ interface Row {
   follows_id: string | null;
 }
 
-const toDefect = (r: Row): Defect => ({
+const toDefect = (r: Row, answer: DefectAnswer | null = null): Defect => ({
   id: r.id,
   serviceId: r.service_id,
   runId: r.run_id,
@@ -39,12 +39,40 @@ const toDefect = (r: Row): Defect => ({
   lastSeen: r.last_seen,
   cause: guessCause(r.error),
   followsId: r.follows_id,
+  answer,
 });
+
+interface AnswerRow {
+  service_id: string;
+  fingerprint: string;
+  verdict: AnswerVerdict;
+  note: string;
+  subject: string;
+  answered_at: number;
+}
+const toAnswer = (a: AnswerRow): DefectAnswer => ({ verdict: a.verdict, note: a.note, answeredAt: a.answered_at });
+export const answerFor = (serviceId: string, fingerprint: string): DefectAnswer | null => {
+  const row = get<AnswerRow>('SELECT * FROM defect_answers WHERE service_id = ? AND fingerprint = ?', serviceId, fingerprint);
+  return row ? toAnswer(row) : null;
+};
 
 export const findById = (id: string): Defect | undefined => {
   const row = get<Row>('SELECT * FROM defects WHERE id = ?', id);
-  return row && toDefect(row);
+  return row && toDefect(row, answerFor(row.service_id, row.fingerprint));
 };
+
+export function saveAnswer(serviceId: string, fingerprint: string, a: { verdict: AnswerVerdict; note: string; subject: string; now: number }): void {
+  run(
+    `INSERT INTO defect_answers (service_id, fingerprint, verdict, note, subject, answered_at) VALUES (?,?,?,?,?,?)
+     ON CONFLICT(service_id, fingerprint) DO UPDATE SET verdict = excluded.verdict, note = excluded.note, subject = excluded.subject, answered_at = excluded.answered_at`,
+    serviceId, fingerprint, a.verdict, a.note, a.subject, a.now,
+  );
+}
+export const removeAnswer = (serviceId: string, fingerprint: string): void => void run('DELETE FROM defect_answers WHERE service_id = ? AND fingerprint = ?', serviceId, fingerprint);
+
+/** The newest answers of a service, for Claude's standing instructions. */
+export const recentAnswers = (serviceId: string, limit: number): { subject: string; verdict: AnswerVerdict; note: string }[] =>
+  all<AnswerRow>('SELECT * FROM defect_answers WHERE service_id = ? ORDER BY answered_at DESC LIMIT ?', serviceId, limit).map((a) => ({ subject: a.subject, verdict: a.verdict, note: a.note }));
 
 /** The defect a new identical failure should be merged into: still open or dismissed as a false alarm (so it stays dismissed), most recently seen. */
 export const findOpenByFingerprint = (serviceId: string, fingerprint: string): Defect | undefined => {
@@ -61,10 +89,12 @@ export function list(filter: { serviceId?: string; status?: string; runId?: stri
       args.push(value);
     }
   }
-  return all<Row>(`SELECT * FROM defects ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY last_seen DESC LIMIT ${limit}`, ...args).map(toDefect);
+  const rows = all<Row>(`SELECT * FROM defects ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY last_seen DESC LIMIT ${limit}`, ...args);
+  const answers = new Map(all<AnswerRow>('SELECT * FROM defect_answers').map((a) => [`${a.service_id}|${a.fingerprint}`, toAnswer(a)]));
+  return rows.map((r) => toDefect(r, answers.get(`${r.service_id}|${r.fingerprint}`) ?? null));
 }
 
-export type NewDefect = Omit<Defect, 'occurrences' | 'cause' | 'followsId'> & { followsId?: string | null };
+export type NewDefect = Omit<Defect, 'occurrences' | 'cause' | 'followsId' | 'answer'> & { followsId?: string | null };
 
 export function insert(d: NewDefect): void {
   run(
