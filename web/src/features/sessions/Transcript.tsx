@@ -15,6 +15,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
   const [draft, setDraft] = useDraft(`session:${session.id}`);
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmStop, setConfirmStop] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
   /** False once the reader scrolls up: new messages stop pulling the view down, and a jump button appears. */
   const [atBottom, setAtBottom] = useState(true);
@@ -54,7 +55,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
       <div className="panel-head">
         <h2 className="ellipsis">{session.title}</h2>
         {running ? (
-          <button className="btn btn-danger btn-sm" onClick={() => void attempt(() => api.cancelSession(session.id))}>
+          <button className="btn btn-danger btn-sm" onClick={() => setConfirmStop(true)}>
             <Icon name="stop" size={12} />
             중단
           </button>
@@ -64,6 +65,19 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
           </button>
         )}
       </div>
+
+      {confirmStop && (
+        <ConfirmModal
+          title="작업 중단"
+          confirm="중단"
+          onConfirm={async () => {
+            await attempt(() => api.cancelSession(session.id));
+          }}
+          onClose={() => setConfirmStop(false)}
+        >
+          Claude의 작업을 중단합니다. 진행 중이던 응답은 끊기고, 예약해 둔 메시지가 있으면 자동으로 보내지 않고 멈춰 둡니다.
+        </ConfirmModal>
+      )}
 
       {confirmDelete && (
         <ConfirmModal

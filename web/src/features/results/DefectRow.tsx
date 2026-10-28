@@ -1,3 +1,4 @@
+import { explainCause } from '../../../../shared/cause.ts';
 import { api, type Defect } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
 import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, severityTone } from '../../core/format.ts';
@@ -31,6 +32,7 @@ export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Def
 export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; followedFrom?: string }) {
   const update = (patch: Parameters<typeof api.updateDefect>[1]) => void attempt(() => api.updateDefect(d.id, patch));
   const closed = d.status === 'fixed' || d.status === 'false_positive';
+  const guess = explainCause(d.error);
   const analyze = async () => {
     if (await attempt(() => api.createSession(d.serviceId, { kind: 'chat', message: analysisRequest(d, followedFrom) }))) goService(d.serviceId, 'sessions');
   };
@@ -84,9 +86,16 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
         </label>
       </div>
 
-      <p className="muted small">
-        <Pill tone={causeTone(d.cause)}>{CAUSE_LABEL[d.cause]}</Pill> {CAUSE_HINT[d.cause]} 오류 문구만 보고 추정한 것이라 틀릴 수 있습니다.
-      </p>
+      <div className="cause">
+        <p className="muted small">
+          <Pill tone={causeTone(d.cause)}>{CAUSE_LABEL[d.cause]}</Pill> {guess.why ?? CAUSE_HINT[d.cause]}
+        </p>
+        {guess.matched && (
+          <p className="muted small">
+            판단 근거: 오류 문구의 <code>{guess.matched}</code> 부분. 오류 문구만 보고 추정한 것이라 틀릴 수 있습니다.
+          </p>
+        )}
+      </div>
       {followedFrom && <p className="muted small">같은 파일에서 먼저 실패한 “{followedFrom}” 뒤에 이어서 실패했습니다. 앞의 원인을 고치면 같이 해결될 수 있습니다.</p>}
 
       {d.screenshot && (

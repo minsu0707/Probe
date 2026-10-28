@@ -43,3 +43,11 @@ test('short password names are sensitive, ordinary names containing "pw" are not
   for (const k of ['ADMIN_PW', 'pw', 'DB_PW_PROD', 'USER_PSWD', 'ADMIN_PASSWORD']) assert.equal(isSensitiveKey(k), true, k);
   for (const k of ['ADMIN_ID', 'BASE_URL', 'POWER_USER', 'NEWS_PAGE']) assert.equal(isSensitiveKey(k), false, k);
 });
+
+test('the explanation names the part of the error that decided the cause', async () => {
+  const { explainCause } = await import('../shared/cause.ts');
+  const g = explainCause('Error: strict mode violation: getByText("저장") resolved to 3 elements');
+  assert.equal(g.cause, 'test');
+  assert.equal(g.matched, 'strict mode violation');
+  assert.equal(explainCause('something odd').matched, null);
+});

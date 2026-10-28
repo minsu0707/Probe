@@ -4,6 +4,7 @@
  * across runs possible.
  */
 import { createHash } from 'node:crypto';
+import { explainCause } from '../../../shared/cause.ts';
 import type { DefectCause, Severity } from '../../../shared/models.ts';
 
 /** Playwright colours its error text; strip the escape codes before storing or hashing. */
@@ -31,12 +32,7 @@ export function guessSeverity(error: string): Severity {
  *   test     the test itself is the likely culprit: an ambiguous or missing locator, a wait that ran out
  *   app      the page answered, but with something other than the expected value (Expected ... Received)
  */
-export function guessCause(error: string): DefectCause {
-  if (/blockedbyclient|net::ERR_|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ERR_NAME_NOT_RESOLVED|browser has been closed|Target (?:page|closed)|status(?: code)?:?\s*50[234]/i.test(error)) return 'env';
-  if (/strict mode violation|element\(s\) not found|Test timeout of|is not a function|SyntaxError|Cannot find (?:module|name)|is not defined/i.test(error)) return 'test';
-  if (/Received/.test(error)) return 'app';
-  return 'unknown';
-}
+export const guessCause = (error: string): DefectCause => explainCause(error).cause;
 
 /**
  * Reduce the error's first line to its "shape" by masking numbers and hex addresses, so
