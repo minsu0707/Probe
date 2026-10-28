@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 export const TABS = ['overview', 'learn', 'sessions', 'cases', 'monitor', 'results'] as const;
 export type Tab = (typeof TABS)[number];
 
-export const SETTINGS_SECTIONS = ['agent', 'security', 'browser', 'general', 'integrations'] as const;
+export const SETTINGS_SECTIONS = ['agent', 'security', 'backup', 'browser', 'general', 'integrations'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export type Route =

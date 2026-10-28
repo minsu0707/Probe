@@ -3,6 +3,7 @@ import { api } from '../../core/api.ts';
 import { setTheme, useTheme } from '../../core/theme.ts';
 import { settingsHref, SETTINGS_SECTIONS, type SettingsSection } from '../../app/router.ts';
 import { Icon, type IconName } from '../../ui/index.ts';
+import { BackupSection } from './BackupSection.tsx';
 import { ClaudeAgentCard } from './ClaudeAgentCard.tsx';
 import { McpRows } from './McpCard.tsx';
 import { Group, Row } from './Rows.tsx';
@@ -11,6 +12,7 @@ import { AutoInstallRow, UpdateRows } from './UpdateCard.tsx';
 const SECTIONS: Record<SettingsSection, { label: string; icon: IconName }> = {
   agent: { label: '에이전트', icon: 'learn' },
   security: { label: '자격 증명 · 보안', icon: 'lock' },
+  backup: { label: '백업 · 복원', icon: 'download' },
   browser: { label: '브라우저', icon: 'monitor' },
   general: { label: '일반', icon: 'settings' },
   integrations: { label: '연동', icon: 'external' },
@@ -38,6 +40,7 @@ export function SettingsPage({ section }: { section: SettingsSection }) {
         <h1>{SECTIONS[section].label}</h1>
         {section === 'agent' && <ClaudeAgentCard />}
         {section === 'security' && <SecuritySection />}
+        {section === 'backup' && <BackupSection />}
         {section === 'browser' && <BrowserSection />}
         {section === 'general' && <GeneralSection />}
         {section === 'integrations' && <IntegrationsSection />}

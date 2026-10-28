@@ -63,6 +63,12 @@ async function startServer(): Promise<void> {
   server.on('exit', (code) => {
     server = null;
     if (quitting) return;
+    if (code === 75) {
+      // The server asked to be started again (after a restore): relaunch the whole app.
+      quitting = true;
+      app.relaunch();
+      return app.exit(0);
+    }
     dialog.showErrorBox('Probe 서버가 멈췄습니다', `서버가 종료되었습니다 (코드 ${code}).\n자세한 내용: ${join(HOME, 'probe.log')}`);
     app.exit(1);
   });

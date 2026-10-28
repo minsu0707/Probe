@@ -19,6 +19,8 @@ const version: string = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf
 
 /** Delay so the HTTP response is flushed before the process exits. */
 const EXIT_DELAY_MS = 150;
+/** desktop/main.ts relaunches the app when the server exits with this code. */
+const RESTART_EXIT_CODE = 75;
 
 /** What would be lost by stopping now, in words a person can read. */
 function busyWith(): string | null {
@@ -33,6 +35,13 @@ export const systemRoutes = new Hono()
   // `root` lets the settings page show the real install path instead of a placeholder;
   // `browser` tells it which browser tests will run in.
   .get('/health', (c) => c.json({ app: 'probe', version, pid: process.pid, root: ROOT, browser: detectBrowserChannel() ?? 'chromium', busy: busyWith() }))
+  // Used after a restore: the desktop shell sees this exit code and starts Probe again, which finishes the restore.
+  .post('/restart', (c) => {
+    const busy = busyWith();
+    if (busy) throw conflict(`Not restarting: ${busy}. Stop it first.`);
+    setTimeout(() => process.exit(RESTART_EXIT_CODE), EXIT_DELAY_MS);
+    return c.json({ restarting: true }, 202);
+  })
   .post('/shutdown', (c) => {
     const busy = busyWith();
     if (busy && c.req.query('force') !== '1') throw conflict(`Not stopping: ${busy}. Stop it first, or use force.`);

@@ -5,7 +5,11 @@
  */
 import { DatabaseSync } from 'node:sqlite';
 import { DB_FILE } from '../config.ts';
+import { applyPendingRestore } from './restore-boot.ts';
 import { SCHEMA } from './schema.ts';
+
+// A restore prepared while the app was running is finished here, before the file is opened.
+applyPendingRestore();
 
 export const db = new DatabaseSync(DB_FILE);
 db.exec(SCHEMA);

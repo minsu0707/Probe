@@ -6,6 +6,7 @@
 import { Hono } from 'hono';
 import { HttpError } from '../core/errors.ts';
 import { agentsRoutes } from '../modules/agents/routes.ts';
+import { backupRoutes } from '../modules/backup/routes.ts';
 import { defectsRoutes } from '../modules/defects/routes.ts';
 import { documentsRoutes } from '../modules/documents/routes.ts';
 import { learningRoutes } from '../modules/learning/routes.ts';
@@ -37,6 +38,7 @@ export function buildApp(): Hono {
   app.route('/api', sessionsRoutes);
   app.route('/api', runsRoutes);
   app.route('/api', defectsRoutes);
+  app.route('/api', backupRoutes);
 
   app.get('*', serveWebApp);
   return app;
