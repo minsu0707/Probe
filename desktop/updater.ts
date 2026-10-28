@@ -1,9 +1,10 @@
 /**
  * Self-update of the installed app, from the GitHub Releases of this project (electron-updater).
  *
- * New versions are downloaded in the background and installed the next time the app quits or the
- * user chooses "지금 재시작해서 업데이트". It never restarts on its own: a test run or a Claude
- * session may be in progress.
+ * New versions are downloaded in the background. They are installed when the user chooses to (the
+ * popup, the settings button, the tray item), or by themselves only if the user turned on
+ * "자동 설치" in Settings: then at a quiet moment, never while a test run or Claude session works.
+ * Default is off.
  *
  * PROBE_UPDATE_URL points the app at any folder or server that holds `latest.yml` and the
  * installer, which is how the update flow is tested without publishing a release.
@@ -33,6 +34,25 @@ let state: UpdateState = enabled ? { phase: 'idle', currentVersion: app.getVersi
 let getWindow: () => BrowserWindow | null = () => null;
 let beforeInstall: () => Promise<boolean> = async () => true;
 let isSafeToRestart: () => Promise<boolean> = async () => false;
+
+const autoFile = () => join(process.env.PROBE_HOME ?? app.getPath('userData'), 'auto-update');
+/** The "자동 설치" setting; off until the user turns it on. */
+export function autoInstallEnabled(): boolean {
+  try {
+    return readFileSync(autoFile(), 'utf8').trim() === 'on';
+  } catch {
+    return false;
+  }
+}
+function setAutoInstall(on: boolean): boolean {
+  try {
+    writeFileSync(autoFile(), on ? 'on' : 'off');
+  } catch {
+    /* keep the old value */
+  }
+  if (autoInstallEnabled() && state.phase === 'ready' && !testFeed) void installWhenSafe();
+  return autoInstallEnabled();
+}
 
 /** One line per update event in <data>/update.log, so "it didn't update" can be answered from the file. */
 function log(line: string): void {
@@ -85,7 +105,7 @@ export async function installUpdate(): Promise<boolean> {
  * Until then it keeps asking every 30 s; the banner and the settings button work in the meantime.
  */
 async function installWhenSafe(): Promise<void> {
-  while (state.phase === 'ready') {
+  while (state.phase === 'ready' && autoInstallEnabled()) {
     if (await isSafeToRestart()) {
       log('installing: idle');
       if (await installUpdate()) return;
@@ -126,18 +146,20 @@ export function initUpdater(opts: { window: () => BrowserWindow | null; confirmI
   ipcMain.handle('update:get', () => state);
   ipcMain.handle('update:check', () => checkForUpdate());
   ipcMain.handle('update:install', () => installUpdate());
+  ipcMain.handle('update:get-auto', () => autoInstallEnabled());
+  ipcMain.handle('update:set-auto', (_e, on: boolean) => setAutoInstall(Boolean(on)));
 
   if (!enabled) return;
   if (testFeed) autoUpdater.setFeedURL({ provider: 'generic', url: testFeed });
   autoUpdater.autoDownload = true;
-  // A test feed must never install anything: the installer would replace the real installed app.
-  autoUpdater.autoInstallOnAppQuit = !testFeed;
+  // Installing is the user's click, or the "자동 설치" setting. Quitting alone never installs.
+  autoUpdater.autoInstallOnAppQuit = false;
   autoUpdater.on('update-available', (i) => apply({ type: 'available', version: i.version }));
   autoUpdater.on('update-not-available', () => apply({ type: 'none', at: Date.now() }));
   autoUpdater.on('download-progress', (p) => apply({ type: 'progress', percent: p.percent }));
   autoUpdater.on('update-downloaded', (i) => {
     apply({ type: 'downloaded', version: i.version });
-    if (!testFeed) void installWhenSafe();
+    if (!testFeed && autoInstallEnabled()) void installWhenSafe();
   });
   autoUpdater.on('error', (e) => apply({ type: 'error', message: briefError(e) }));
 

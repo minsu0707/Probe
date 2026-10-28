@@ -5,7 +5,7 @@ import { Icon, type IconName } from '../../ui/index.ts';
 import { ClaudeAgentCard } from './ClaudeAgentCard.tsx';
 import { McpRows } from './McpCard.tsx';
 import { Group, Row } from './Rows.tsx';
-import { UpdateRows } from './UpdateCard.tsx';
+import { AutoInstallRow, UpdateRows } from './UpdateCard.tsx';
 
 const SECTIONS: Record<SettingsSection, { label: string; icon: IconName }> = {
   agent: { label: '에이전트', icon: 'learn' },
@@ -86,6 +86,7 @@ function GeneralSection() {
     <>
       <Group title="업데이트">
         <UpdateRows version={health?.version} />
+        <AutoInstallRow />
       </Group>
       <Group title="실행">
         <Row title="설치한 앱" desc="바탕화면이나 시작 메뉴의 Probe. 창을 닫으면 트레이로 숨고, 트레이 메뉴의 종료로 완전히 꺼집니다." />

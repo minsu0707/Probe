@@ -6,6 +6,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('probeDesktop', {
   getUpdate: () => ipcRenderer.invoke('update:get'),
   checkForUpdate: () => ipcRenderer.invoke('update:check'),
+  getAutoInstall: () => ipcRenderer.invoke('update:get-auto'),
+  setAutoInstall: (on) => ipcRenderer.invoke('update:set-auto', on),
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onUpdate: (callback) => {
     const listener = (_event, state) => callback(state);

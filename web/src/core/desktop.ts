@@ -11,6 +11,8 @@ interface ProbeDesktop {
   getUpdate(): Promise<UpdateState>;
   checkForUpdate(): Promise<UpdateState>;
   installUpdate(): Promise<boolean>;
+  getAutoInstall(): Promise<boolean>;
+  setAutoInstall(on: boolean): Promise<boolean>;
   onUpdate(callback: (state: UpdateState) => void): () => void;
 }
 
@@ -19,6 +21,8 @@ const bridge = (): ProbeDesktop | undefined => (window as unknown as { probeDesk
 export const isDesktopApp = (): boolean => Boolean(bridge());
 export const checkForUpdate = () => bridge()?.checkForUpdate();
 export const installUpdate = () => bridge()?.installUpdate();
+export const getAutoInstall = () => bridge()?.getAutoInstall();
+export const setAutoInstall = (on: boolean) => bridge()?.setAutoInstall(on);
 
 /** Live update state; null in a plain browser or before the first answer. */
 export function useUpdateState(): UpdateState | null {
