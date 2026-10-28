@@ -60,12 +60,24 @@ export function NewSession({ serviceId, knowledgeCount, claudeReady, onCreated }
         <p className="muted small">이 서비스의 문서와 지식, 테스트에 대해 묻거나 시킵니다. 같은 권한(파일 읽기·쓰기)으로 동작합니다.</p>
         <div className="field">
           <label htmlFor="first-message">첫 메시지</label>
-          <textarea id="first-message" rows={3} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="예: 결제 흐름에서 빠진 예외 케이스가 있는지 knowledge/rules.md를 보고 알려줘" />
+          <textarea
+            id="first-message"
+            rows={3}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.nativeEvent.isComposing && claudeReady && busy === null && message.trim()) {
+                e.preventDefault();
+                void start('chat', message);
+              }
+            }}
+            placeholder="예: 결제 흐름에서 빠진 예외 케이스가 있는지 knowledge/rules.md를 보고 알려줘" />
         </div>
         <div className="actions">
           <button className="btn" disabled={!claudeReady || busy !== null || !message.trim()} onClick={() => void start('chat', message)}>
             {busy === 'chat' ? '시작하는 중…' : '대화 시작'}
           </button>
+          <span className="muted small">Ctrl+Enter로 바로 시작</span>
         </div>
       </section>
     </div>
