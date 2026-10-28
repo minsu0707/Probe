@@ -799,3 +799,313 @@ kbd {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ------------------------------------------------------------ checkboxes */
+input[type='checkbox']:not(.switch) {
+  appearance: none;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--panel);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+input[type='checkbox']:not(.switch):hover:not(:disabled) {
+  border-color: var(--accent);
+}
+input[type='checkbox']:not(.switch):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--accent);
+}
+input[type='checkbox']:not(.switch):checked,
+input[type='checkbox']:not(.switch):indeterminate {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+input[type='checkbox']:not(.switch):checked::after {
+  content: '';
+  width: 8px;
+  height: 4px;
+  margin-top: -2px;
+  border-left: 2px solid var(--accent-ink);
+  border-bottom: 2px solid var(--accent-ink);
+  transform: rotate(-48deg) scale(0);
+  animation: tick-in 0.16s ease-out forwards;
+}
+input[type='checkbox']:not(.switch):indeterminate::after {
+  content: '';
+  width: 8px;
+  height: 2px;
+  background: var(--accent-ink);
+  border-radius: 1px;
+}
+input[type='checkbox']:not(.switch):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@keyframes tick-in {
+  to {
+    transform: rotate(-48deg) scale(1);
+  }
+}
+
+/* ------------------------------------------------------- option cards */
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 12px;
+}
+.option-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s, background 0.18s;
+}
+.option-card.is-on {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent-soft) 55%, var(--panel));
+}
+.option-card.is-disabled {
+  opacity: 0.6;
+}
+.option-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.is-disabled .option-main {
+  cursor: not-allowed;
+}
+.option-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--sunken);
+  color: var(--muted);
+  transition: background 0.18s, color 0.18s;
+}
+.is-on .option-icon {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.option-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.option-details {
+  padding: 0 14px 10px 60px;
+}
+.option-details summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--accent);
+  width: fit-content;
+}
+.option-details p {
+  margin: 6px 0 0;
+  max-width: 70ch;
+}
+
+/* the switch */
+.switch {
+  appearance: none;
+  flex: none;
+  position: relative;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+  cursor: inherit;
+  transition: background 0.2s;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.switch:checked {
+  background: var(--accent);
+}
+.switch:checked::after {
+  transform: translateX(16px);
+}
+.switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* ----------------------------------------------------------- loading */
+.loading {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 0;
+  text-align: center;
+}
+.radar {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+}
+.radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--accent);
+  opacity: 0;
+  animation: radar-ping 2.4s ease-out infinite;
+}
+.radar-ring:nth-child(2) {
+  animation-delay: 0.8s;
+}
+.radar-ring:nth-child(3) {
+  animation-delay: 1.6s;
+}
+.radar-sweep {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 70%, color-mix(in srgb, var(--accent) 45%, transparent) 100%);
+  mask: radial-gradient(circle, transparent 0 22px, #000 23px);
+  -webkit-mask: radial-gradient(circle, transparent 0 22px, #000 23px);
+  animation: spin 1.6s linear infinite;
+}
+.radar-core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  animation: float 2.4s ease-in-out infinite;
+}
+@keyframes radar-ping {
+  0% {
+    transform: scale(0.45);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+@keyframes float {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.loading-step {
+  font-weight: 600;
+  animation: fade-up 0.35s ease-out;
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+.loading-tip {
+  max-width: 46ch;
+  margin-top: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  animation: fade-up 0.35s ease-out;
+}
+.loading-tip b {
+  margin-right: 6px;
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.skeletons {
+  width: min(560px, 90%);
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeleton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  animation: fade-up 0.5s ease-out backwards;
+}
+.skel {
+  display: block;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--sunken) 25%, var(--line) 50%, var(--sunken) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+.skel-box {
+  width: 16px;
+  height: 16px;
+}
+.skel-line {
+  height: 10px;
+}
+.skel-pill {
+  margin-left: auto;
+  width: 44px;
+  height: 16px;
+  border-radius: 999px;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radar-ring,
+  .radar-core,
+  .skel {
+    animation: none;
+  }
+  .radar-ring {
+    opacity: 0.25;
+  }
+  .radar-sweep {
+    animation-duration: 6s;
+  }
+}

@@ -6,6 +6,8 @@ export { Empty } from './Empty.tsx';
 export { FileDrop } from './FileDrop.tsx';
 export { useNow } from './hooks.ts';
 export { ClaudeAvatar, ClaudeMark, Icon, Logo, type IconName } from './Icon.tsx';
+export { Loading } from './Loading.tsx';
+export { OptionCard } from './OptionCard.tsx';
 export { Markdown } from './Markdown.tsx';
 export { Modal } from './Modal.tsx';
 export { Pill, type Tone } from './Pill.tsx';

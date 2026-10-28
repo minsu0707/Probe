@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type ServiceOverview, type TestCase } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
 import { useStore, attempt } from '../../core/store.ts';
-import { ConfirmModal, Empty, Icon, Pill } from '../../ui/index.ts';
+import { ConfirmModal, Empty, Icon, Loading, Pill } from '../../ui/index.ts';
 
 /** 테스트 케이스: what Claude wrote, grouped by feature, with a choice of what to run. */
 export function CasesPage() {
@@ -68,10 +68,10 @@ function CasesBody({ service }: { service: ServiceOverview }) {
 
   if (cases === null)
     return (
-      <div className="page-loading" role="status">
-        <span className="spinner" aria-hidden="true" />
-        <p>테스트 목록을 불러오는 중…</p>
-      </div>
+      <Loading
+        steps={['테스트 파일을 찾는 중…', 'Playwright에게 목록을 물어보는 중…', '기능별로 묶는 중…', '제목과 근거를 읽는 중…', '거의 다 됐어요…']}
+        tips={['케이스를 골라서 일부만 실행할 수 있어요.', '검색창에 기능 이름이나 근거 문서를 넣어 찾아보세요.', '선택한 케이스는 우클릭 없이 바로 삭제할 수 있어요. 지운 케이스는 휴지통에 남습니다.', '실행이 끝나면 결과 · 결함 탭에서 원인 추정을 볼 수 있어요.']}
+      />
     );
 
   return (
