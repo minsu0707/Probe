@@ -2,9 +2,9 @@
  * Typed client for the Probe HTTP API. Every call returns parsed JSON (or text for the .enc
  * export) and throws `ApiError` with a message safe to show the user.
  */
-import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, TestCase, UsageWindow } from '../../../shared/models.ts';
+import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, QueuedMessage, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, TestCase, UsageWindow } from '../../../shared/models.ts';
 
-export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, TestCase, UsageWindow };
+export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, QueuedMessage, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, TestCase, UsageWindow };
 
 export interface McpStatus {
   installed: boolean;
@@ -83,9 +83,11 @@ export const api = {
 
   // sessions
   sessions: (serviceId: string) => call<Session[]>(`/api/services/${serviceId}/sessions`),
-  session: (id: string) => call<{ session: Session; messages: SessionMessage[] }>(`/api/sessions/${id}`),
+  session: (id: string) => call<{ session: Session; messages: SessionMessage[]; queue: QueuedMessage[] }>(`/api/sessions/${id}`),
   createSession: (serviceId: string, b: { kind: SessionKind; message?: string }) => call<Session>(`/api/services/${serviceId}/sessions`, json('POST', b)),
   sendMessage: (id: string, text: string) => call<Session>(`/api/sessions/${id}/messages`, json('POST', { text })),
+  sendQueuedNow: (id: string) => call<void>(`/api/sessions/${id}/queue/send`, json('POST')),
+  removeQueued: (id: string, queuedId: number) => call<void>(`/api/sessions/${id}/queue/${queuedId}`, json('DELETE')),
   cancelSession: (id: string) => call<void>(`/api/sessions/${id}/cancel`, json('POST')),
   renameSession: (id: string, title: string) => call<Session>(`/api/sessions/${id}`, json('PATCH', { title })),
   deleteSession: (id: string) => call<void>(`/api/sessions/${id}`, json('DELETE')),

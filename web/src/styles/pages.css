@@ -1481,3 +1481,47 @@ table.runs .num {
     display: none;
   }
 }
+
+/* messages waiting for Claude */
+.queue {
+  align-self: flex-end;
+  width: min(88%, 520px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+}
+.queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.queue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+  opacity: 0.85;
+}
+.queue-no {
+  flex: none;
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+}
+.queue-item p {
+  flex: 1;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

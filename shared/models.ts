@@ -252,6 +252,14 @@ export interface SessionMessage {
   text: string;
 }
 
+/** A message written while Claude was busy, waiting its turn. */
+export interface QueuedMessage {
+  id: number;
+  sessionId: string;
+  ts: number;
+  text: string;
+}
+
 // ------------------------------------------------------------- app updates
 
 /**

@@ -1,5 +1,5 @@
 import { all, get, run } from '../../core/db.ts';
-import type { Session, SessionKind, SessionMessage } from '../../../shared/models.ts';
+import type { QueuedMessage, Session, SessionKind, SessionMessage } from '../../../shared/models.ts';
 
 interface Row {
   id: string;
@@ -55,3 +55,11 @@ export const messages = (sessionId: string): SessionMessage[] =>
     role: r.role,
     text: r.text,
   }));
+
+export const queue = (sessionId: string): QueuedMessage[] =>
+  all<{ id: number; session_id: string; ts: number; text: string }>('SELECT * FROM session_queue WHERE session_id = ? ORDER BY id', sessionId).map((r) => ({ id: r.id, sessionId: r.session_id, ts: r.ts, text: r.text }));
+
+export const enqueue = (sessionId: string, text: string, ts: number): void => void run('INSERT INTO session_queue (session_id, ts, text) VALUES (?,?,?)', sessionId, ts, text);
+/** Put a message back where it was (same id keeps its place in line). */
+export const requeue = (m: QueuedMessage): void => void run('INSERT INTO session_queue (id, session_id, ts, text) VALUES (?,?,?,?)', m.id, m.sessionId, m.ts, m.text);
+export const dequeue = (sessionId: string, id: number): boolean => Number(run('DELETE FROM session_queue WHERE session_id = ? AND id = ?', sessionId, id).changes) > 0;

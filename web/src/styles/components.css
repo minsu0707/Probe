@@ -792,7 +792,8 @@ kbd {
 
 /* Modal buttons sit on the right: confirm, then cancel. */
 .modal-body .actions {
-  justify-content: flex-end;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 /* A "run tests" button with nothing to run: dimmed, but still clickable so the click can explain. */
 .btn[aria-disabled='true'] {
@@ -855,52 +856,24 @@ input[type='checkbox']:not(.switch):disabled {
   }
 }
 
-/* ------------------------------------------------------- option cards */
-.option-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 12px;
+/* ------------------------------------------------------- option rows */
+.option-list {
+  padding: 0;
+  gap: 0;
 }
-.option-card {
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  transition: border-color 0.18s, background 0.18s;
-}
-.option-card.is-on {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-  background: color-mix(in srgb, var(--accent-soft) 55%, var(--panel));
-}
-.option-card.is-disabled {
-  opacity: 0.6;
-}
-.option-main {
+.option-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 16px;
+  padding: 12px 16px;
   cursor: pointer;
 }
-.is-disabled .option-main {
+.option-row + .option-row {
+  border-top: 1px solid var(--line);
+}
+.option-row.is-disabled {
+  opacity: 0.55;
   cursor: not-allowed;
-}
-.option-icon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: var(--sunken);
-  color: var(--muted);
-  transition: background 0.18s, color 0.18s;
-}
-.is-on .option-icon {
-  background: var(--accent);
-  color: var(--accent-ink);
 }
 .option-text {
   flex: 1;
@@ -908,19 +881,6 @@ input[type='checkbox']:not(.switch):disabled {
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-.option-details {
-  padding: 0 14px 10px 60px;
-}
-.option-details summary {
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--accent);
-  width: fit-content;
-}
-.option-details p {
-  margin: 6px 0 0;
-  max-width: 70ch;
 }
 
 /* the switch */

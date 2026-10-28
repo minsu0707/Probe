@@ -8,7 +8,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import { api } from './api.ts';
-import type { ClaudeAgentStatus, Defect, Job, LogLine, RunSummary, ServiceOverview, Session, SessionMessage } from './api.ts';
+import type { ClaudeAgentStatus, Defect, Job, LogLine, QueuedMessage, RunSummary, ServiceOverview, Session, SessionMessage } from './api.ts';
 
 export interface Toast {
   id: number;
@@ -38,10 +38,12 @@ export interface State {
   sessions: Record<string, Session[]>;
   /** Transcript per session. */
   transcripts: Record<string, SessionMessage[]>;
+  /** Messages waiting for Claude to be free, per session. */
+  queues: Record<string, QueuedMessage[]>;
   toasts: Toast[];
 }
 
-let state: State = { ready: false, connected: false, services: [], currentId: null, runs: {}, logs: {}, defects: [], jobs: {}, frameTick: {}, serviceVersion: {}, claude: null, sessions: {}, transcripts: {}, toasts: [] };
+let state: State = { ready: false, connected: false, services: [], currentId: null, runs: {}, logs: {}, defects: [], jobs: {}, frameTick: {}, serviceVersion: {}, claude: null, sessions: {}, transcripts: {}, queues: {}, toasts: [] };
 const listeners = new Set<() => void>();
 
 export const getState = (): State => state;
@@ -188,7 +190,12 @@ export function addTranscript(sessionId: string, messages: SessionMessage[]): vo
 }
 
 export async function loadTranscript(sessionId: string): Promise<void> {
-  const { session, messages } = await api.session(sessionId);
+  const { session, messages, queue } = await api.session(sessionId);
   upsertSession(session);
   addTranscript(sessionId, messages);
+  setQueue(sessionId, queue);
+}
+
+export function setQueue(sessionId: string, queue: QueuedMessage[]): void {
+  patch((s) => ({ queues: { ...s.queues, [sessionId]: queue } }));
 }

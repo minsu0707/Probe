@@ -107,6 +107,16 @@ export const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS session_messages_s ON session_messages(session_id, id);
 
+  -- Messages written while Claude was busy. They survive a restart but are never sent on their
+  -- own after one: the user sees them waiting and decides.
+  CREATE TABLE IF NOT EXISTS session_queue (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    ts INTEGER NOT NULL,
+    text TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS session_queue_s ON session_queue(session_id, id);
+
   CREATE TABLE IF NOT EXISTS jobs (
     id TEXT PRIMARY KEY,
     service_id TEXT NOT NULL REFERENCES services(id) ON DELETE CASCADE,

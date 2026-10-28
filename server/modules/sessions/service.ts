@@ -17,7 +17,7 @@ import { conflict, notFound, unprocessable } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import { newId } from '../../core/ids.ts';
 import { killTree } from '../../core/process.ts';
-import type { Session, SessionKind, SessionMessage } from '../../../shared/models.ts';
+import type { QueuedMessage, Session, SessionKind, SessionMessage } from '../../../shared/models.ts';
 import { BACKGROUND_ALLOWED_TOOLS, BACKGROUND_DENIED_TOOLS, SESSION_EXTRA_TOOLS } from '../agents/claude-cli.ts';
 import { requireClaudeReady } from '../agents/service.ts';
 import { recordUsage } from '../agents/usage.ts';
@@ -30,6 +30,7 @@ import * as repo from './repository.ts';
 import { snapshotSpecs, sweepDeletedSpecs } from './sweep.ts';
 
 const STDERR_TAIL_CHARS = 2000;
+const QUEUE_MAX = 10;
 const TITLE_MAX = 40;
 
 /** Cut at TITLE_MAX characters and say so, instead of stopping mid-sentence. */
@@ -46,10 +47,10 @@ const cancelled = new Set<string>();
 export const listSessions = (serviceId: string): Session[] => repo.forService(requireService(serviceId).id);
 export const isSessionRunning = (serviceId: string): boolean => Boolean(repo.runningIn(serviceId));
 
-export function getSession(id: string): { session: Session; messages: SessionMessage[] } {
+export function getSession(id: string): { session: Session; messages: SessionMessage[]; queue: QueuedMessage[] } {
   const session = repo.findById(id);
   if (!session) throw notFound('Session not found');
-  return { session, messages: repo.messages(id) };
+  return { session, messages: repo.messages(id), queue: repo.queue(id) };
 }
 
 /** Create a session and send its first message. */
@@ -74,9 +75,47 @@ export async function sendMessage(id: string, text: string): Promise<Session> {
   if (!session) throw notFound('Session not found');
   const message = text.trim();
   if (!message) throw unprocessable('Message is empty');
+
+  // Claude is busy with this very conversation, or earlier messages are still waiting (paused by a
+  // stop or a restart): the new one joins the line instead of being refused.
+  if (children.has(id) || repo.queue(id).length) {
+    if (repo.queue(id).length >= QUEUE_MAX) throw conflict(`You can queue up to ${QUEUE_MAX} messages.`);
+    repo.enqueue(id, message, Date.now());
+    broadcastQueue(id);
+    if (!children.has(id)) await dispatchNext(id); // idle with a paused line: sending is the signal to go on
+    return repo.findById(id)!;
+  }
+
   await assertCanRun(session.serviceId);
   await takeTurn(id, message, message);
   return repo.findById(id)!;
+}
+
+/** Send the first waiting message now. Used when a turn ends well, and by "지금 보내기" for a paused line. */
+export async function dispatchNext(id: string): Promise<void> {
+  if (!repo.findById(id)) throw notFound('Session not found');
+  if (children.has(id)) throw conflict('Claude is still working on the current message.');
+  const next = repo.queue(id)[0];
+  if (!next) throw conflict('No message is waiting.');
+  await assertCanRun(repo.findById(id)!.serviceId);
+  repo.dequeue(id, next.id);
+  broadcastQueue(id);
+  try {
+    await takeTurn(id, next.text, next.text);
+  } catch (e) {
+    repo.requeue(next); // it never started: keep it
+    broadcastQueue(id);
+    throw e;
+  }
+}
+
+export function removeQueued(sessionId: string, queuedId: number): void {
+  if (!repo.dequeue(sessionId, queuedId)) throw notFound('That message is not waiting any more');
+  broadcastQueue(sessionId);
+}
+
+function broadcastQueue(sessionId: string): void {
+  broadcast({ type: 'session:queue', sessionId, queue: repo.queue(sessionId) });
 }
 
 export function cancelSession(id: string): void {
@@ -157,6 +196,11 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
     if (note) say(id, 'error', note);
     setStatus(id, status);
     broadcast({ type: 'service', serviceId: session.serviceId });
+    // Only a turn that ended well moves the line on. After a stop or a failure the messages wait
+    // for the user, who sees them and chooses (send now, or remove).
+    if (status === 'idle' && !note && repo.queue(id)[0]) {
+      dispatchNext(id).catch((e: unknown) => say(id, 'error', `예약한 메시지를 보내지 못했습니다: ${e instanceof Error ? e.message : String(e)}`));
+    }
   };
   child.on('error', (e) => close('failed', `Could not start the claude CLI: ${e.message}`));
   child.on('close', (code) => {

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { parseBody } from '../../http/validate.ts';
-import { cancelSession, createSession, deleteSession, getSession, listSessions, renameSession, sendMessage } from './service.ts';
+import { cancelSession, createSession, deleteSession, dispatchNext, getSession, listSessions, removeQueued, renameSession, sendMessage } from './service.ts';
 
 export const sessionsRoutes = new Hono()
   .get('/services/:id/sessions', (c) => c.json(listSessions(c.req.param('id'))))
@@ -18,5 +18,7 @@ export const sessionsRoutes = new Hono()
     const body = await parseBody(c, z.object({ title: z.string().trim().min(1).max(120) }));
     return c.json(renameSession(c.req.param('id'), body.title));
   })
+  .post('/sessions/:id/queue/send', async (c) => (await dispatchNext(c.req.param('id')), c.body(null, 202)))
+  .delete('/sessions/:id/queue/:qid', (c) => (removeQueued(c.req.param('id'), Number(c.req.param('qid'))), c.body(null, 204)))
   .post('/sessions/:id/cancel', (c) => (cancelSession(c.req.param('id')), c.body(null, 204)))
   .delete('/sessions/:id', (c) => (deleteSession(c.req.param('id')), c.body(null, 204)));

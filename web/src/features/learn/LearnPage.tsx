@@ -2,7 +2,7 @@
 import { api, type Doc, type Job, type KnowledgeFile } from '../../core/api.ts';
 import { attempt, toast, useStore } from '../../core/store.ts';
 import { settingsHref } from '../../app/router.ts';
-import { Empty, Icon, OptionCard } from '../../ui/index.ts';
+import { Empty, Icon, OptionRow } from '../../ui/index.ts';
 import { JobCard } from './JobCard.tsx';
 import { KnowledgePanel } from './KnowledgePanel.tsx';
 import { SourcesPanel } from './SourcesPanel.tsx';
@@ -74,26 +74,16 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
         )}
       </div>
 
-      <div className="option-grid">
-        <OptionCard
-          icon="monitor"
+      <section className="panel option-list">
+        <OptionRow
           title="서비스를 직접 둘러보며 학습"
-          summary={canExplore ? '계정별로 로그인해 메뉴와 화면을 열어 보고, 보이는 항목을 자료와 함께 학습합니다.' : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
-          details="환경 변수에 있는 모든 계정(ADMIN_ID/ADMIN_PW, RES1_ID/RES1_PW처럼 ID와 비밀번호가 짝인 것, 최대 8개)으로 각각 로그인해서 메뉴와 화면을 차례로 열어 보고(계정당 최대 약 50화면, 6분) 실제로 보이는 항목을 자료와 함께 학습합니다. 계정별로 보이는 메뉴가 어떻게 다른지(권한)도 정리합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다."
+          desc={canExplore ? '환경 변수의 계정(최대 8개)으로 로그인해 메뉴와 화면을 열어 보고, 계정별로 보이는 메뉴의 차이도 정리합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다.' : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
           checked={exploring}
           disabled={!canExplore || learning}
           onChange={setExplore}
         />
-        <OptionCard
-          icon="check"
-          title="학습이 끝나면 테스트 케이스도 자동으로 만들기"
-          summary="학습한 기능을 기준으로 기능별 테스트를 쓰고 우선순위(P0~P2)를 붙입니다."
-          details="결과는 테스트 케이스 탭에서 확인하고, 골라서 실행할 수 있습니다."
-          checked={writeTests}
-          disabled={learning}
-          onChange={setWriteTests}
-        />
-      </div>
+        <OptionRow title="학습이 끝나면 테스트 케이스도 만들기" desc="기능별 테스트를 쓰고 우선순위(P0~P2)를 붙입니다. 결과는 테스트 케이스 탭에서 골라 실행할 수 있습니다." checked={writeTests} disabled={learning} onChange={setWriteTests} />
+      </section>
 
       {!claudeReady && (
         <div className="callout">

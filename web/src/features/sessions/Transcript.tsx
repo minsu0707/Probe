@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { api, type Session, type SessionMessage } from '../../core/api.ts';
+import { api, type QueuedMessage, type Session, type SessionMessage } from '../../core/api.ts';
 import { clock } from '../../core/format.ts';
 import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
 import { ClaudeAvatar, ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
 
 const EMPTY: SessionMessage[] = [];
+const NO_QUEUE: QueuedMessage[] = [];
 
 /** One conversation: the messages so far, and a box to say the next thing. */
 export function Transcript({ session, claudeReady, onDeleted }: { session: Session; claudeReady: boolean; onDeleted: () => void }) {
   const messages = useStore((s) => s.transcripts[session.id] ?? EMPTY);
+  const queue = useStore((s) => s.queues[session.id] ?? NO_QUEUE);
   const [draft, setDraft] = useDraft(`session:${session.id}`);
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -33,7 +35,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
 
   const send = async () => {
     const text = draft.trim();
-    if (!text || running || sending) return;
+    if (!text || sending) return;
     setSending(true);
     const ok = await attempt(() => api.sendMessage(session.id, text));
     setSending(false);
@@ -113,6 +115,27 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
             </div>
           </div>
         )}
+        {queue.length > 0 && (
+          <div className="queue" aria-label="예약된 메시지">
+            <div className="queue-head muted small">
+              {running ? `예약 ${queue.length}건 · Claude가 끝나면 순서대로 보냅니다` : `예약 ${queue.length}건 · 멈춰 있습니다`}
+              {!running && (
+                <button className="btn btn-sm" onClick={() => void attempt(() => api.sendQueuedNow(session.id))} disabled={!claudeReady}>
+                  지금 보내기
+                </button>
+              )}
+            </div>
+            {queue.map((q, i) => (
+              <div key={q.id} className="queue-item">
+                <span className="queue-no tabular">{i + 1}</span>
+                <p>{q.text}</p>
+                <button className="icon-btn" aria-label="예약 취소" title="예약 취소" onClick={() => void attempt(() => api.removeQueued(session.id, q.id))}>
+                  <Icon name="x" size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div ref={bottom} />
       </div>
       {!atBottom && (
@@ -129,11 +152,11 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKey}
           disabled={!claudeReady}
-          placeholder={running ? 'Claude가 끝나면 이어서 보낼 수 있습니다' : '메시지 (Enter 전송, Shift+Enter 줄바꿈)'}
+          placeholder={running ? 'Claude가 작업 중입니다. 지금 보내면 끝난 뒤 순서대로 보냅니다 (Enter 예약)' : '메시지 (Enter 전송, Shift+Enter 줄바꿈)'}
           aria-label="메시지"
         />
-        <button className="btn btn-primary" onClick={() => void send()} disabled={!claudeReady || running || sending || !draft.trim()}>
-          보내기
+        <button className="btn btn-primary" onClick={() => void send()} disabled={!claudeReady || sending || !draft.trim()}>
+          {running ? '예약' : '보내기'}
         </button>
       </div>
     </section>
