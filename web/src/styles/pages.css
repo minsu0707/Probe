@@ -1419,7 +1419,8 @@ table.runs .num {
 }
 .to-bottom {
   position: absolute;
-  right: 18px;
+  left: 50%;
+  margin-left: -17px;
   bottom: 12px;
   display: grid;
   place-items: center;
@@ -1442,5 +1443,41 @@ table.runs .num {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+}
+
+/* The status column is meant to be seen whole: tighter rows, and the least useful panels drop away as the window gets shorter. */
+.overview-aside {
+  gap: 10px;
+}
+.overview-aside .panel {
+  padding: 10px 12px;
+  gap: 8px;
+}
+.ov-checks button,
+.ov-static,
+.ov-runs button,
+.ov-link {
+  padding: 5px 6px;
+}
+.ov-rate-num {
+  font-size: 26px;
+}
+.ov-figures dd {
+  font-size: 16px;
+}
+@media (max-height: 880px) {
+  .ov-runs li:nth-child(n + 4) {
+    display: none;
+  }
+}
+@media (max-height: 780px) {
+  .ov-shortcuts {
+    display: none;
+  }
+}
+@media (max-height: 680px) {
+  .ov-recent {
+    display: none;
   }
 }

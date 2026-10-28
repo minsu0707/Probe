@@ -24,6 +24,8 @@ export interface ServiceOverview extends Service {
   /** Documents added since the last successful learning job. */
   unlearnedDocs: number;
   knowledgeCount: number;
+  /** Tests the specs declare (counted from the source). 0 means there is nothing to run yet. */
+  testCount: number;
   openDefects: number;
   lastRun: RunSummary | null;
   activeRun: RunSummary | null;

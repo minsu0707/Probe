@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { api, type ServiceOverview } from '../../core/api.ts';
 import { ago, RUN_STATUS_LABEL, runTone } from '../../core/format.ts';
+import { runButtonProps } from '../../core/runGuard.ts';
 import { attempt, loadRuns, useStore } from '../../core/store.ts';
 import { goService, type Tab } from '../../app/router.ts';
 import { Icon, Pill, useNow, type IconName } from '../../ui/index.ts';
@@ -70,7 +71,7 @@ export function ServiceAside({ service }: { service: ServiceOverview }) {
           <p className="muted small">아직 실행한 테스트가 없습니다. 아래 버튼으로 처음 실행해 보세요.</p>
         )}
         <div className="actions">
-          <button className="btn btn-primary btn-sm" disabled={running} onClick={() => void start()} title={running ? '다른 실행이 진행 중입니다' : undefined}>
+          <button className="btn btn-primary btn-sm" disabled={running} {...runButtonProps(service, start, running ? '다른 실행이 진행 중입니다' : undefined)}>
             <Icon name="play" size={12} />
             테스트 실행
           </button>
@@ -95,7 +96,7 @@ export function ServiceAside({ service }: { service: ServiceOverview }) {
       </section>
 
       {mine.length > 0 && (
-        <section className="panel">
+        <section className="panel ov-recent">
           <div className="panel-head">
             <h2>최근 실행</h2>
             <span className="muted small">{mine.length}건</span>
@@ -119,7 +120,7 @@ export function ServiceAside({ service }: { service: ServiceOverview }) {
         </section>
       )}
 
-      <section className="panel">
+      <section className="panel ov-shortcuts">
         <div className="panel-head">
           <h2>바로가기</h2>
         </div>

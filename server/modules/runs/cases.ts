@@ -4,7 +4,7 @@
  * executed and no credentials are passed.
  */
 import { spawn } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { testsDir } from '../../config.ts';
@@ -103,4 +103,36 @@ export async function listTestCases(serviceId: string): Promise<{ cases: TestCas
   // "No tests found" just means nothing has been written yet; the page shows that as its empty state.
   const errors = (json.errors ?? []).map((e) => (e.message ?? '').replace(ANSI, '').trim()).filter((m) => m && !/^Error: No tests found\.?$/i.test(m));
   return { cases: flattenSuites(json.suites ?? [], readSource), errors };
+}
+
+const TEST_DECL = /(^|[^\w.])test(?:\.(?:only|skip|fixme|fail|slow))?\s*\(\s*['"`]/g;
+
+/**
+ * How many tests the specs declare, counted from the source. Playwright's own list takes seconds;
+ * this is only to know whether "run tests" has anything to run, so it is cheap and approximate.
+ */
+export function countTestCases(serviceId: string): number {
+  const root = join(testsDir(serviceId), 'specs');
+  let total = 0;
+  const walk = (dir: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.spec\.[cm]?[jt]s$/.test(e.name)) {
+        try {
+          total += (readFileSync(full, 'utf8').match(TEST_DECL) ?? []).length;
+        } catch {
+          /* unreadable file: counts as none */
+        }
+      }
+    }
+  };
+  walk(root);
+  return total;
 }

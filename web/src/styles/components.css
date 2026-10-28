@@ -789,3 +789,13 @@ kbd {
     transition: none;
   }
 }
+
+/* Modal buttons sit on the right: confirm, then cancel. */
+.modal-body .actions {
+  justify-content: flex-end;
+}
+/* A "run tests" button with nothing to run: dimmed, but still clickable so the click can explain. */
+.btn[aria-disabled='true'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

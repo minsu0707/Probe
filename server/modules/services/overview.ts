@@ -10,6 +10,7 @@ import { countKnowledge } from '../learning/knowledge.ts';
 import { isLearning } from '../learning/service.ts';
 import { countSecrets } from '../secrets/service.ts';
 import { isSessionRunning } from '../sessions/service.ts';
+import { countTestCases } from '../runs/cases.ts';
 import { activeRun, listRuns } from '../runs/service.ts';
 import { faviconVersion } from './favicon.ts';
 import { requireService } from './service.ts';
@@ -22,6 +23,7 @@ export function serviceOverview(id: string): ServiceOverview {
     docCount: countDocs(id),
     unlearnedDocs: countUnlearnedDocs(id),
     knowledgeCount: countKnowledge(id),
+    testCount: countTestCases(id),
     openDefects: countOpenDefects(id),
     lastRun: listRuns(id, 1)[0] ?? null,
     activeRun: activeRun(id) ?? null,

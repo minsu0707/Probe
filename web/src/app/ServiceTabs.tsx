@@ -1,5 +1,6 @@
 import { api } from '../core/api.ts';
 import type { ServiceOverview } from '../core/api.ts';
+import { runButtonProps } from '../core/runGuard.ts';
 import { attempt } from '../core/store.ts';
 import { Icon } from '../ui/index.ts';
 import { goService, serviceHref, type Tab } from './router.ts';
@@ -63,9 +64,9 @@ export function ServiceTabs({ service, tab }: { service: ServiceOverview; tab: T
       ) : (
         <button
           className="btn btn-primary"
-          onClick={async () => {
+          {...runButtonProps(service, async () => {
             if (await attempt(() => api.startRun(service.id))) goService(service.id, 'monitor');
-          }}
+          })}
         >
           <Icon name="play" size={14} />
           테스트 실행

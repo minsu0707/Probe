@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api, type RunSummary } from '../../core/api.ts';
+import { api, type RunSummary, type ServiceOverview } from '../../core/api.ts';
+import { runButtonProps } from '../../core/runGuard.ts';
 import { RUN_STATUS_LABEL, startTime } from '../../core/format.ts';
 import { attempt, loadRun, loadRuns, useStore } from '../../core/store.ts';
 import { Empty, Icon } from '../../ui/index.ts';
@@ -14,10 +15,11 @@ export function MonitorPage() {
   const mine = Object.values(runs)
     .filter((r) => r.serviceId === service.id)
     .sort((a, b) => b.startedAt - a.startedAt);
-  return <MonitorBody key={service.id} serviceId={service.id} serviceName={service.name} runs={mine} />;
+  return <MonitorBody key={service.id} service={service} runs={mine} />;
 }
 
-function MonitorBody({ serviceId, serviceName, runs }: { serviceId: string; serviceName: string; runs: RunSummary[] }) {
+function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSummary[] }) {
+  const { id: serviceId, name: serviceName } = service;
   const [picked, setPicked] = useState<string | null>(null);
   /** The user chose an older run on purpose; stop auto-following new live runs. */
   const [pinned, setPinned] = useState(false);
@@ -42,7 +44,7 @@ function MonitorBody({ serviceId, serviceName, runs }: { serviceId: string; serv
         <Empty
           title="아직 실행한 테스트가 없습니다"
           action={
-            <button className="btn btn-primary" onClick={() => void attempt(() => api.startRun(serviceId))}>
+            <button className="btn btn-primary" {...runButtonProps(service, () => void attempt(() => api.startRun(serviceId)))}>
               <Icon name="play" size={14} />
               테스트 실행
             </button>
