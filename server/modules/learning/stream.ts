@@ -16,10 +16,26 @@ export type StreamEvent =
   /** Account usage, to show in the status bar. */
   | { kind: 'usage'; usage: ClaudeUsage };
 
+/** The parts of a stream-json line this file reads; the CLI sends more, and none of it is guaranteed. */
+interface RawEvent {
+  type?: string;
+  subtype?: string;
+  is_error?: boolean;
+  result?: unknown;
+  message?: { content?: RawBlock[] };
+}
+interface RawBlock {
+  type?: string;
+  name?: string;
+  input?: ToolInput;
+  text?: unknown;
+}
+type ToolInput = { file_path?: unknown; path?: unknown; pattern?: unknown; command?: unknown; status?: string } | undefined;
+
 /** A line that isn't JSON (stray warnings) yields no events rather than an error. */
 export function parseStreamLine(line: string): StreamEvent[] {
   if (!line.trim()) return [];
-  let ev: any;
+  let ev: RawEvent;
   try {
     ev = JSON.parse(line);
   } catch {
@@ -33,8 +49,8 @@ export function parseStreamLine(line: string): StreamEvent[] {
   }
   if (ev.type === 'assistant') {
     // Blocks keep their order: Claude often says what it will do, then does it.
-    return (ev.message?.content ?? []).flatMap((block: any): StreamEvent[] => {
-      if (block.type === 'tool_use') return [{ kind: 'progress', text: describeTool(block.name, block.input) }];
+    return (ev.message?.content ?? []).flatMap((block): StreamEvent[] => {
+      if (block.type === 'tool_use' && block.name) return [{ kind: 'progress', text: describeTool(block.name, block.input) }];
       if (block.type === 'text' && String(block.text).trim()) return [{ kind: 'text', text: String(block.text) }];
       return [];
     });
@@ -45,7 +61,7 @@ export function parseStreamLine(line: string): StreamEvent[] {
   return [];
 }
 
-export function describeTool(name: string, input: any): string {
+export function describeTool(name: string, input: ToolInput): string {
   const target = String(input?.file_path ?? input?.path ?? input?.pattern ?? '');
   if (name === 'Read') return `읽는 중: ${basename(target)}`;
   if (name === 'Write' || name === 'Edit') return `작성 중: ${basename(target)}`;

@@ -1,0 +1,325 @@
+/* ------------------------------------------------------------ learn page */
+.docs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.docs li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+}
+.docs li + li {
+  border-top: 1px solid var(--line);
+}
+.doc-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.joblog {
+  list-style: none;
+  margin: 0;
+  padding: 8px 12px;
+  max-height: 168px;
+  overflow-y: auto;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.joblog-now {
+  color: var(--ink);
+}
+.job-summary {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+.tab {
+  padding: 8px 12px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--ink);
+}
+.tab-on {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.editor {
+  min-height: 420px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.md {
+  max-width: 78ch;
+}
+.md h2,
+.md h3,
+.md h4,
+.md h5 {
+  margin: 20px 0 6px;
+}
+.md h2 {
+  font-size: 17px;
+}
+.md h3 {
+  font-size: 15px;
+}
+.md > :first-child {
+  margin-top: 0;
+}
+.md p,
+.md ul,
+.md ol,
+.md blockquote {
+  margin: 8px 0;
+}
+.md ul,
+.md ol {
+  padding-left: 20px;
+}
+.md li + li {
+  margin-top: 3px;
+}
+.md blockquote {
+  padding: 2px 12px;
+  border-left: 3px solid var(--line-strong);
+  color: var(--muted);
+}
+.md pre {
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+.md pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 16px 0;
+}
+.tag-inferred {
+  color: var(--warn);
+  font-weight: 600;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+.md table,
+table.runs {
+  border-collapse: collapse;
+  width: 100%;
+}
+.md th,
+.md td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+.md th {
+  background: var(--sunken);
+}
+
+/* Knowledge files as an outline: one row per section, opened on demand. */
+.fold-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0 4px;
+}
+.fold-bar input {
+  flex: 1;
+  min-width: 0;
+}
+.fold-item {
+  border-bottom: 1px solid var(--line);
+}
+.fold-item > summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 4px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.fold-item > summary::-webkit-details-marker {
+  display: none;
+}
+.fold-item > summary:hover {
+  color: var(--accent);
+}
+.fold-item > summary .icon {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.12s;
+}
+.fold-item[open] > summary .icon {
+  transform: rotate(90deg);
+}
+.fold-item > .md {
+  padding: 0 4px 14px 22px;
+}
+
+/* 테스트 케이스 tab: a selection bar, then one collapsible card per feature. */
+.case-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 4px;
+}
+.case-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+  min-width: 96px;
+}
+.case-search {
+  width: min(320px, 100%);
+}
+.case-group > summary {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+.case-group > summary::-webkit-details-marker {
+  display: none;
+}
+.case-group > summary .icon {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.12s;
+}
+.case-group[open] > summary .icon {
+  transform: rotate(90deg);
+}
+.case-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.case-list li + li {
+  border-top: 1px solid var(--line);
+}
+.case-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+.case-row:hover {
+  background: var(--sunken);
+}
+.case-row input {
+  margin-top: 3px;
+}
+.case-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.case-title {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.case-source {
+  color: var(--muted);
+  font-size: 12px;
+}
+.case-file {
+  flex: none;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.case-error {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  font-size: 12px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.explore-option {
+  padding: 0 4px 12px;
+}
+.check-off {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* A failure and the ones that only followed from it. */
+.defect-group {
+  list-style: none;
+}
+.defect-group > .defects {
+  margin: 0;
+  padding: 0;
+}
+.defect-kids {
+  margin: 4px 0 8px 22px;
+}
+.defect-kids > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12.5px;
+  padding: 4px 0;
+}
+
+.filter-sep {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  background: var(--line-strong);
+}
+
+.page-loading {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+}
+.case-error-detail summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--muted);
+}

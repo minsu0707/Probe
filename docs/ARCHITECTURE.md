@@ -131,7 +131,7 @@ Known limitation: Playwright traces (`.zip`) and screenshots can contain typed v
 **A screen**
 1. Create the page component in `web/src/features/<name>/`. Add server calls to `core/api.ts`.
 2. Add it as a tab of a service (`TABS` in `app/router.ts`, `TAB_DEFS` in `app/ServiceTabs.tsx`, the switch in `app/App.tsx`), or as a settings section (`SETTINGS_SECTIONS`, `SECTIONS` in `features/settings/SettingsPage.tsx`).
-3. Put shared styles in `components.css` and screen-only styles in `pages.css`. Use only the variables in `tokens.css` for colour.
+3. Put shared styles in `components.css` and screen-only styles in `pages/<feature>.css`. Use only the variables in `tokens.css` for colour.
 
 **An MCP tool**: add a `registerTool` call in `mcp/server.ts`. Never return a secret value.
 

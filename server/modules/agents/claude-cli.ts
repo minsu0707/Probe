@@ -3,7 +3,7 @@
  * prints. No process is started here, so the parsing is tested against real captured output.
  */
 import { join } from 'node:path';
-import type { ClaudeAuth, ClaudeProfile, ClaudeUsage, UsageWindow } from '../../../shared/models.ts';
+import { usageWindow, type ClaudeAuth, type ClaudeProfile, type ClaudeUsage } from '../../../shared/models.ts';
 import { envWithoutElectronFlag } from '../../core/process.ts';
 
 /**
@@ -87,10 +87,9 @@ export function parseAuthStatus(json: unknown): ClaudeAuth {
  * `resetsAt` in epoch seconds; Probe keeps milliseconds like everywhere else. Anything else is null.
  */
 export function parseRateLimit(ev: unknown): ClaudeUsage | null {
-  const windows = (ev as any)?.rate_limit_info?.unifiedWindows;
+  const windows = (ev as { rate_limit_info?: { unifiedWindows?: Record<string, { utilization?: unknown; resetsAt?: unknown } | undefined> } } | null)?.rate_limit_info?.unifiedWindows;
   if (!windows || typeof windows !== 'object') return null;
-  const win = (w: any): UsageWindow | null =>
-    typeof w?.utilization === 'number' && typeof w?.resetsAt === 'number' ? { utilization: Math.min(1, Math.max(0, w.utilization)), resetsAt: w.resetsAt * 1000 } : null;
+  const win = (w: { utilization?: unknown; resetsAt?: unknown } | undefined) => usageWindow(w?.utilization, typeof w?.resetsAt === 'number' ? w.resetsAt * 1000 : null);
   const fiveHour = win(windows.five_hour);
   const sevenDay = win(windows.seven_day);
   return fiveHour || sevenDay ? { fiveHour, sevenDay, at: Date.now() } : null;

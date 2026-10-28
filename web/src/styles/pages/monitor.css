@@ -1,0 +1,457 @@
+/* ---------------------------------------------------------- monitor page */
+.monitor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+}
+.stat + .stat {
+  border-left: 1px solid var(--line);
+}
+.stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.tone-pass {
+  color: var(--pass);
+}
+.tone-fail {
+  color: var(--fail);
+}
+.progress {
+  grid-column: 1 / -1;
+  display: flex;
+  height: 6px;
+  background: var(--sunken);
+  border-top: 1px solid var(--line);
+}
+.seg {
+  display: block;
+  height: 100%;
+  transition: width 0.3s;
+}
+.seg-pass {
+  background: var(--pass);
+}
+.seg-fail {
+  background: var(--fail);
+}
+.seg-skip {
+  background: var(--line-strong);
+}
+.seg-run {
+  background: var(--accent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.monitor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.now {
+  gap: 14px;
+}
+.crumbs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.crumbs li {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 12px;
+  min-width: 0;
+}
+.crumbs li + li {
+  border-left: 1px solid var(--line);
+}
+.crumb-value {
+  font-weight: 600;
+}
+.crumb-empty .crumb-value {
+  color: var(--muted);
+  font-weight: 400;
+}
+.now-test {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.now-step {
+  font-family: var(--mono);
+  font-size: 12.5px;
+}
+.timeline {
+  min-height: 0;
+}
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--sunken);
+}
+.log-flat {
+  max-height: 260px;
+}
+.log-row {
+  display: grid;
+  grid-template-columns: 64px 18px minmax(0, 1fr);
+  gap: 8px;
+  padding: 3px 12px;
+  font-size: 12.5px;
+}
+.log-row time {
+  color: var(--muted);
+  font-size: 11.5px;
+  padding-top: 1px;
+}
+.log-mark {
+  text-align: center;
+  color: var(--muted);
+}
+.log-text {
+  overflow-wrap: anywhere;
+}
+.log-test {
+  margin-top: 6px;
+  font-weight: 600;
+}
+.log-step .log-text {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.log-page .log-mark,
+.log-view .log-mark {
+  color: var(--accent);
+}
+.log-system {
+  color: var(--warn);
+}
+.log-system .log-mark {
+  color: var(--warn);
+}
+.log-pass .log-mark {
+  color: var(--pass);
+  font-weight: 700;
+}
+.log-fail {
+  background: var(--fail-soft);
+}
+.log-fail .log-mark {
+  color: var(--fail);
+  font-weight: 700;
+}
+.log-skip .log-text {
+  color: var(--muted);
+}
+.frame {
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  aspect-ratio: 16 / 10;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.frame-empty {
+  padding: 24px;
+  text-align: center;
+  max-width: 36ch;
+}
+.mini-defects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mini-defects li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.mini-defects li + li {
+  border-top: 1px solid var(--line);
+}
+.mini-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ------------------------------------------------- monitor: compact dashboard */
+.monitor {
+  gap: 10px;
+}
+.monitor .stat {
+  padding: 8px 12px;
+  gap: 0;
+}
+.monitor .stat-value {
+  font-size: 18px;
+  line-height: 1.25;
+}
+.monitor .progress {
+  height: 4px;
+}
+.monitor .panel {
+  padding: 10px 12px;
+  gap: 8px;
+}
+.monitor .panel-head h2 {
+  font-size: 13px;
+}
+.monitor .now-test {
+  font-size: 14px;
+}
+.monitor .crumbs li {
+  padding: 5px 10px;
+}
+.monitor-grid {
+  gap: 10px;
+}
+.monitor .stack {
+  gap: 10px;
+}
+.monitor .log {
+  max-height: 300px;
+}
+.monitor .log-row {
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+.dash {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px;
+}
+.d-8 {
+  grid-column: span 8;
+}
+.d-6 {
+  grid-column: span 6;
+}
+.d-4 {
+  grid-column: span 4;
+}
+.chart-card {
+  min-width: 0;
+}
+.plot {
+  width: 100%;
+  min-height: 130px;
+}
+.plot svg {
+  display: block;
+  overflow: visible;
+}
+.plot .grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.plot .grid-v {
+  stroke-dasharray: 2 3;
+  opacity: 0.7;
+}
+.plot .axis {
+  fill: var(--muted);
+  font: 10px var(--mono);
+}
+.plot .avg-line {
+  stroke: #d98a00;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+.bar-hit {
+  cursor: pointer;
+}
+.chart-empty {
+  min-height: 130px;
+  display: grid;
+  place-items: center;
+}
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.swatch {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+}
+.gauge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 130px;
+}
+.gauge svg {
+  width: min(100%, 230px);
+  height: auto;
+}
+.gauge-track,
+.gauge-value {
+  fill: none;
+  stroke-width: 11;
+  stroke-linecap: butt;
+}
+.gauge-track {
+  stroke: var(--sunken);
+}
+.gauge-num {
+  position: absolute;
+  bottom: 22px;
+  font-size: 26px;
+  font-weight: 600;
+}
+.hbars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.hbars li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.hbars b {
+  text-align: right;
+  font-weight: 600;
+}
+.hbar-track {
+  height: 8px;
+  background: var(--sunken);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.hbar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+@media (max-width: 1100px) {
+  .d-8,
+  .d-6,
+  .d-4 {
+    grid-column: 1 / -1;
+  }
+}
+
+/* chart tooltip */
+.plot {
+  position: relative;
+}
+.plot .cross {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+.tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 110px;
+  max-width: 240px;
+  padding: 5px 8px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+.tip-head {
+  margin-bottom: 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+}
+.tip-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tip-row b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Page-level scrolling still works; the bar itself is not drawn. */
+.page,
+.settings-body {
+  scrollbar-width: none;
+}
+.page::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar {
+  display: none;
+}
+
+.msg-col > .msg {
+  align-self: flex-start;
+}

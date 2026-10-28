@@ -89,6 +89,8 @@ export const api = {
   session: (id: string) => call<{ session: Session; messages: SessionMessage[]; queue: QueuedMessage[] }>(`/api/sessions/${id}`),
   createSession: (serviceId: string, b: { kind: SessionKind; message?: string }) => call<Session>(`/api/services/${serviceId}/sessions`, json('POST', b)),
   createBackup: (b: { passphrase: string; includeClaudeContext: boolean }) => call<{ id: string; name: string; size: number }>('/api/backup/create', json('POST', b)),
+  /** The backup file itself is the body; the passphrase travels in a header, URL-encoded because header values are ASCII. */
+  stageRestore: (file: File, passphrase: string) => call<{ createdAt: number; appVersion: string; services: number }>('/api/backup/restore', { method: 'POST', headers: { 'x-backup-passphrase': encodeURIComponent(passphrase), 'content-type': 'application/octet-stream' }, body: file }),
   restartApp: () => call<{ restarting: boolean }>('/api/restart', json('POST')),
   sessionPrefs: (serviceId: string) => call<SessionPrefs>(`/api/services/${serviceId}/session-prefs`),
   setSessionPrefs: (serviceId: string, b: Partial<SessionPrefs>) => call<SessionPrefs>(`/api/services/${serviceId}/session-prefs`, json('PUT', b)),

@@ -7,7 +7,12 @@ import './styles/tokens.css';
 import './styles/base.css';
 import './styles/shell.css';
 import './styles/components.css';
-import './styles/pages.css';
+import './styles/pages/services.css';
+import './styles/pages/learn.css';
+import './styles/pages/monitor.css';
+import './styles/pages/results.css';
+import './styles/pages/sessions.css';
+import './styles/pages/overview.css';
 import './styles/responsive.css';
 import './styles/motion.css';
 

@@ -212,6 +212,12 @@ export interface LoginState {
 }
 
 /** How much of a rate-limit window is used (0..1) and when it resets (epoch ms). */
+/** A usage window from a 0..1 fraction and a reset time in milliseconds; null unless both are real numbers. */
+export function usageWindow(utilization: unknown, resetsAt: unknown): UsageWindow | null {
+  if (typeof utilization !== 'number' || typeof resetsAt !== 'number' || !Number.isFinite(utilization) || !Number.isFinite(resetsAt)) return null;
+  return { utilization: Math.min(1, Math.max(0, utilization)), resetsAt };
+}
+
 export interface UsageWindow {
   utilization: number;
   resetsAt: number;

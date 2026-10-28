@@ -79,17 +79,7 @@ function RestoreGroup() {
   const prepare = async () => {
     if (!file) return;
     setBusy(true);
-    const manifest = await attempt(async () => {
-      let res: Response;
-      try {
-        res = await fetch('/api/backup/restore', { method: 'POST', headers: { 'x-backup-passphrase': encodeURIComponent(pass), 'content-type': 'application/octet-stream' }, body: file });
-      } catch {
-        throw new Error('서버에 연결할 수 없습니다.');
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as { error?: string }).error ?? `요청 실패 (${res.status})`);
-      return data as Staged;
-    });
+    const manifest = await attempt(() => api.stageRestore(file, pass));
     setBusy(false);
     if (manifest) setStaged(manifest);
   };

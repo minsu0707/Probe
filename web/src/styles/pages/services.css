@@ -1,0 +1,80 @@
+/* Layouts of the services page. Other features live in their own file beside this one. */
+
+/* --------------------------------------------------------- services page */
+.list {
+  padding: 6px;
+  gap: 2px;
+}
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.row:hover {
+  background: var(--sunken);
+}
+.row-on,
+.row-on:hover {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.row-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.row-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.kv {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.kv li {
+  display: grid;
+  grid-template-columns: minmax(120px, 220px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 12px;
+}
+.kv li + li {
+  border-top: 1px solid var(--line);
+}
+.kv code {
+  justify-self: start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kv-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.kv .masked {
+  color: var(--muted);
+  letter-spacing: 0.15em;
+}
+.kv .plain {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -9,7 +9,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { ClaudeUsage, UsageWindow } from '../../../shared/models.ts';
+import { usageWindow, type ClaudeUsage } from '../../../shared/models.ts';
 import { HOME } from '../../config.ts';
 import type { ClaudeProfile } from '../../../shared/models.ts';
 
@@ -22,11 +22,9 @@ export const credentialsPath = (profile: ClaudeProfile, env: NodeJS.ProcessEnv =
 
 /** `{ five_hour: { utilization: 5, resets_at: ISO }, seven_day: … }`, utilization in percent. Anything else is null. */
 export function parseOauthUsage(json: unknown, now = Date.now()): ClaudeUsage | null {
-  const j = (json && typeof json === 'object' ? json : {}) as Record<string, any>;
-  const win = (w: any): UsageWindow | null => {
-    const resetsAt = typeof w?.resets_at === 'string' ? Date.parse(w.resets_at) : NaN;
-    return typeof w?.utilization === 'number' && Number.isFinite(resetsAt) ? { utilization: Math.min(1, Math.max(0, w.utilization / 100)), resetsAt } : null;
-  };
+  type Raw = { utilization?: unknown; resets_at?: unknown } | undefined;
+  const j = (json && typeof json === 'object' ? json : {}) as Record<string, Raw>;
+  const win = (w: Raw) => usageWindow(typeof w?.utilization === 'number' ? w.utilization / 100 : null, typeof w?.resets_at === 'string' ? Date.parse(w.resets_at) : null);
   const fiveHour = win(j.five_hour);
   const sevenDay = win(j.seven_day);
   return fiveHour || sevenDay ? { fiveHour, sevenDay, at: now } : null;

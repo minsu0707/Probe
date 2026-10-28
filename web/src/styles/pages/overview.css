@@ -1,0 +1,167 @@
+/* ----------------------------------------------------- overview: form + status */
+.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 760px) minmax(280px, 380px);
+  gap: 20px;
+  align-items: start;
+}
+.overview-aside {
+  position: sticky;
+  top: 0;
+}
+.overview-aside .panel {
+  padding: 12px 14px;
+  gap: 10px;
+}
+.overview-aside .panel-head h2 {
+  font-size: 13px;
+}
+.ov-rate {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.ov-rate-num {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.ov-bar {
+  border: 0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ov-figures {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+  gap: 8px;
+}
+.ov-figures dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+.ov-figures dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.ov-checks,
+.ov-runs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ov-checks button,
+.ov-static,
+.ov-runs button,
+.ov-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+}
+.ov-checks button,
+.ov-runs button,
+.ov-link {
+  cursor: pointer;
+}
+.ov-checks button:hover,
+.ov-runs button:hover,
+.ov-link:hover {
+  background: var(--sunken);
+}
+.ov-checks .icon,
+.ov-link .icon:first-child {
+  color: var(--muted);
+}
+.ov-check-label {
+  flex: 1;
+}
+.ov-check-value {
+  font: 12px var(--mono);
+  color: var(--pass);
+}
+.ov-check-warn {
+  color: var(--warn);
+}
+.ov-run-main {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ov-dot-pass {
+  background: var(--pass);
+}
+.ov-dot-fail {
+  background: var(--fail);
+}
+.ov-dot-run {
+  background: var(--accent);
+}
+.ov-dot-neutral {
+  background: var(--line-strong);
+}
+.ov-links {
+  display: flex;
+  flex-direction: column;
+}
+.ov-link .icon:last-child {
+  margin-left: auto;
+  color: var(--muted);
+}
+@media (max-width: 1100px) {
+  .overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .overview-aside {
+    position: static;
+    order: -1;
+  }
+}
+
+/* The status column is meant to be seen whole: tighter rows, and the least useful panels drop away as the window gets shorter. */
+.overview-aside {
+  gap: 10px;
+}
+.overview-aside .panel {
+  padding: 10px 12px;
+  gap: 8px;
+}
+.ov-checks button,
+.ov-static,
+.ov-runs button,
+.ov-link {
+  padding: 5px 6px;
+}
+.ov-rate-num {
+  font-size: 26px;
+}
+.ov-figures dd {
+  font-size: 16px;
+}
+@media (max-height: 880px) {
+  .ov-runs li:nth-child(n + 4) {
+    display: none;
+  }
+}
+@media (max-height: 780px) {
+  .ov-shortcuts {
+    display: none;
+  }
+}
+@media (max-height: 680px) {
+  .ov-recent {
+    display: none;
+  }
+}
