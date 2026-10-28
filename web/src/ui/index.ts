@@ -11,4 +11,5 @@ export { Modal } from './Modal.tsx';
 export { Pill, type Tone } from './Pill.tsx';
 export { Toasts } from './Toasts.tsx';
 export { RenameModal } from './RenameModal.tsx';
+export { UsagePanel, untilReset } from './UsagePanel.tsx';
 export { UsageMeter } from './UsageMeter.tsx';

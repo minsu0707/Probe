@@ -399,3 +399,74 @@
   height: 18px;
   object-fit: contain;
 }
+
+/* Usage popover: opened from the status bar's meter, and the same rows sit in the agent settings. */
+.usage-anchor {
+  position: relative;
+  display: inline-flex;
+}
+.usage-trigger {
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.usage-trigger:hover,
+.usage-trigger[aria-expanded='true'] {
+  background: var(--sunken);
+}
+.usage-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: 280px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.2);
+  color: var(--ink);
+}
+.usage-pop-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.usage-pop-foot {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.usage-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.usage-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.usage-row-head,
+.usage-row-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.usage-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.usage-track .usage-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.usage-track .usage-fill.usage-hot {
+  background: var(--fail);
+}

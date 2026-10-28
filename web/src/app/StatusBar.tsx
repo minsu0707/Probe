@@ -1,7 +1,7 @@
 import { useUpdateState } from '../core/desktop.ts';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { attempt, refreshUsage, useStore } from '../core/store.ts';
-import { ClaudeMark, Icon, UsageMeter } from '../ui/index.ts';
+import { ClaudeMark, Icon, UsageMeter, UsagePanel } from '../ui/index.ts';
 import { goService, settingsHref } from './router.ts';
 
 /** Always-visible footer: is the server up, can Claude be used, is anything running. */
@@ -14,6 +14,23 @@ export function StatusBar() {
 
   const update = useUpdateState();
   const [refreshing, setRefreshing] = useState(false);
+  const [usageOpen, setUsageOpen] = useState(false);
+  const usageBox = useRef<HTMLSpanElement>(null);
+  // The usage popover closes on a click elsewhere or Escape.
+  useEffect(() => {
+    if (!usageOpen) return;
+    const away = (e: MouseEvent) => !usageBox.current?.contains(e.target as Node) && setUsageOpen(false);
+    const key = (e: KeyboardEvent) => e.key === 'Escape' && setUsageOpen(false);
+    window.addEventListener('mousedown', away);
+    const close = () => setUsageOpen(false);
+    window.addEventListener('keydown', key);
+    window.addEventListener('hashchange', close);
+    return () => {
+      window.removeEventListener('hashchange', close);
+      window.removeEventListener('mousedown', away);
+      window.removeEventListener('keydown', key);
+    };
+  }, [usageOpen]);
   const claudeOk = Boolean(claude?.installed && claude.auth?.loggedIn);
   // The icon already says "Claude", so the words only carry what differs: who is signed in, or what is wrong.
   const claudeText = !claude?.installed ? '설치되어 있지 않음' : claude.auth?.loggedIn ? `${claude.auth.email ?? '로그인됨'}${claude.auth.plan ? ` · ${claude.auth.plan}` : ''}` : '로그인 필요';
@@ -37,7 +54,23 @@ export function StatusBar() {
       )}
       {claudeOk && (
         <>
-          {claude?.usage ? <UsageMeter usage={claude.usage} /> : <span className="muted">사용량</span>}
+          <span className="usage-anchor" ref={usageBox}>
+            <button className="status-link usage-trigger" onClick={() => setUsageOpen((o) => !o)} aria-expanded={usageOpen} aria-label="사용량 자세히 보기" title={claude?.usage ? undefined : '사용량'}>
+              {claude?.usage ? <UsageMeter usage={claude.usage} /> : <span className="muted">사용량</span>}
+            </button>
+            {usageOpen && (
+              <div className="usage-pop" role="dialog" aria-label="Claude 사용량">
+                <div className="usage-pop-head">
+                  <span className="claude-mark claude-ok">
+                    <ClaudeMark size={16} />
+                  </span>
+                  <strong>Claude</strong>
+                </div>
+                {claude?.usage ? <UsagePanel usage={claude.usage} /> : <p className="muted small">백그라운드 작업을 한 번 실행하면 표시됩니다.</p>}
+                {claude?.auth?.email && <div className="usage-pop-foot muted small">{claude.auth.email}</div>}
+              </div>
+            )}
+          </span>
           <button
             className={`usage-refresh${refreshing ? ' is-spinning' : ''}`}
             title="사용량 새로고침"
