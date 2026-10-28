@@ -119,6 +119,12 @@ export async function refreshClaude(): Promise<void> {
   patch(() => ({ claude }));
 }
 
+/** Ask for the plan's current usage (the status bar's refresh button). */
+export async function refreshUsage(): Promise<void> {
+  const claude = await api.refreshClaudeUsage();
+  patch(() => ({ claude }));
+}
+
 export async function loadDefects(): Promise<void> {
   const defects = await api.defects();
   patch(() => ({ defects }));

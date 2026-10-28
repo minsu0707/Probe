@@ -48,6 +48,7 @@ export const api = {
   startClaudeLogin: (b: { method?: 'claudeai' | 'console'; email?: string }) => call<LoginState>('/api/agents/claude/login', json('POST', b)),
   submitClaudeCode: (code: string) => call<LoginState>('/api/agents/claude/login/code', json('POST', { code })),
   cancelClaudeLogin: () => call<void>('/api/agents/claude/login/cancel', json('POST')),
+  refreshClaudeUsage: () => call<ClaudeAgentStatus>('/api/agents/claude/usage/refresh', json('POST')),
   claudeLogout: () => call<ClaudeAgentStatus>('/api/agents/claude/logout', json('POST')),
 
   // services

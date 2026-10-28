@@ -1,6 +1,7 @@
 import { useUpdateState } from '../core/desktop.ts';
-import { useStore } from '../core/store.ts';
-import { ClaudeMark, UsageMeter } from '../ui/index.ts';
+import { useState } from 'react';
+import { attempt, refreshUsage, useStore } from '../core/store.ts';
+import { ClaudeMark, Icon, UsageMeter } from '../ui/index.ts';
 import { goService, settingsHref } from './router.ts';
 
 /** Always-visible footer: is the server up, can Claude be used, is anything running. */
@@ -12,6 +13,7 @@ export function StatusBar() {
   const working = useStore((s) => s.services.find((x) => x.claudeWorking));
 
   const update = useUpdateState();
+  const [refreshing, setRefreshing] = useState(false);
   const claudeOk = Boolean(claude?.installed && claude.auth?.loggedIn);
   // The icon already says "Claude", so the words only carry what differs: who is signed in, or what is wrong.
   const claudeText = !claude?.installed ? '설치되어 있지 않음' : claude.auth?.loggedIn ? `${claude.auth.email ?? '로그인됨'}${claude.auth.plan ? ` · ${claude.auth.plan}` : ''}` : '로그인 필요';
@@ -33,7 +35,24 @@ export function StatusBar() {
           {claudeText}
         </a>
       )}
-      {claude?.usage && <UsageMeter usage={claude.usage} />}
+      {claudeOk && (
+        <>
+          {claude?.usage ? <UsageMeter usage={claude.usage} /> : <span className="muted">사용량</span>}
+          <button
+            className={`usage-refresh${refreshing ? ' is-spinning' : ''}`}
+            title="사용량 새로고침"
+            aria-label="사용량 새로고침"
+            disabled={refreshing}
+            onClick={async () => {
+              setRefreshing(true);
+              await attempt(refreshUsage);
+              setRefreshing(false);
+            }}
+          >
+            <Icon name="refresh" size={13} />
+          </button>
+        </>
+      )}
       <span className="spacer" />
       {update?.phase === 'ready' && (
         <a className="status-item status-link" href={settingsHref('general')} title="설정에서 설치">

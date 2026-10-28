@@ -59,3 +59,13 @@ test('system profile: the environment decides, so an existing config folder is l
   assert.equal(claudeEnv('system', 'C:\\Probe', { CLAUDE_CONFIG_DIR: 'C:\\existing' }).CLAUDE_CONFIG_DIR, 'C:\\existing');
   assert.equal(claudeEnv('system', 'C:\\Probe', {}).CLAUDE_CONFIG_DIR, undefined);
 });
+
+test('usage service figures: percent and ISO reset time become a fraction and epoch ms', async () => {
+  const { parseOauthUsage } = await import('../server/modules/agents/live-usage.ts');
+  const u = parseOauthUsage({ five_hour: { utilization: 5.5, resets_at: '2026-10-28T06:00:00Z' }, seven_day: { utilization: 34, resets_at: '2026-10-30T00:00:00Z' } }, 7)!;
+  assert.equal(u.fiveHour?.utilization, 0.055);
+  assert.equal(u.fiveHour?.resetsAt, Date.parse('2026-10-28T06:00:00Z'));
+  assert.equal(u.sevenDay?.utilization, 0.34);
+  assert.equal(parseOauthUsage({ five_hour: null }), null);
+  assert.equal(parseOauthUsage('nope'), null);
+});

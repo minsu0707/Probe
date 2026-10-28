@@ -12,7 +12,7 @@ export function UsageMeter({ usage }: { usage: ClaudeUsage }) {
     { label: '5시간', w: usage.fiveHour },
     { label: '7일', w: usage.sevenDay },
   ].filter((p): p is { label: string; w: UsageWindow } => p.w !== null);
-  const title = [...parts.map((p) => `${p.label} 한도 ${pct(p.w)}% 사용 · ${resetText(p.w)}에 초기화`), `${new Date(usage.at).toLocaleTimeString('en-GB')} 기준`].join('\n');
+  const title = [...parts.map((p) => `${p.label} 한도 ${pct(p.w)}% 사용 · ${resetText(p.w)}에 초기화`)].join('\n');
 
   return (
     <span className="usage" title={title}>
