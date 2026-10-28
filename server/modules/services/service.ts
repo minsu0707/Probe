@@ -38,7 +38,7 @@ export function createService(input: { name: string; baseUrl?: string; notes?: s
   if (!name) throw badRequest('Service name is required');
   if (repo.nameTaken(name)) throw conflict(`A service named "${name}" already exists`);
 
-  const service: Service = { id: newId(), name, baseUrl: normalizeUrl(input.baseUrl), notes: input.notes?.trim() || null, readOnly: input.readOnly === true, createdAt: Date.now() };
+  const service: Service = { id: newId(), name, baseUrl: normalizeUrl(input.baseUrl), notes: input.notes?.trim() || null, readOnly: input.readOnly === true, conventions: null, createdAt: Date.now() };
   repo.insert(service);
   scaffoldWorkspace(service.id);
   broadcast({ type: 'service', serviceId: service.id });
@@ -47,7 +47,7 @@ export function createService(input: { name: string; baseUrl?: string; notes?: s
 }
 
 /** `undefined` leaves a field alone; `null` clears it. */
-export function updateService(id: string, patch: { name?: string; baseUrl?: string | null; notes?: string | null; readOnly?: boolean }): Service {
+export function updateService(id: string, patch: { name?: string; baseUrl?: string | null; notes?: string | null; readOnly?: boolean; conventions?: string | null }): Service {
   const current = requireService(id);
   repo.update({
     id,
@@ -55,6 +55,7 @@ export function updateService(id: string, patch: { name?: string; baseUrl?: stri
     baseUrl: patch.baseUrl === undefined ? current.baseUrl : normalizeUrl(patch.baseUrl),
     notes: patch.notes === undefined ? current.notes : patch.notes?.trim() || null,
     readOnly: patch.readOnly === undefined ? current.readOnly : patch.readOnly,
+    conventions: patch.conventions === undefined ? current.conventions : patch.conventions?.trim() || null,
   });
   broadcast({ type: 'service', serviceId: id });
   const updated = requireService(id);

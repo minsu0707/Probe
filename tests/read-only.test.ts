@@ -55,3 +55,15 @@ test('the session is told to write end-to-end scenarios and that writes are the 
   assert.match(p, /do not refuse or ask again/);
   assert.match(p, /never enter wrong credentials/);
 });
+
+test('owner conventions reach the system prompt of every session', () => {
+  const base = { serviceName: 'S', baseUrl: null, envNames: [], knowledgeFiles: [] };
+  const svc = services.createService({ name: 'Conv' });
+  assert.equal(services.requireService(svc.id).conventions, null);
+  services.updateService(svc.id, { conventions: '  제목은 [화면] 형식  ' });
+  const saved = services.requireService(svc.id).conventions;
+  assert.equal(saved, '제목은 [화면] 형식');
+  assert.match(buildSystemPrompt({ ...base, conventions: saved }), /PROJECT CONVENTIONS[\s\S]*제목은 \[화면\] 형식/);
+  assert.doesNotMatch(buildSystemPrompt(base), /PROJECT CONVENTIONS/);
+  assert.equal(services.updateService(svc.id, { conventions: '  ' }).conventions, null);
+});

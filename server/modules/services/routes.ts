@@ -19,7 +19,7 @@ export const servicesRoutes = new Hono()
     return c.body(icon.bytes as Uint8Array<ArrayBuffer>, 200, { 'content-type': icon.type, 'content-security-policy': 'sandbox', 'x-content-type-options': 'nosniff', 'cache-control': 'private, max-age=86400' });
   })
   .patch('/services/:id', async (c) => {
-    const body = await parseBody(c, z.object({ name: z.string().optional(), baseUrl: z.string().nullable().optional(), notes: z.string().nullable().optional(), readOnly: z.boolean().optional() }));
+    const body = await parseBody(c, z.object({ name: z.string().optional(), baseUrl: z.string().nullable().optional(), notes: z.string().nullable().optional(), readOnly: z.boolean().optional(), conventions: z.string().max(20000).nullable().optional() }));
     return c.json(serviceOverview(updateService(c.req.param('id'), body).id));
   })
   .delete('/services/:id', (c) => (deleteService(c.req.param('id')), c.body(null, 204)));

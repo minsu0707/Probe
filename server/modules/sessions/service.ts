@@ -213,7 +213,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
 
 function contextFor(serviceId: string) {
   const service = requireService(serviceId);
-  return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name), readOnly: service.readOnly };
+  return { serviceName: service.name, baseUrl: service.baseUrl, envNames: listSecrets(serviceId).map((s) => s.key), knowledgeFiles: listKnowledge(serviceId).map((f) => f.name), readOnly: service.readOnly, conventions: service.conventions };
 }
 
 /** Probe's own MCP server for this session, so run_tests works whichever Claude login is in use. It must not open a browser tab: the app is already open. */

@@ -4,6 +4,7 @@ import { api, type Session } from '../../core/api.ts';
 import { ago } from '../../core/format.ts';
 import { attempt, loadSessions, useStore } from '../../core/store.ts';
 import { ConfirmModal, ContextMenu, Empty, Icon, RenameModal, useNow } from '../../ui/index.ts';
+import { ConventionsModal } from './ConventionsModal.tsx';
 import { NewSession } from './NewSession.tsx';
 import { Transcript } from './Transcript.tsx';
 
@@ -15,10 +16,11 @@ export function SessionsPage() {
   const service = useStore((s) => s.services.find((x) => x.id === s.currentId));
   if (!service) return <Empty title="서비스를 먼저 등록하세요">Claude 세션은 서비스별로 보관됩니다.</Empty>;
   // key remounts per service so one service's conversation never flashes while another loads
-  return <SessionsBody key={service.id} serviceId={service.id} serviceName={service.name} knowledgeCount={service.knowledgeCount} />;
+  return <SessionsBody key={service.id} serviceId={service.id} serviceName={service.name} conventions={service.conventions ?? ''} knowledgeCount={service.knowledgeCount} />;
 }
 
-function SessionsBody({ serviceId, serviceName, knowledgeCount }: { serviceId: string; serviceName: string; knowledgeCount: number }) {
+function SessionsBody({ serviceId, serviceName, conventions, knowledgeCount }: { serviceId: string; serviceName: string; conventions: string; knowledgeCount: number }) {
+  const [editingRules, setEditingRules] = useState(false);
   const sessions = useStore((s) => s.sessions[serviceId] ?? EMPTY);
   const claude = useStore((s) => s.claude);
   const now = useNow(30_000);
@@ -42,10 +44,17 @@ function SessionsBody({ serviceId, serviceName, knowledgeCount }: { serviceId: s
         <div>
           <p className="muted">{serviceName}의 테스트를 Claude에게 쓰게 하고, 대화로 고쳐 나갑니다.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setPicked(NEW)} disabled={!claudeReady}>
-          <Icon name="plus" size={16} />새 세션
-        </button>
+        <div className="actions">
+          <button className="btn" onClick={() => setEditingRules(true)} title="이 서비스의 모든 Claude 세션에 적용할 규칙">
+            <Icon name="edit" size={14} />
+            컨벤션{conventions.trim() ? ' · 적용 중' : ''}
+          </button>
+          <button className="btn btn-primary" onClick={() => setPicked(NEW)} disabled={!claudeReady}>
+            <Icon name="plus" size={16} />새 세션
+          </button>
+        </div>
       </div>
+      {editingRules && <ConventionsModal value={conventions} onSave={(text) => attempt(() => api.updateService(serviceId, { conventions: text }))} onClose={() => setEditingRules(false)} />}
 
       {!claudeReady && (
         <div className="callout">

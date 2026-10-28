@@ -12,6 +12,8 @@ export interface Service {
   notes: string | null;
   /** 조회 전용: tests may only look (no creating, changing or deleting). Enforced in the prompt and in the test browser. */
   readOnly: boolean;
+  /** House rules for writing tests (naming, locators, structure). Added to every Claude session of this service. */
+  conventions: string | null;
   createdAt: number;
 }
 

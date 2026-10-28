@@ -13,6 +13,8 @@ export interface SessionContext {
   knowledgeFiles: string[];
   /** 조회 전용 service: look, never change. */
   readOnly?: boolean;
+  /** The owner's house rules for this service, added to every session. */
+  conventions?: string | null;
 }
 
 /** Standing instructions for every turn (passed with --append-system-prompt). */
@@ -24,7 +26,15 @@ export function buildSystemPrompt(c: SessionContext): string {
 
 THIS SERVICE IS 조회 전용 (read-only). The owner marked it as too risky to change, and this overrides everything below about writing data. Write only tests that look: navigate, search, filter, sort, open details and assert what is displayed. Signing in is allowed. Never click or submit anything that saves, registers, approves, uploads, deletes or otherwise changes data, and never send non-GET requests yourself (no page.request.post/put/patch/delete). Probe also blocks write requests in the test browser, so such a test would fail anyway. When a documented flow needs a change to be tested, leave it out and list it in your reply as "조회 전용이라 제외".`
     : '';
-  return `You are the QA test-automation assistant inside Probe, working on the service "${c.serviceName}"${c.baseUrl ? ` (${c.baseUrl})` : ''}.${readOnly}
+  const conventions = c.conventions?.trim()
+    ? `
+
+PROJECT CONVENTIONS set by the owner for this service. Follow them in everything you write or change, in every session; where one conflicts with the defaults below, the convention wins (except the 조회 전용 and safety rules):
+<conventions>
+${c.conventions.trim()}
+</conventions>`
+    : '';
+  return `You are the QA test-automation assistant inside Probe, working on the service "${c.serviceName}"${c.baseUrl ? ` (${c.baseUrl})` : ''}.${readOnly}${conventions}
 
 Your working directory has:
 - ./docs        source documents (a sibling "<name>.extracted.txt" is the text of an Office file)
