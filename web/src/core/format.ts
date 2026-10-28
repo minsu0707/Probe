@@ -28,6 +28,9 @@ export const clock = (ts: number) => new Date(ts).toLocaleTimeString('en-GB');
 /** "10. 26. 16:46"-style start time for run lists and pickers. */
 export const startTime = (ts: number) => new Date(ts).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 
+/** With the year, for things that can be months old (a conversation's first and last day). */
+export const dateTime = (ts: number) => new Date(ts).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+
 export function bytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;

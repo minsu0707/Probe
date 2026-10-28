@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api, type QueuedMessage, type Session, type SessionMessage } from '../../core/api.ts';
-import { clock } from '../../core/format.ts';
+import { clock, dateTime } from '../../core/format.ts';
 import { labelOfLine } from '../../../../shared/tool-labels.ts';
 import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
@@ -55,16 +55,28 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
     <section className="panel chat">
       <div className="panel-head">
         <h2 className="ellipsis">{session.title}</h2>
-        {running ? (
-          <button className="btn btn-stop btn-sm" onClick={() => setConfirmStop(true)}>
-            중단
-          </button>
-        ) : (
-          <button className="btn btn-quiet btn-sm" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash" size={14} />
-            세션 삭제
-          </button>
-        )}
+        <div className="chat-head-side">
+          {running ? (
+            <button className="btn btn-stop btn-sm" onClick={() => setConfirmStop(true)}>
+              중단
+            </button>
+          ) : (
+            <button className="btn btn-quiet btn-sm" onClick={() => setConfirmDelete(true)}>
+              <Icon name="trash" size={14} />
+              세션 삭제
+            </button>
+          )}
+          <dl className="chat-dates muted small">
+            <div>
+              <dt>시작</dt>
+              <dd>{dateTime(session.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>마지막 작업</dt>
+              <dd>{running ? '지금 작업 중' : dateTime(session.updatedAt)}</dd>
+            </div>
+          </dl>
+        </div>
       </div>
 
       {confirmStop && (
