@@ -1530,3 +1530,80 @@ table.runs .num {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* mode / model / effort chips above the sessions */
+.prefs-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pref {
+  position: relative;
+}
+.pref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.pref-chip:hover {
+  border-color: var(--line-strong);
+}
+.pref-chip.risky {
+  border-color: var(--warn, #b45309);
+}
+.pref-name {
+  color: var(--muted);
+}
+.pref-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 220px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+.pref-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.pref-item:hover,
+.pref-item:focus-visible {
+  background: var(--accent-soft);
+}
+.pref-item.risky {
+  color: var(--warn, #b45309);
+}
+.pref-check {
+  width: 14px;
+  display: inline-grid;
+  place-items: center;
+}
+.pref-hint {
+  margin: 4px 0 0;
+  padding: 8px 8px 4px;
+  border-top: 1px solid var(--line);
+  max-width: 260px;
+  min-height: 3.6em;
+}

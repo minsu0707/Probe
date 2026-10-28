@@ -25,6 +25,8 @@ import { listKnowledge } from '../learning/knowledge.ts';
 import { parseStreamLine } from '../learning/stream.ts';
 import { listSecrets } from '../secrets/service.ts';
 import { requireService } from '../services/service.ts';
+import { DEFAULT_PREFS, type SessionPrefs } from '../../../shared/session-prefs.ts';
+import { getPrefs } from './prefs.ts';
 import { buildSystemPrompt, openingMessage } from './prompt.ts';
 import * as repo from './repository.ts';
 import { snapshotSpecs, sweepDeletedSpecs } from './sweep.ts';
@@ -160,7 +162,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
   broadcast({ type: 'service', serviceId: session.serviceId });
 
   const specsBefore = snapshotSpecs(session.serviceId);
-  const args = buildArgs({ prompt, claudeSessionId: ids.claudeSessionId, resume: ids.started, system: buildSystemPrompt(contextFor(session.serviceId)) });
+  const args = buildArgs({ prompt, claudeSessionId: ids.claudeSessionId, resume: ids.started, system: buildSystemPrompt(contextFor(session.serviceId)), prefs: getPrefs(session.serviceId), readOnly: requireService(session.serviceId).readOnly });
   const child = spawn('claude', args, { cwd: serviceDir(session.serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
 
@@ -223,8 +225,14 @@ function probeMcpConfig(): string {
   return JSON.stringify({ mcpServers: { probe: { command: process.execPath, args: [join(ROOT, 'mcp', 'server.ts')], env } } });
 }
 
-/** Same tool policy as every background job; see agents/claude-cli.ts for why it is explicit. */
-export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: boolean; system: string }): string[] {
+/**
+ * Same tool policy as every background job (see agents/claude-cli.ts) unless the user chose a wider
+ * mode: Auto and Bypass permissions open the shell and the web. A 조회 전용 service always keeps them
+ * closed, whatever the mode, because there a stray command could change data the owner wants untouched.
+ */
+export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: boolean; system: string; prefs?: SessionPrefs; readOnly?: boolean }): string[] {
+  const prefs = o.prefs ?? DEFAULT_PREFS;
+  const open = (prefs.mode === 'auto' || prefs.mode === 'bypassPermissions') && !o.readOnly;
   return [
     '-p',
     o.prompt,
@@ -236,14 +244,15 @@ export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: 
     '--append-system-prompt',
     o.system,
     '--permission-mode',
-    'acceptEdits',
+    prefs.mode,
+    ...(prefs.model === 'default' ? [] : ['--model', prefs.model]),
+    ...(prefs.effort === 'default' ? [] : ['--effort', prefs.effort]),
     '--mcp-config',
     probeMcpConfig(),
     '--allowedTools',
     ...BACKGROUND_ALLOWED_TOOLS,
     ...SESSION_EXTRA_TOOLS,
-    '--disallowedTools',
-    ...BACKGROUND_DENIED_TOOLS,
+    ...(open ? [] : ['--disallowedTools', ...BACKGROUND_DENIED_TOOLS]),
   ];
 }
 

@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { parseBody } from '../../http/validate.ts';
+import { SESSION_EFFORTS, SESSION_MODELS, SESSION_MODES } from '../../../shared/session-prefs.ts';
+import { getPrefs, setPrefs } from './prefs.ts';
 import { cancelSession, createSession, deleteSession, dispatchNext, getSession, listSessions, removeQueued, renameSession, sendMessage } from './service.ts';
 
 export const sessionsRoutes = new Hono()
@@ -8,6 +10,11 @@ export const sessionsRoutes = new Hono()
   .post('/services/:id/sessions', async (c) => {
     const body = await parseBody(c, z.object({ kind: z.enum(['write-tests', 'chat']), message: z.string().max(8000).optional() }));
     return c.json(await createSession(c.req.param('id'), body), 202);
+  })
+  .get('/services/:id/session-prefs', (c) => c.json(getPrefs(c.req.param('id'))))
+  .put('/services/:id/session-prefs', async (c) => {
+    const body = await parseBody(c, z.object({ mode: z.enum(SESSION_MODES).optional(), model: z.enum(SESSION_MODELS).optional(), effort: z.enum(SESSION_EFFORTS).optional() }));
+    return c.json(setPrefs(c.req.param('id'), body));
   })
   .get('/sessions/:id', (c) => c.json(getSession(c.req.param('id'))))
   .post('/sessions/:id/messages', async (c) => {

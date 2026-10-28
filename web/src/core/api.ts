@@ -2,6 +2,7 @@
  * Typed client for the Probe HTTP API. Every call returns parsed JSON (or text for the .enc
  * export) and throws `ApiError` with a message safe to show the user.
  */
+import type { SessionPrefs } from '../../../shared/session-prefs.ts';
 import type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, DefectStatus, Doc, Job, KnowledgeFile, LogLine, LoginState, QueuedMessage, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, Severity, TestCase, UsageWindow } from '../../../shared/models.ts';
 
 export type { ClaudeAgentStatus, ClaudeProfile, ClaudeUsage, Defect, Doc, Job, KnowledgeFile, LogLine, LoginState, QueuedMessage, RunSummary, SecretMeta, ServiceOverview, Session, SessionKind, SessionMessage, TestCase, UsageWindow };
@@ -86,6 +87,8 @@ export const api = {
   sessions: (serviceId: string) => call<Session[]>(`/api/services/${serviceId}/sessions`),
   session: (id: string) => call<{ session: Session; messages: SessionMessage[]; queue: QueuedMessage[] }>(`/api/sessions/${id}`),
   createSession: (serviceId: string, b: { kind: SessionKind; message?: string }) => call<Session>(`/api/services/${serviceId}/sessions`, json('POST', b)),
+  sessionPrefs: (serviceId: string) => call<SessionPrefs>(`/api/services/${serviceId}/session-prefs`),
+  setSessionPrefs: (serviceId: string, b: Partial<SessionPrefs>) => call<SessionPrefs>(`/api/services/${serviceId}/session-prefs`, json('PUT', b)),
   sendMessage: (id: string, text: string) => call<Session>(`/api/sessions/${id}/messages`, json('POST', { text })),
   sendQueuedNow: (id: string) => call<void>(`/api/sessions/${id}/queue/send`, json('POST')),
   removeQueued: (id: string, queuedId: number) => call<void>(`/api/sessions/${id}/queue/${queuedId}`, json('DELETE')),

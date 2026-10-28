@@ -4,6 +4,7 @@ import { api, type Session } from '../../core/api.ts';
 import { ago } from '../../core/format.ts';
 import { attempt, loadSessions, useStore } from '../../core/store.ts';
 import { ConfirmModal, ContextMenu, Empty, Icon, RenameModal, useNow } from '../../ui/index.ts';
+import { PrefsBar } from './PrefsBar.tsx';
 import { ConventionsModal } from './ConventionsModal.tsx';
 import { NewSession } from './NewSession.tsx';
 import { Transcript } from './Transcript.tsx';
@@ -55,6 +56,8 @@ function SessionsBody({ serviceId, serviceName, conventions, knowledgeCount }: {
         </div>
       </div>
       {editingRules && <ConventionsModal value={conventions} onSave={(text) => attempt(() => api.updateService(serviceId, { conventions: text }))} onClose={() => setEditingRules(false)} />}
+
+      <PrefsBar serviceId={serviceId} />
 
       {!claudeReady && (
         <div className="callout">
