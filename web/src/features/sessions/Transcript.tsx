@@ -3,7 +3,7 @@ import { api, type Session, type SessionMessage } from '../../core/api.ts';
 import { clock } from '../../core/format.ts';
 import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
-import { ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
+import { ClaudeAvatar, ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
 
 const EMPTY: SessionMessage[] = [];
 
@@ -14,13 +14,22 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
   const [sending, setSending] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
+  /** False once the reader scrolls up: new messages stop pulling the view down, and a jump button appears. */
+  const [atBottom, setAtBottom] = useState(true);
+  const atBottomRef = useRef(true);
   const running = session.status === 'running';
 
   useEffect(() => void loadTranscript(session.id).catch(() => undefined), [session.id]);
   // Follow the newest message while Claude works.
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: 'end' });
+    if (atBottomRef.current) bottom.current?.scrollIntoView({ block: 'end' });
   }, [messages.length]);
+
+  const jumpToBottom = () => {
+    atBottomRef.current = true;
+    setAtBottom(true);
+    bottom.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  };
 
   const send = async () => {
     const text = draft.trim();
@@ -66,16 +75,51 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
         </ConfirmModal>
       )}
 
-      <div className="chat-log" role="log" aria-live="polite">
-        {messages.map((m) => (
-          <Message key={m.id} m={m} />
+      <div className="chat-profile">
+        <ClaudeAvatar size={32} />
+        <div className="chat-profile-text">
+          <strong>Claude</strong>
+          <span className="muted small">
+            <span className={`dot${running ? ' dot-live' : ' dot-idle'}`} /> {running ? '작업 중' : claudeReady ? '대기 중' : '로그인이 필요합니다'}
+          </span>
+        </div>
+      </div>
+
+      <div className="chat-log-wrap">
+      <div
+        className="chat-log"
+        role="log"
+        aria-live="polite"
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          const near = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+          atBottomRef.current = near;
+          setAtBottom(near);
+        }}
+      >
+        {messages.map((m, i) => (
+          <Message key={m.id} m={m} first={!startsClaudeRun(messages[i - 1])} />
         ))}
         {running && (
-          <div className="msg msg-tool">
-            <span className="dot dot-live" /> Claude가 작업 중입니다…
+          <div className="msg-row msg-row-claude">
+            <span className="avatar-slot">{!messages.length || messages.at(-1)!.role === 'user' ? <ClaudeAvatar /> : null}</span>
+            <div className="msg-col">
+              {(!messages.length || messages.at(-1)!.role === 'user') && <div className="msg-name">Claude</div>}
+              <div className="msg msg-claude msg-typing" aria-label="Claude가 작업 중입니다">
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </div>
+            </div>
           </div>
         )}
         <div ref={bottom} />
+      </div>
+      {!atBottom && (
+        <button className="to-bottom" onClick={jumpToBottom} aria-label="맨 아래로 이동" title="맨 아래로">
+          <Icon name="arrowDown" size={16} />
+        </button>
+      )}
       </div>
 
       <div className="chat-input">
@@ -96,20 +140,36 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
   );
 }
 
-function Message({ m }: { m: SessionMessage }) {
-  if (m.role === 'tool') return <div className="msg msg-tool">{m.text}</div>;
+/** A run of Claude's lines (answers, tool notes, errors) shows its avatar and name once, on the first line. */
+const isClaudeSide = (m: SessionMessage | undefined): boolean => Boolean(m) && m!.role !== 'user';
+const startsClaudeRun = isClaudeSide;
+
+function Message({ m, first }: { m: SessionMessage; first: boolean }) {
   if (m.role === 'user')
     return (
-      <div className="msg msg-user">
-        <p>{m.text}</p>
-        <time>{clock(m.ts)}</time>
+      <div className="msg-row msg-row-user">
+        <div className="msg msg-user">
+          <p>{m.text}</p>
+          <time>{clock(m.ts)}</time>
+        </div>
       </div>
     );
-  if (m.role === 'error') return <div className="msg msg-error">{m.text}</div>;
   return (
-    <div className="msg msg-claude">
-      <Markdown source={m.text} />
-      <time>{clock(m.ts)}</time>
+    <div className="msg-row msg-row-claude">
+      <span className="avatar-slot">{first ? <ClaudeAvatar /> : null}</span>
+      <div className="msg-col">
+        {first && <div className="msg-name">Claude</div>}
+        {m.role === 'tool' ? (
+          <div className="msg msg-tool">{m.text}</div>
+        ) : m.role === 'error' ? (
+          <div className="msg msg-error">{m.text}</div>
+        ) : (
+          <div className="msg msg-claude">
+            <Markdown source={m.text} />
+            <time>{clock(m.ts)}</time>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

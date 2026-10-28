@@ -4,6 +4,7 @@ import { attempt } from '../../core/store.ts';
 import { goService } from '../../app/router.ts';
 import { ConfirmModal, Icon } from '../../ui/index.ts';
 import { EnvPanel } from './EnvPanel.tsx';
+import { ServiceAside } from './ServiceAside.tsx';
 
 /** Edit panel for the selected service: basic info, env variables, and deletion. */
 export function ServiceDetail({ service }: { service: ServiceOverview }) {
@@ -21,7 +22,8 @@ export function ServiceDetail({ service }: { service: ServiceOverview }) {
   };
 
   return (
-    <div className="stack narrow">
+    <div className="overview">
+      <div className="stack">
       <form className="panel" onSubmit={save}>
         <h2>기본 정보</h2>
         <div className="field">
@@ -69,6 +71,8 @@ export function ServiceDetail({ service }: { service: ServiceOverview }) {
           </ConfirmModal>
         )}
       </section>
+      </div>
+      <ServiceAside service={service} />
     </div>
   );
 }

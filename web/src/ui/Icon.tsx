@@ -23,6 +23,7 @@ const PATHS = {
   lock: 'M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3',
   sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
   moon: 'M20 14.5A8 8 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z',
+  arrowDown: 'M12 5v14M6 13l6 6 6-6',
   refresh: 'M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5',
 } as const;
 
@@ -48,6 +49,15 @@ export function ClaudeMark({ size = 14 }: { size?: number }) {
     <svg className="icon" width={size} height={size} viewBox="0 0 248 248" fill="currentColor" aria-hidden="true">
       <path d={CLAUDE_MARK} />
     </svg>
+  );
+}
+
+/** Claude's profile picture: its own mark (from claude.ai's favicon) in white on Claude's orange. */
+export function ClaudeAvatar({ size = 28 }: { size?: number }) {
+  return (
+    <span className="claude-avatar" style={{ width: size, height: size }} aria-hidden="true">
+      <ClaudeMark size={Math.round(size * 0.62)} />
+    </span>
   );
 }
 
