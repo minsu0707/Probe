@@ -57,7 +57,7 @@ function SecuritySection() {
   return (
     <Group>
       <Row title="암호화 저장" desc={<>환경 파일의 값은 AES-256-GCM으로 암호화해 <code>data/probe.db</code>에 저장합니다. 키는 <code>data/master.key</code>.</>} />
-      <Row title="화면과 Claude에는 이름만" desc="비밀번호, 토큰처럼 보이는 변수(이름에 pass, secret, token, key 등)는 표시하지 않고 Claude에게는 이름만 전달합니다." />
+      <Row title="화면과 Claude에는 이름만" desc="비밀번호, 토큰처럼 보이는 변수(이름에 pass, secret, token, key 등)는 기본으로 가려지고(눈 아이콘으로 직접 확인 가능), Claude에게는 이름만 전달합니다." />
       <Row title="실행할 때만 복호화" desc="테스트를 시작할 때만 환경 변수로 넣습니다. 진행 기록과 결함에 같은 값이 찍히면 ••••로 가립니다." />
       <Row title="이 컴퓨터에서만" desc={<>서버는 <code>127.0.0.1</code>에서만 열리고, 다른 사이트에서 오는 요청은 거부합니다.</>} />
       <Row title="트레이스와 스크린샷" desc="입력한 값이 담길 수 있어 가려지지 않습니다. 밖으로 공유하기 전에 확인하세요." />

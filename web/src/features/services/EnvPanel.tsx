@@ -14,10 +14,19 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
   const [pendingEnc, setPendingEnc] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  /** Sensitive values the user chose to show, by key. Dropped whenever the list is reloaded or the service changes. */
+  const [revealed, setRevealed] = useState<Record<string, string>>({});
+
+  const toggle = async (key: string) => {
+    if (revealed[key] !== undefined) return setRevealed(({ [key]: _hide, ...rest }) => rest);
+    const value = await attempt(() => api.revealSecret(service.id, key));
+    if (value !== undefined) setRevealed((r) => ({ ...r, [key]: value }));
+  };
 
   // Refetch when the server says this service changed (version bump) or the selection changes.
   useEffect(() => {
     let alive = true;
+    setRevealed({});
     api.env(service.id).then((k) => alive && setKeys(k), () => alive && setKeys([]));
     return () => {
       alive = false;
@@ -48,7 +57,7 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
 
       <FileDrop
         label=".env 또는 .enc 파일을 끌어다 놓거나 선택"
-        hint="같은 이름의 변수는 덮어씁니다. 값은 이 컴퓨터에 암호화되어 저장되고, 화면과 Claude에는 이름만 전달됩니다."
+        hint="같은 이름의 변수는 덮어씁니다. 값은 이 컴퓨터에 암호화되어 저장되고, Claude에는 이름만 전달되고, 비밀번호처럼 가려진 값은 눈 아이콘을 눌러야 보입니다."
         busy={busy}
         onFiles={async ([file]) => {
           const text = await file.text();
@@ -64,10 +73,17 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
           {keys.map((k) => (
             <li key={k.key}>
               <code>{k.key}</code>
-              <span className={k.sensitive ? 'masked' : 'plain'}>{k.sensitive ? '••••••••' : k.value}</span>
-              <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${k.key} 삭제`} onClick={() => setDeleting(k.key)}>
-                <Icon name="x" size={14} />
-              </button>
+              {k.sensitive && revealed[k.key] === undefined ? <span className="masked">••••••••</span> : <span className="plain">{k.sensitive ? revealed[k.key] : k.value}</span>}
+              <span className="kv-actions">
+                {k.sensitive && (
+                  <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${k.key} ${revealed[k.key] === undefined ? '값 보기' : '값 숨기기'}`} title={revealed[k.key] === undefined ? '값 보기' : '값 숨기기'} onClick={() => void toggle(k.key)}>
+                    <Icon name={revealed[k.key] === undefined ? 'eye' : 'eyeOff'} size={14} />
+                  </button>
+                )}
+                <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${k.key} 삭제`} onClick={() => setDeleting(k.key)}>
+                  <Icon name="x" size={14} />
+                </button>
+              </span>
             </li>
           ))}
         </ul>

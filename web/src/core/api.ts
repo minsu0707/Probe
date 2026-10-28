@@ -60,6 +60,7 @@ export const api = {
   // environment variables
   env: (id: string) => call<SecretMeta[]>(`/api/services/${id}/env`),
   importEnv: (id: string, text: string, passphrase?: string) => call<{ keys: string[]; encrypted: boolean }>(`/api/services/${id}/env`, json('POST', { text, passphrase })),
+  revealSecret: (id: string, key: string) => call<string>(`/api/services/${id}/env/${encodeURIComponent(key)}/value`),
   deleteSecret: (id: string, key: string) => call<void>(`/api/services/${id}/env/${encodeURIComponent(key)}`, json('DELETE')),
   exportEnc: (id: string, passphrase: string) => call<string>(`/api/services/${id}/env/export`, json('POST', { passphrase })),
 

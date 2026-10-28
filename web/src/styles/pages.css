@@ -62,6 +62,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.kv-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
 .kv .masked {
   color: var(--muted);
   letter-spacing: 0.15em;

@@ -9,7 +9,7 @@
 import { parse as parseDotenv } from 'dotenv';
 import { decodeEnc, decryptValue, encodeEnc, encryptValue, isEncFile } from '../../core/crypto.ts';
 import { tx } from '../../core/db.ts';
-import { badRequest, unprocessable } from '../../core/errors.ts';
+import { badRequest, notFound, unprocessable } from '../../core/errors.ts';
 import { broadcast } from '../../core/hub.ts';
 import type { SecretMeta } from '../../../shared/models.ts';
 import { refreshFavicon } from '../services/favicon.ts';
@@ -61,6 +61,14 @@ function adoptBaseUrl(serviceId: string, entries: Record<string, string>): void 
   } catch {
     /* ignore */
   }
+}
+
+/** One variable's real value, for the user's own "show" button. Never sent unless asked for by key. */
+export function revealSecret(serviceId: string, key: string): string {
+  requireService(serviceId);
+  const row = repo.findByService(serviceId).find((r) => r.key === key);
+  if (!row) throw notFound('That variable does not exist');
+  return decryptValue(row.value);
 }
 
 export function deleteSecret(serviceId: string, key: string): void {
