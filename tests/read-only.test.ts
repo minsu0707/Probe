@@ -55,6 +55,7 @@ test('the session is told to write end-to-end scenarios and that writes are the 
   assert.match(p, /Skipping is the last resort/);
   assert.match(p, /do not refuse or ask again/);
   assert.match(p, /never enter wrong credentials/);
+  assert.match(p, /FIXED name[\s\S]*never a timestamp[\s\S]*idempotent/);
 });
 
 test('owner conventions reach the system prompt of every session', () => {
