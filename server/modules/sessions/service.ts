@@ -86,6 +86,14 @@ export function cancelSession(id: string): void {
   killTree(child);
 }
 
+export function renameSession(id: string, title: string): Session {
+  if (!repo.findById(id)) throw notFound('Session not found');
+  repo.rename(id, title.trim());
+  const session = repo.findById(id)!;
+  broadcast({ type: 'session', session });
+  return session;
+}
+
 export function deleteSession(id: string): void {
   const session = repo.findById(id);
   if (!session) throw notFound('Session not found');

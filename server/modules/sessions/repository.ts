@@ -26,6 +26,8 @@ export const cli = (id: string): { claudeSessionId: string; started: boolean } |
   return row && { claudeSessionId: row.claude_session_id, started: row.started === 1 };
 };
 
+export const rename = (id: string, title: string): void => void run('UPDATE sessions SET title = ? WHERE id = ?', title, id);
+
 export const forService = (serviceId: string): Session[] => all<Row>('SELECT * FROM sessions WHERE service_id = ? ORDER BY updated_at DESC', serviceId).map(toSession);
 
 export const runningIn = (serviceId: string): Session | undefined => {

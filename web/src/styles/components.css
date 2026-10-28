@@ -699,3 +699,42 @@ kbd {
   flex-direction: column;
   gap: 2px;
 }
+
+/* ---------------------------------------------------------- context menu */
+.ctx-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 150px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
+}
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.ctx-item:hover:not(:disabled),
+.ctx-item:focus-visible {
+  background: var(--sunken);
+  outline: none;
+}
+.ctx-item:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.ctx-danger:not(:disabled) {
+  color: var(--fail);
+}

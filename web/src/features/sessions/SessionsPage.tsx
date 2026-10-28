@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { settingsHref } from '../../app/router.ts';
-import type { Session } from '../../core/api.ts';
+import { api, type Session } from '../../core/api.ts';
 import { ago } from '../../core/format.ts';
-import { loadSessions, useStore } from '../../core/store.ts';
-import { Empty, Icon, useNow } from '../../ui/index.ts';
+import { attempt, loadSessions, useStore } from '../../core/store.ts';
+import { ConfirmModal, ContextMenu, Empty, Icon, RenameModal, useNow } from '../../ui/index.ts';
 import { NewSession } from './NewSession.tsx';
 import { Transcript } from './Transcript.tsx';
 
@@ -24,6 +24,11 @@ function SessionsBody({ serviceId, serviceName, knowledgeCount }: { serviceId: s
   const now = useNow(30_000);
   const [picked, setPicked] = useState<string | null>(null);
   const claudeReady = !claude || (claude.installed && Boolean(claude.auth?.loggedIn));
+
+  const [menu, setMenu] = useState<{ x: number; y: number; session: Session } | null>(null);
+  const [renaming, setRenaming] = useState<Session | null>(null);
+  const [deleting, setDeleting] = useState<Session | null>(null);
+  const closeMenu = useCallback(() => setMenu(null), []);
 
   useEffect(() => void loadSessions(serviceId).catch(() => undefined), [serviceId]);
 
@@ -55,7 +60,7 @@ function SessionsBody({ serviceId, serviceName, knowledgeCount }: { serviceId: s
         <section className="panel list" aria-label="세션 목록">
           {sessions.length === 0 && <p className="muted small pad">아직 세션이 없습니다.</p>}
           {sessions.map((s) => (
-            <button key={s.id} className={`row${s.id === selectedId ? ' row-on' : ''}`} onClick={() => setPicked(s.id)} aria-pressed={s.id === selectedId}>
+            <button key={s.id} className={`row${s.id === selectedId ? ' row-on' : ''}`} onClick={() => setPicked(s.id)} onContextMenu={(e) => (e.preventDefault(), setMenu({ x: e.clientX, y: e.clientY, session: s }))} aria-pressed={s.id === selectedId}>
               <div className="row-main">
                 <strong className="ellipsis">{s.title}</strong>
                 <span className="muted small">
@@ -73,6 +78,30 @@ function SessionsBody({ serviceId, serviceName, knowledgeCount }: { serviceId: s
             </button>
           ))}
         </section>
+
+        {menu && (
+          <ContextMenu
+            x={menu.x}
+            y={menu.y}
+            onClose={closeMenu}
+            items={[
+              { label: '이름 변경', icon: <Icon name="edit" size={14} />, onSelect: () => setRenaming(menu.session) },
+              { label: '삭제', icon: <Icon name="trash" size={14} />, danger: true, disabled: menu.session.status === 'running', hint: '작업 중인 세션은 먼저 중단하세요', onSelect: () => setDeleting(menu.session) },
+            ]}
+          />
+        )}
+        {renaming && <RenameModal title="세션 이름 변경" value={renaming.title} onSave={(name) => attempt(() => api.renameSession(renaming.id, name))} onClose={() => setRenaming(null)} />}
+        {deleting && (
+          <ConfirmModal
+            title="세션 삭제"
+            onConfirm={async () => {
+              if (await attempt(() => api.deleteSession(deleting.id)) && deleting.id === selectedId) setPicked(null);
+            }}
+            onClose={() => setDeleting(null)}
+          >
+            <b>{deleting.title}</b> 대화를 삭제합니다. 대화 내용은 복구할 수 없습니다.
+          </ConfirmModal>
+        )}
 
         {selected ? (
           <Transcript key={selected.id} session={selected} claudeReady={claudeReady} onDeleted={() => setPicked(null)} />

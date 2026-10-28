@@ -87,6 +87,7 @@ export const api = {
   createSession: (serviceId: string, b: { kind: SessionKind; message?: string }) => call<Session>(`/api/services/${serviceId}/sessions`, json('POST', b)),
   sendMessage: (id: string, text: string) => call<Session>(`/api/sessions/${id}/messages`, json('POST', { text })),
   cancelSession: (id: string) => call<void>(`/api/sessions/${id}/cancel`, json('POST')),
+  renameSession: (id: string, title: string) => call<Session>(`/api/sessions/${id}`, json('PATCH', { title })),
   deleteSession: (id: string) => call<void>(`/api/sessions/${id}`, json('DELETE')),
 
   // runs

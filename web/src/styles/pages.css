@@ -693,13 +693,24 @@ table.runs .num {
 
 
 /* ---------------------------------------------------------- Claude sessions */
+/* The chat fills the page's height; only the message log scrolls. */
+.page:has(> .split-sessions) {
+  overflow-y: hidden;
+}
 .split-sessions {
   grid-template-columns: 240px minmax(0, 1fr);
-  align-items: start;
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+.split-sessions > .list {
+  align-self: start;
+  max-height: 100%;
+  overflow-y: auto;
 }
 .chat {
-  min-height: 420px;
-  max-height: calc(100vh - 230px);
+  min-height: 0;
 }
 .chat-log {
   flex: 1;
