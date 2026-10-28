@@ -67,11 +67,22 @@ run('npm', ['run', 'build']);
 run('npx', ['electron-builder', '--win', '--publish', 'always'], { ...process.env, GH_TOKEN: token });
 
 // The build leaves a draft: installed apps cannot see it, so none of them checks during the minutes the
-// installer is still uploading. Publishing is the last step, once latest.yml and the installer are both there.
-const assets = run('gh', ['release', 'view', `v${next}`, '--repo', 'minsu0707/Probe', '--json', 'assets', '-q', '".assets[].name"'], process.env, true);
-if (!/latest\.yml/.test(assets) || !/\.exe\b/.test(assets)) {
-  console.error(`\nrelease: the draft v${next} is missing files (found: ${assets.replace(/\s+/g, ' ') || 'none'}). Not publishing.`);
+// installer is still uploading. electron-builder uploads the files in parallel and can end up creating
+// the same release twice, each with some of the files, so look at every release with this tag, publish
+// the one that has everything, and delete the incomplete drafts.
+interface Rel {
+  id: number;
+  draft: boolean;
+  assets: { name: string }[];
+}
+const REPO = 'minsu0707/Probe';
+const releases = (JSON.parse(run('gh', ['api', `repos/${REPO}/releases?per_page=30`], process.env, true)) as (Rel & { tag_name: string })[]).filter((r) => r.tag_name === `v${next}`);
+const complete = (r: Rel) => r.assets.some((a) => a.name === 'latest.yml') && r.assets.some((a) => a.name.endsWith('.exe'));
+const best = releases.filter(complete).sort((a, b) => b.assets.length - a.assets.length)[0];
+if (!best) {
+  console.error(`\nrelease: no release of v${next} has both latest.yml and the installer yet (found: ${releases.map((r) => r.assets.map((a) => a.name).join('+') || 'empty').join(' | ') || 'none'}). Not publishing; run this again with the same version.`);
   process.exit(1);
 }
-run('gh', ['release', 'edit', `v${next}`, '--repo', 'minsu0707/Probe', '--draft=false', '--latest']);
+for (const r of releases) if (r.id !== best.id && r.draft) run('gh', ['api', '-X', 'DELETE', `repos/${REPO}/releases/${r.id}`], process.env, true);
+if (best.draft) run('gh', ['api', '-X', 'PATCH', `repos/${REPO}/releases/${best.id}`, '-F', 'draft=false', '-f', 'make_latest=true'], process.env, true);
 console.log(`\nrelease: v${next} published. Installed apps will download it within hours, or on "지금 확인".`);
