@@ -173,6 +173,14 @@ export function upsertSession(session: Session): void {
   });
 }
 
+export function removeRuns(ids: string[]): void {
+  patch((s) => {
+    const gone = new Set(ids);
+    const keep = <T,>(o: Record<string, T>) => Object.fromEntries(Object.entries(o).filter(([id]) => !gone.has(id)));
+    return { runs: keep(s.runs), logs: keep(s.logs) };
+  });
+}
+
 export function removeSession(serviceId: string, sessionId: string): void {
   patch((s) => {
     const { [sessionId]: _gone, ...transcripts } = s.transcripts;

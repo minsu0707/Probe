@@ -10,7 +10,9 @@
  * handled in ingest.ts.
  */
 import { randomBytes } from 'node:crypto';
+import { rmSync } from 'node:fs';
 import { conflict, notFound, unprocessable } from '../../core/errors.ts';
+import { broadcast } from '../../core/hub.ts';
 import { newId } from '../../core/ids.ts';
 import { killTree } from '../../core/process.ts';
 import { ensureDir, runDir } from '../../config.ts';
@@ -51,6 +53,24 @@ export function getRun(id: string): RunSummary {
 /** Live runs report their in-memory summary; the rest come from the database. */
 export function listRuns(serviceId?: string, limit = 50): RunSummary[] {
   return repo.listRuns(serviceId, limit).map((stored) => getLive(stored.id)?.summary ?? withDefects(stored));
+}
+
+/**
+ * Remove finished runs and their log. A run in progress is never removed. Its folder (failure
+ * screenshots, traces) is kept while a defect still points at it, so the defect stays viewable.
+ */
+export function deleteRuns(ids: string[]): string[] {
+  const removed: string[] = [];
+  for (const id of new Set(ids)) {
+    const stored = repo.findRun(id);
+    if (!stored) continue;
+    if (getLive(id) || isActive(stored)) throw conflict('실행 중인 기록은 삭제할 수 없습니다. 먼저 중단하세요.');
+    repo.deleteRun(id);
+    if (countRunDefects(id) === 0) rmSync(runDir(id), { recursive: true, force: true });
+    removed.push(id);
+  }
+  if (removed.length) broadcast({ type: 'runs:deleted', runIds: removed });
+  return removed;
 }
 
 export function startRun(serviceId: string, opts: StartOptions = {}): RunSummary {

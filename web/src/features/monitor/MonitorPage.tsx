@@ -3,7 +3,7 @@ import { api, type RunSummary, type ServiceOverview } from '../../core/api.ts';
 import { runButtonProps } from '../../core/runGuard.ts';
 import { RUN_STATUS_LABEL, startTime } from '../../core/format.ts';
 import { attempt, loadRun, loadRuns, useStore } from '../../core/store.ts';
-import { Empty, Icon } from '../../ui/index.ts';
+import { ConfirmModal, Empty, Icon } from '../../ui/index.ts';
 import { RunView } from './RunView.tsx';
 
 /** 실시간 모니터링: follows the live run, or shows any earlier run picked from the list. */
@@ -23,10 +23,13 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
   const [picked, setPicked] = useState<string | null>(null);
   /** The user chose an older run on purpose; stop auto-following new live runs. */
   const [pinned, setPinned] = useState(false);
+  const [deleting, setDeleting] = useState<'one' | 'all' | null>(null);
 
   const liveId = runs.find((r) => r.status === 'running' || r.status === 'starting')?.id;
   const runId = pinned && picked ? picked : (liveId ?? picked ?? runs[0]?.id ?? null);
   const run = runs.find((r) => r.id === runId);
+  const finished = runs.filter((r) => r.status !== 'running' && r.status !== 'starting');
+  const running = run?.status === 'running' || run?.status === 'starting';
 
   useEffect(() => void loadRuns(serviceId).catch(() => undefined), [serviceId]);
   useEffect(() => {
@@ -62,6 +65,7 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
         <div>
           <p className="muted">{run.title}</p>
         </div>
+        <div className="run-tools">
         <label className="run-picker">
           <span className="eyebrow">실행 기록</span>
           <select
@@ -78,6 +82,15 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
             ))}
           </select>
         </label>
+        <button className="icon-btn" aria-label="이 실행 기록 삭제" title="이 실행 기록 삭제" disabled={running} onClick={() => setDeleting('one')}>
+          <Icon name="trash" size={15} />
+        </button>
+        {finished.length > 1 && (
+          <button className="btn btn-sm" onClick={() => setDeleting('all')}>
+            끝난 기록 모두 삭제
+          </button>
+        )}
+        </div>
       </div>
       <RunView
         run={run}
@@ -88,6 +101,23 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
           setPinned(true);
         }}
       />
+      {deleting && (
+        <ConfirmModal
+          title={deleting === 'one' ? '실행 기록 삭제' : '끝난 실행 기록 모두 삭제'}
+          onConfirm={async () => {
+            const ids = deleting === 'one' ? [run.id] : finished.map((r) => r.id);
+            const done = await attempt(() => api.deleteRuns(ids));
+            if (done) {
+              setDeleting(null);
+              setPicked(null);
+              setPinned(false);
+            }
+          }}
+          onClose={() => setDeleting(null)}
+        >
+          {deleting === 'one' ? `${startTime(run.startedAt)} 실행의 기록과 로그를 삭제합니다.` : `진행 중인 실행을 뺀 ${finished.length}건의 기록과 로그를 삭제합니다.`} 이미 등록된 결함은 그대로 남습니다. 되돌릴 수 없습니다.
+        </ConfirmModal>
+      )}
     </>
   );
 }

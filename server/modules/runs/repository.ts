@@ -38,6 +38,8 @@ export const findRun = (id: string): RunSummary | undefined => {
 export const listRuns = (serviceId: string | undefined, limit: number): RunSummary[] =>
   (serviceId ? all<Row>('SELECT * FROM runs WHERE service_id = ? ORDER BY started_at DESC LIMIT ?', serviceId, limit) : all<Row>('SELECT * FROM runs ORDER BY started_at DESC LIMIT ?', limit)).map(toSummary);
 
+export const deleteRun = (id: string): void => void run('DELETE FROM runs WHERE id = ?', id); // run_log goes with it (cascade)
+
 export const appendLog = (runId: string, line: { ts: number; kind: string; text: string; status?: TestStatus }): void =>
   void run('INSERT INTO run_log (run_id, ts, kind, text, status) VALUES (?,?,?,?,?)', runId, line.ts, line.kind, line.text, line.status ?? null);
 

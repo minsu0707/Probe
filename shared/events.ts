@@ -35,6 +35,8 @@ export type ServerMessage =
   /** A new live screenshot is available at /api/runs/:id/live.jpg. */
   | { type: 'frame'; runId: string; ts: number }
   | { type: 'defect'; defect: Defect }
+  /** Finished runs were removed from the history. */
+  | { type: 'runs:deleted'; runIds: string[] }
   | { type: 'job'; job: Job }
   | { type: 'session'; session: Session }
   | { type: 'session:message'; message: SessionMessage }

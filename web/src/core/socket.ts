@@ -3,7 +3,7 @@
  * drops it reconnects and refetches, so a closed laptop lid never leaves stale data on screen.
  */
 import type { ServerMessage } from '../../../shared/events.ts';
-import { addTranscript, appendLog, loadDefects, loadRuns, patch, refreshClaude, refreshServices, removeSession, toast, upsertSession, setQueue } from './store.ts';
+import { addTranscript, appendLog, loadDefects, loadRuns, patch, refreshClaude, refreshServices, removeSession, toast, upsertSession, removeRuns, setQueue } from './store.ts';
 
 const RECONNECT_MS = 1500;
 const REFRESH_DEBOUNCE_MS = 250;
@@ -31,6 +31,9 @@ function handle(msg: ServerMessage): void {
       break;
     case 'log':
       appendLog(msg.runId, { ts: msg.ts, kind: msg.kind, text: msg.text, status: msg.status });
+      break;
+    case 'runs:deleted':
+      removeRuns(msg.runIds);
       break;
     case 'frame':
       patch((s) => ({ frameTick: { ...s.frameTick, [msg.runId]: msg.ts } }));

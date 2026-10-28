@@ -11,7 +11,7 @@ import { deleteTests } from './delete.ts';
 import { isSessionRunning } from '../sessions/service.ts';
 import { conflict } from '../../core/errors.ts';
 import { ingestEvents, ingestFrame } from './ingest.ts';
-import { activeRun, getRun, listRuns, liveFrame, runLog, startRun, stopRun } from './service.ts';
+import { activeRun, deleteRuns, getRun, listRuns, liveFrame, runLog, startRun, stopRun } from './service.ts';
 
 const CONTENT_TYPES: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
 
@@ -29,6 +29,10 @@ export const runsRoutes = new Hono()
     const body = await parseBody(c, z.object({ tests: z.array(z.object({ file: z.string(), line: z.number().int().positive() })).min(1).max(500) }));
     if (isSessionRunning(id)) throw conflict('Claude가 작업 중입니다. 끝난 뒤에 삭제하세요.');
     return c.json({ removed: await deleteTests(id, body.tests) });
+  })
+  .post('/runs/delete', async (c) => {
+    const body = await parseBody(c, z.object({ ids: z.array(z.string()).min(1).max(500) }));
+    return c.json({ removed: deleteRuns(body.ids) });
   })
   .post('/runs/:id/stop', (c) => (stopRun(c.req.param('id')), c.body(null, 204)))
 

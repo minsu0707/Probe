@@ -95,6 +95,7 @@ export const api = {
   // runs
   runs: (serviceId?: string) => call<RunSummary[]>(`/api/runs${serviceId ? `?serviceId=${serviceId}` : ''}`),
   run: (id: string) => call<{ run: RunSummary; log: LogLine[] }>(`/api/runs/${id}`),
+  deleteRuns: (ids: string[]) => call<{ removed: string[] }>('/api/runs/delete', json('POST', { ids })),
   startRun: (id: string, b: { grep?: string; tests?: { file: string; line: number }[]; title?: string; headed?: boolean } = {}) => call<RunSummary>(`/api/services/${id}/runs`, json('POST', b)),
   testCases: (id: string) => call<{ cases: TestCase[]; errors: string[] }>(`/api/services/${id}/tests`),
   deleteTests: (id: string, tests: { file: string; line: number }[]) => call<{ removed: number }>(`/api/services/${id}/tests/delete`, json('POST', { tests })),

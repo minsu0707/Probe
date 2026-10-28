@@ -203,6 +203,11 @@ input[aria-invalid='true'] {
   font-weight: 600;
   max-width: 280px;
 }
+.run-tools {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
 .run-picker {
   display: flex;
   flex-direction: column;
