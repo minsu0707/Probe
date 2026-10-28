@@ -738,3 +738,31 @@ kbd {
 .ctx-danger:not(:disabled) {
   color: var(--fail);
 }
+
+/* ---------------------------------------------------------- theme toggle */
+.theme-toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.theme-toggle button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.theme-toggle button:hover {
+  color: var(--ink);
+}
+.theme-toggle button.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}

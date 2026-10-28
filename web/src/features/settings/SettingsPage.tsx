@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../core/api.ts';
+import { setTheme, useTheme } from '../../core/theme.ts';
 import { settingsHref, SETTINGS_SECTIONS, type SettingsSection } from '../../app/router.ts';
 import { Icon, type IconName } from '../../ui/index.ts';
 import { ClaudeAgentCard } from './ClaudeAgentCard.tsx';
@@ -80,10 +81,28 @@ function BrowserSection() {
   );
 }
 
+function ThemeRow() {
+  const theme = useTheme();
+  return (
+    <Row title="테마" desc="밝은 화면과 어두운 화면 중에서 고릅니다. 고르기 전에는 Windows 설정을 따릅니다.">
+      <div className="theme-toggle" role="radiogroup" aria-label="테마">
+        {(['light', 'dark'] as const).map((t) => (
+          <button key={t} role="radio" aria-checked={theme === t} aria-label={t === 'light' ? '밝은 테마' : '어두운 테마'} title={t === 'light' ? '밝은 테마' : '어두운 테마'} className={theme === t ? 'on' : ''} onClick={() => setTheme(t)}>
+            <Icon name={t === 'light' ? 'sun' : 'moon'} size={16} />
+          </button>
+        ))}
+      </div>
+    </Row>
+  );
+}
+
 function GeneralSection() {
   const health = useHealth();
   return (
     <>
+      <Group title="화면">
+        <ThemeRow />
+      </Group>
       <Group title="업데이트">
         <UpdateRows version={health?.version} />
         <AutoInstallRow />
