@@ -42,3 +42,11 @@ test('installing is reachable from ready and final', () => {
   assert.deepEqual(installing, { phase: 'installing', currentVersion: '1.0.0', version: '1.1.0' });
   for (const ev of [{ type: 'checking' }, { type: 'none', at: 1 }, { type: 'error', message: 'x' }] as const) assert.deepEqual(reduceUpdate(installing, ev), installing);
 });
+
+test('a release whose latest.yml is not up yet is not shown as a failure', () => {
+  const idle = { phase: 'idle', currentVersion: '1.0.0', checkedAt: 5 } as const;
+  const gap = 'Cannot find latest.yml in the latest release artifacts (https://github.com/x/y/releases/download/v1.0.1/latest.yml): HttpError: 404';
+  assert.deepEqual(reduceUpdate({ phase: 'checking', currentVersion: '1.0.0' }, { type: 'error', message: gap }), { phase: 'idle', currentVersion: '1.0.0', checkedAt: null });
+  assert.deepEqual(reduceUpdate(idle, { type: 'error', message: gap }), idle);
+  assert.equal(reduceUpdate(idle, { type: 'error', message: 'offline' }).phase, 'error', 'other errors still show');
+});

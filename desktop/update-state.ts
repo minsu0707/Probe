@@ -13,6 +13,12 @@ export type UpdateEvent =
   | { type: 'installing'; version: string }
   | { type: 'error'; message: string };
 
+/**
+ * A release becomes visible a few minutes before its latest.yml is uploaded. A check in that gap is
+ * not a failure the user can act on: the next check (every few minutes) finds it, so it stays quiet.
+ */
+export const isReleaseStillUploading = (message: string): boolean => /Cannot find latest\.yml/i.test(message);
+
 export function reduceUpdate(state: UpdateState, ev: UpdateEvent): UpdateState {
   const currentVersion = state.currentVersion;
   // A downloaded update stays the answer: a later check failing (offline) must not hide it.
@@ -32,6 +38,7 @@ export function reduceUpdate(state: UpdateState, ev: UpdateEvent): UpdateState {
     case 'installing':
       return { phase: 'installing', currentVersion, version: ev.version };
     case 'error':
+      if (isReleaseStillUploading(ev.message)) return { phase: 'idle', currentVersion, checkedAt: state.phase === 'idle' ? state.checkedAt : null };
       return { phase: 'error', currentVersion, message: ev.message };
   }
 }

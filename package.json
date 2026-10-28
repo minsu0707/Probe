@@ -106,7 +106,7 @@
         "provider": "github",
         "owner": "minsu0707",
         "repo": "Probe",
-        "releaseType": "release"
+        "releaseType": "draft"
       }
     ]
   }
