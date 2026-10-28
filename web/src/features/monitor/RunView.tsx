@@ -1,6 +1,9 @@
 import type { RunSummary } from '../../core/api.ts';
 import { duration } from '../../core/format.ts';
+import { useMemo } from 'react';
+import { useStore } from '../../core/store.ts';
 import { useNow } from '../../ui/index.ts';
+import { DurationChart, PassGauge, ProgressChart, resultsOf, SlowestList, ThroughputChart, TrendChart } from './charts.tsx';
 import { LiveFrame } from './LiveFrame.tsx';
 import { NowCard } from './NowCard.tsx';
 import { RunDefects } from './RunDefects.tsx';
@@ -16,11 +19,14 @@ function Stat({ label, value, tone }: { label: string; value: string | number; t
 }
 
 /** Counters and progress bar across the top; "now" + log on the left, browser + defects on the right. */
-export function RunView({ run, serviceName }: { run: RunSummary; serviceName: string }) {
+export function RunView({ run, serviceName, runs, onPick }: { run: RunSummary; serviceName: string; runs: RunSummary[]; onPick: (id: string) => void }) {
   const live = run.status === 'running' || run.status === 'starting';
   const now = useNow(1000);
   const t = run.totals;
   const done = t.passed + t.failed + t.skipped;
+  const lines = useStore((s) => s.logs[run.id]);
+  const res = useMemo(() => resultsOf(lines), [lines]);
+  const end = run.endedAt ?? now;
   const pct = (n: number) => (t.total ? (n / t.total) * 100 : 0);
 
   return (
@@ -39,6 +45,15 @@ export function RunView({ run, serviceName }: { run: RunSummary; serviceName: st
           {live && t.running > 0 && <span className="seg seg-run" style={{ width: `${pct(t.running)}%` }} />}
         </div>
       </section>
+
+      <div className="dash">
+        <ProgressChart res={res} start={run.startedAt} end={end} total={t.total} />
+        <PassGauge res={res} />
+        <ThroughputChart res={res} start={run.startedAt} end={end} />
+        <DurationChart res={res} />
+        <TrendChart runs={runs} currentId={run.id} onPick={onPick} />
+        <SlowestList res={res} />
+      </div>
 
       <div className="monitor-grid">
         <div className="stack">

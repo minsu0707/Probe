@@ -77,7 +77,15 @@ function MonitorBody({ serviceId, serviceName, runs }: { serviceId: string; serv
           </select>
         </label>
       </div>
-      <RunView run={run} serviceName={serviceName} />
+      <RunView
+        run={run}
+        serviceName={serviceName}
+        runs={runs}
+        onPick={(id) => {
+          setPicked(id);
+          setPinned(true);
+        }}
+      />
     </>
   );
 }
