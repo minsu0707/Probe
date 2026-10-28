@@ -1126,3 +1126,62 @@ table.runs .num {
     grid-column: 1 / -1;
   }
 }
+
+/* chart tooltip */
+.plot {
+  position: relative;
+}
+.plot .cross {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+.tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 110px;
+  max-width: 240px;
+  padding: 5px 8px;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.18);
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+.tip-head {
+  margin-bottom: 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+}
+.tip-row > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tip-row b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Page-level scrolling still works; the bar itself is not drawn. */
+.page,
+.settings-body {
+  scrollbar-width: none;
+}
+.page::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar {
+  display: none;
+}

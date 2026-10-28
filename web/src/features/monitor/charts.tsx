@@ -52,9 +52,17 @@ function useWidth(): [RefObject<HTMLDivElement | null>, number] {
 
 const M = { l: 34, r: 8, t: 6, b: 18 };
 
-/** Axes and grid; `draw` gets the scales. */
-function Plot({ height = 130, yMax, xMax, xLabel, yLabel, draw }: { height?: number; yMax: number; xMax: number; xLabel: (v: number) => string; yLabel?: (v: number) => string; draw: (sx: (v: number) => number, sy: (v: number) => number, iw: number, ih: number) => ReactNode }) {
+/** What the tooltip says for the point under the pointer; `x` is where to snap the guide line (data units). */
+interface Tip {
+  x: number;
+  head: string;
+  rows: { color?: string; label: string; value: string }[];
+}
+
+/** Axes and grid; `draw` gets the scales. `tip` turns a pointer position (data x) into a small tooltip. */
+function Plot({ height = 130, yMax, xMax, xLabel, yLabel, draw, tip }: { height?: number; yMax: number; xMax: number; xLabel: (v: number) => string; yLabel?: (v: number) => string; draw: (sx: (v: number) => number, sy: (v: number) => number, iw: number, ih: number) => ReactNode; tip?: (v: number) => Tip | null }) {
   const [ref, w] = useWidth();
+  const [hover, setHover] = useState<Tip | null>(null);
   const iw = Math.max(0, w - M.l - M.r);
   const ih = height - M.t - M.b;
   const sx = (v: number) => M.l + (xMax ? (v / xMax) * iw : 0);
@@ -64,7 +72,20 @@ function Plot({ height = 130, yMax, xMax, xLabel, yLabel, draw }: { height?: num
   return (
     <div ref={ref} className="plot">
       {w > 0 && (
-        <svg width={w} height={height} role="img">
+        <svg
+          width={w}
+          height={height}
+          role="img"
+          onMouseMove={
+            tip
+              ? (e) => {
+                  const px = e.clientX - e.currentTarget.getBoundingClientRect().left;
+                  setHover(px < M.l || px > M.l + iw ? null : tip(((px - M.l) / (iw || 1)) * xMax));
+                }
+              : undefined
+          }
+          onMouseLeave={() => setHover(null)}
+        >
           {yTicks.map((v) => (
             <g key={v}>
               <line className="grid" x1={M.l} x2={M.l + iw} y1={sy(v)} y2={sy(v)} />
@@ -82,7 +103,22 @@ function Plot({ height = 130, yMax, xMax, xLabel, yLabel, draw }: { height?: num
             </g>
           ))}
           {draw(sx, sy, iw, ih)}
+          {hover && <line className="cross" x1={sx(hover.x)} x2={sx(hover.x)} y1={M.t} y2={M.t + ih} />}
         </svg>
+      )}
+      {hover && (
+        <div className="tip" style={sx(hover.x) > w / 2 ? { right: w - sx(hover.x) + 10, top: 4 } : { left: sx(hover.x) + 10, top: 4 }}>
+          <div className="tip-head">{hover.head}</div>
+          {hover.rows.map((r) => (
+            <div key={r.label} className="tip-row">
+              <span>
+                {r.color && <span className="swatch" style={{ background: r.color }} />}
+                {r.label}
+              </span>
+              <b className="tabular">{r.value}</b>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -145,6 +181,11 @@ export function ProgressChart({ res, start, end, total }: { res: Result[]; start
           xMax={span}
           yMax={yMax}
           xLabel={clockLabel}
+          tip={(v) => {
+            const c = { pass: 0, fail: 0, skip: 0 };
+            for (const r of res) if (r.ts - start <= v) c[r.kind]++;
+            return { x: v, head: `${clockLabel(v)} 시점`, rows: [{ color: C.pass, label: '통과', value: String(c.pass) }, { color: C.fail, label: '실패', value: String(c.fail) }, { color: C.skip, label: '건너뜀', value: String(c.skip) }, { label: '진행', value: total ? `${c.pass + c.fail + c.skip}/${total}` : String(c.pass + c.fail + c.skip) }] };
+          }}
           draw={(sx, sy) => (
             <>
               {(['skip', 'fail', 'pass'] as const).map((k) => {
@@ -177,6 +218,7 @@ export function PassGauge({ res }: { res: Result[] }) {
     <Card title="통과율" hint="건너뜀 제외" className="d-4">
       <div className="gauge">
         <svg viewBox="0 0 120 70" role="img" aria-label={rate === null ? '통과율 없음' : `통과율 ${rate.toFixed(1)}%`}>
+          <title>{`통과 ${pass} · 실패 ${fail}`}</title>
           <path d={arc} className="gauge-track" pathLength="100" />
           {rate !== null && rate > 0 && <path d={arc} className="gauge-value" pathLength="100" strokeDasharray={`${rate} 100`} style={{ stroke: color }} />}
         </svg>
@@ -207,13 +249,17 @@ export function ThroughputChart({ res, start, end }: { res: Result[]; start: num
           xMax={span}
           yMax={yMax}
           xLabel={clockLabel}
+          tip={(v) => {
+            const i = Math.min(n - 1, Math.max(0, Math.floor((v / span) * n)));
+            const b = buckets[i];
+            return { x: ((i + 0.5) / n) * span, head: `${clockLabel((i / n) * span)} ~ ${clockLabel(((i + 1) / n) * span)}`, rows: [{ color: C.pass, label: '통과', value: String(b.pass) }, { color: C.fail, label: '실패', value: String(b.fail) }, { color: C.skip, label: '건너뜀', value: String(b.skip) }] };
+          }}
           draw={(sx, sy, iw) => {
             const bw = Math.max(2, iw / n - 2);
             return buckets.map((b, i) => {
               let y = 0;
               return (
                 <g key={i}>
-                  <title>{`${clockLabel((i / n) * span)}~ · 통과 ${b.pass} · 실패 ${b.fail} · 건너뜀 ${b.skip}`}</title>
                   {KINDS.map((k) => {
                     const rect = b[k] ? <rect key={k} x={sx((i / n) * span) + 1} y={sy(y + b[k])} width={bw} height={sy(y) - sy(y + b[k])} fill={C[k]} /> : null;
                     y += b[k];
@@ -247,15 +293,18 @@ export function DurationChart({ res }: { res: Result[] }) {
           yMax={yMax}
           xLabel={(v) => `#${Math.round(v) + 1}`}
           yLabel={secLabel}
+          tip={(v) => {
+            const i = Math.min(timed.length - 1, Math.max(0, Math.round(v)));
+            const r = timed[i];
+            return { x: i, head: `#${i + 1} ${r.title}`, rows: [{ color: r.kind === 'fail' ? C.fail : C.accent, label: r.kind === 'fail' ? '실패' : '통과', value: secLabel(r.ms) }, { color: C.warn, label: '평균 대비', value: `${r.ms >= avg ? '+' : '-'}${secLabel(Math.abs(r.ms - avg))}` }] };
+          }}
           draw={(sx, sy, iw) => (
             <>
               <line x1={sx(0)} x2={sx(last)} y1={sy(avg)} y2={sy(avg)} className="avg-line" />
               <path d={timed.map((r, i) => `${i ? 'L' : 'M'}${sx(i).toFixed(1)},${sy(r.ms).toFixed(1)}`).join('')} fill="none" stroke={C.accent} strokeWidth="1.4" strokeLinejoin="round" />
               {timed.length <= 120 &&
                 timed.map((r, i) => (
-                  <circle key={i} cx={sx(i)} cy={sy(r.ms)} r={iw / timed.length > 6 ? 2.6 : 1.8} fill={r.kind === 'fail' ? C.fail : C.accent}>
-                    <title>{`${r.title} · ${secLabel(r.ms)}`}</title>
-                  </circle>
+                  <circle key={i} cx={sx(i)} cy={sy(r.ms)} r={iw / timed.length > 6 ? 2.6 : 1.8} fill={r.kind === 'fail' ? C.fail : C.accent} />
                 ))}
             </>
           )}
@@ -287,6 +336,11 @@ export function TrendChart({ runs, currentId, onPick }: { runs: RunSummary[]; cu
           yMax={100}
           xLabel={timeOf}
           yLabel={(v) => `${Math.round(v)}%`}
+          tip={(v) => {
+            const i = Math.min(list.length - 1, Math.max(0, Math.floor(v)));
+            const r = list[i];
+            return { x: i + 0.5, head: startTime(r.startedAt), rows: [{ label: '통과율', value: `${rate(r).toFixed(1)}%` }, { color: C.pass, label: '통과', value: String(r.totals.passed) }, { color: C.fail, label: '실패', value: String(r.totals.failed) }, { color: C.skip, label: '건너뜀', value: String(r.totals.skipped) }, { label: '결함', value: String(r.defects) }] };
+          }}
           draw={(sx, sy, iw) => {
             const bw = Math.max(3, iw / list.length - 3);
             return list.map((r, i) => {
@@ -294,7 +348,6 @@ export function TrendChart({ runs, currentId, onPick }: { runs: RunSummary[]; cu
               const color = v >= 90 ? C.pass : v >= 70 ? C.warn : C.fail;
               return (
                 <g key={r.id} className="bar-hit" onClick={() => onPick(r.id)}>
-                  <title>{`${startTime(r.startedAt)} · 통과율 ${v.toFixed(1)}% (통과 ${r.totals.passed} / 실패 ${r.totals.failed})`}</title>
                   <rect x={sx(i) + 1} y={sy(100)} width={bw} height={sy(0) - sy(100)} fill="transparent" />
                   <rect x={sx(i) + 1} y={sy(v)} width={bw} height={sy(0) - sy(v)} fill={color} opacity={r.id === currentId ? 1 : 0.5} stroke={r.id === currentId ? 'var(--ink)' : 'none'} />
                 </g>
@@ -321,7 +374,7 @@ export function SlowestList({ res }: { res: Result[] }) {
       ) : (
         <ol className="hbars">
           {top.map((r, i) => (
-            <li key={i} title={r.title}>
+            <li key={i} title={`${r.title} · ${secLabel(r.ms)}`}>
               <span className="hbar-label ellipsis">{r.title}</span>
               <span className="hbar-track">
                 <span className="hbar-fill" style={{ width: `${(r.ms / max) * 100}%`, background: r.kind === 'fail' ? C.fail : C.accent }} />

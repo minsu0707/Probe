@@ -85,7 +85,7 @@ function ThemeRow() {
   const theme = useTheme();
   return (
     <Row title="테마" desc="밝은 화면과 어두운 화면 중에서 고릅니다. 고르기 전에는 Windows 설정을 따릅니다.">
-      <div className="theme-toggle" role="radiogroup" aria-label="테마">
+      <div className="theme-toggle" data-mode={theme} role="radiogroup" aria-label="테마">
         {(['light', 'dark'] as const).map((t) => (
           <button key={t} role="radio" aria-checked={theme === t} aria-label={t === 'light' ? '밝은 테마' : '어두운 테마'} title={t === 'light' ? '밝은 테마' : '어두운 테마'} className={theme === t ? 'on' : ''} onClick={() => setTheme(t)}>
             <Icon name={t === 'light' ? 'sun' : 'moon'} size={16} />

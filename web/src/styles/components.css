@@ -740,29 +740,52 @@ kbd {
 }
 
 /* ---------------------------------------------------------- theme toggle */
+/* The accent pill slides between sun and moon instead of jumping. */
 .theme-toggle {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   padding: 3px;
-  gap: 2px;
   background: var(--sunken);
   border: 1px solid var(--line);
   border-radius: 999px;
 }
+.theme-toggle::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background: var(--accent);
+  border-radius: 999px;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.theme-toggle[data-mode='dark']::before {
+  transform: translateX(100%);
+}
 .theme-toggle button {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 32px;
+  width: 34px;
   height: 26px;
   border: 0;
   border-radius: 999px;
   background: none;
   color: var(--muted);
   cursor: pointer;
+  transition: color 0.28s;
 }
 .theme-toggle button:hover {
   color: var(--ink);
 }
 .theme-toggle button.on {
-  background: var(--accent);
   color: var(--accent-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle::before,
+  .theme-toggle button {
+    transition: none;
+  }
 }
