@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { isolatedHome } from './helpers.ts';
 
 isolatedHome();
 const { testsDir, ensureDir } = await import('../server/config.ts');
-const { sweepDeletedSpecs } = await import('../server/modules/sessions/sweep.ts');
+const { snapshotSpecs, sweepDeletedSpecs } = await import('../server/modules/sessions/sweep.ts');
+const { recycler } = await import('../server/core/recycle.ts');
+
+/** Stands in for the real Recycle Bin: records what was sent and removes the file, as the real one does. */
+const recycled: { path: string; text: string }[] = [];
+recycler.move = (path: string) => (recycled.push({ path, text: readFileSync(path, 'utf8') }), rmSync(path));
 
 test('only marked or empty files under tests/specs are removed', () => {
   const specs = join(ensureDir(testsDir('svc1')), 'specs');
@@ -24,26 +29,37 @@ test('only marked or empty files under tests/specs are removed', () => {
   assert.deepEqual(sweepDeletedSpecs('no-such-service'), []);
 });
 
-test('a spec Claude empties is kept in the trash, and restoring puts it back', async () => {
-  const { listTrash, restoreTrashed } = await import('../server/modules/runs/trash.ts');
-  const { snapshotSpecs } = await import('../server/modules/sessions/sweep.ts');
-  const svc = (await import('../server/modules/services/service.ts')).createService({ name: 'Trashy', baseUrl: 'http://127.0.0.1:9' }).id;
-  const specs = join(ensureDir(testsDir(svc)), 'specs');
+test('a spec Claude empties goes to the Recycle Bin with its earlier content', () => {
+  const specs = join(ensureDir(testsDir('svc2')), 'specs');
   mkdirSync(specs, { recursive: true });
   writeFileSync(join(specs, 'gone.spec.ts'), "test('a', async () => {});\n");
-  const before = snapshotSpecs(svc);
+  const before = snapshotSpecs('svc2');
   writeFileSync(join(specs, 'gone.spec.ts'), '// probe:delete\n');
-  sweepDeletedSpecs(svc, before);
+  recycled.length = 0;
+  sweepDeletedSpecs('svc2', before);
   assert.ok(!existsSync(join(specs, 'gone.spec.ts')));
-  const [item] = listTrash(svc);
-  assert.equal(item.file, 'gone.spec.ts');
-  restoreTrashed(svc, item.id);
-  assert.match((await import('node:fs')).readFileSync(join(specs, 'gone.spec.ts'), 'utf8'), /test\('a'/);
-  assert.equal(listTrash(svc).length, 0);
+  assert.equal(recycled.length, 1);
+  assert.match(recycled[0].text, /test\('a'/, 'the Recycle Bin holds what the file had, not the marker');
+});
+
+test('a file the Recycle Bin refuses is kept, never deleted for good', () => {
+  const specs = join(ensureDir(testsDir('svc3')), 'specs');
+  mkdirSync(specs, { recursive: true });
+  writeFileSync(join(specs, 'stay.spec.ts'), '// probe:delete\n');
+  const real = recycler.move;
+  recycler.move = () => {
+    throw new Error('no bin');
+  };
+  try {
+    assert.deepEqual(sweepDeletedSpecs('svc3'), []);
+  } finally {
+    recycler.move = real;
+  }
+  assert.ok(existsSync(join(specs, 'stay.spec.ts')));
 });
 
 test('a test block is cut out with its comment and can be restored', async () => {
-  const { cutTest } = await import('../server/modules/runs/trash.ts');
+  const { cutTest } = await import('../server/modules/runs/delete.ts');
   const src = "import x from 'y';\n\n// 근거 문서\ntest('a (b)', async ({ page }) => {\n  const s = `}${1}`;\n});\n\ntest('c', () => {});\n";
   const cut = cutTest(src, 4)!;
   assert.equal(cut.removed, "// 근거 문서\ntest('a (b)', async ({ page }) => {\n  const s = `}${1}`;\n});");

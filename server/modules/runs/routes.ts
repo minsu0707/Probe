@@ -7,7 +7,7 @@ import { runDir } from '../../config.ts';
 import type { IngestEvent } from '../../../shared/events.ts';
 import { parseBody } from '../../http/validate.ts';
 import { listTestCases } from './cases.ts';
-import { emptyTrash, listTrash, restoreTrashed, trashTests } from './trash.ts';
+import { deleteTests } from './delete.ts';
 import { isSessionRunning } from '../sessions/service.ts';
 import { conflict } from '../../core/errors.ts';
 import { ingestEvents, ingestFrame } from './ingest.ts';
@@ -26,13 +26,10 @@ export const runsRoutes = new Hono()
   .get('/services/:id/tests', async (c) => c.json(await listTestCases(c.req.param('id'))))
   .post('/services/:id/tests/delete', async (c) => {
     const id = c.req.param('id');
-    const body = await parseBody(c, z.object({ tests: z.array(z.object({ file: z.string(), line: z.number().int().positive(), title: z.string().optional(), feature: z.string().optional() })).min(1).max(500) }));
+    const body = await parseBody(c, z.object({ tests: z.array(z.object({ file: z.string(), line: z.number().int().positive() })).min(1).max(500) }));
     if (isSessionRunning(id)) throw conflict('Claude가 작업 중입니다. 끝난 뒤에 삭제하세요.');
-    return c.json(trashTests(id, body.tests));
+    return c.json({ removed: await deleteTests(id, body.tests) });
   })
-  .get('/services/:id/trash', (c) => c.json(listTrash(c.req.param('id'))))
-  .post('/services/:id/trash/:item/restore', (c) => c.json(restoreTrashed(c.req.param('id'), c.req.param('item'))))
-  .delete('/services/:id/trash/:item?', (c) => (emptyTrash(c.req.param('id'), c.req.param('item')), c.body(null, 204)))
   .post('/runs/:id/stop', (c) => (stopRun(c.req.param('id')), c.body(null, 204)))
 
   // Latest browser frame. 204 means "none yet", which the UI treats as "still starting".

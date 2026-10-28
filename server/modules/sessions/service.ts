@@ -145,7 +145,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
     closed = true;
     children.delete(id);
     const removed = sweepDeletedSpecs(session.serviceId, specsBefore);
-    if (removed.length) say(id, 'tool', `휴지통으로 옮긴 파일: ${removed.join(', ')}`);
+    if (removed.length) say(id, 'tool', `컴퓨터 휴지통으로 옮긴 파일: ${removed.join(', ')}`);
     if (note) say(id, 'error', note);
     setStatus(id, status);
     broadcast({ type: 'service', serviceId: session.serviceId });

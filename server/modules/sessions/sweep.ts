@@ -4,12 +4,12 @@
  * ends. Only files under tests/specs/ are ever touched, and only if they hold nothing but the marker.
  *
  * Nothing is lost for good: the specs are read before the turn (`snapshotSpecs`), and a file that
- * gets removed is saved to the service's trash with its earlier content.
+ * gets removed is first given its earlier content back and then sent to the computer's Recycle Bin.
  */
-import { readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { testsDir } from '../../config.ts';
-import { trashFileContent } from '../runs/trash.ts';
+import { recycleSpec } from '../runs/delete.ts';
 
 export const DELETE_MARKER = '// probe:delete';
 const MAX_DEPTH = 4;
@@ -39,7 +39,7 @@ export function snapshotSpecs(serviceId: string): Map<string, string> {
   return out;
 }
 
-/** Moves marked or empty files in the service's specs folder to the trash; returns their paths relative to it. */
+/** Sends marked or empty files in the service's specs folder to the Recycle Bin; returns their paths relative to it. A file that could not be moved stays. */
 export function sweepDeletedSpecs(serviceId: string, before: ReadonlyMap<string, string> = new Map()): string[] {
   const root = join(testsDir(serviceId), 'specs');
   const removed: string[] = [];
@@ -58,9 +58,11 @@ export function sweepDeletedSpecs(serviceId: string, before: ReadonlyMap<string,
         const text = readFileSync(path, 'utf8').trim();
         if (text === '' || text === DELETE_MARKER) {
           const name = rel(root, path);
-          const old = before.get(name);
-          if (old !== undefined) trashFileContent(serviceId, name, old);
-          rmSync(path, { force: true });
+          try {
+            recycleSpec(path, before.get(name));
+          } catch {
+            continue; // never delete for good when the Recycle Bin did not take it
+          }
           removed.push(name);
         }
       }
