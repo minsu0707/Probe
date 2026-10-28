@@ -66,7 +66,13 @@ function CasesBody({ service }: { service: ServiceOverview }) {
   };
   const chosen = (cases ?? []).filter((c) => picked.has(c.id));
 
-  if (cases === null) return <div className="muted pad">테스트 목록을 읽는 중…</div>;
+  if (cases === null)
+    return (
+      <div className="page-loading" role="status">
+        <span className="spinner" aria-hidden="true" />
+        <p>테스트 목록을 불러오는 중…</p>
+      </div>
+    );
 
   return (
     <>
@@ -81,10 +87,14 @@ function CasesBody({ service }: { service: ServiceOverview }) {
       </div>
 
       {errors.length > 0 && (
-        <div className="callout callout-warn">
+        <div className="callout callout-warn" role="alert">
           <div>
-            <strong>일부 파일을 읽지 못했습니다.</strong>
-            <pre className="case-error">{errors.join('\n\n')}</pre>
+            <strong>{cases.length ? '일부 테스트 파일을 읽지 못했습니다.' : '테스트 목록을 불러오지 못했습니다.'}</strong>
+            <p className="muted small">테스트 파일에 문법 오류가 있을 수 있습니다. Claude 세션에서 고쳐 달라고 하거나 새로고침해 보세요.</p>
+            <details className="case-error-detail">
+              <summary>오류 내용 보기</summary>
+              <pre className="case-error">{errors.join('\n\n')}</pre>
+            </details>
           </div>
         </div>
       )}

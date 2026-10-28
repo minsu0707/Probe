@@ -86,7 +86,8 @@ export async function listTestCases(serviceId: string): Promise<{ cases: TestCas
   try {
     json = JSON.parse(stdout);
   } catch {
-    return { cases: [], errors: [stderr.replace(ANSI, '').trim().split('\n').slice(-5).join('\n') || '테스트 목록을 읽지 못했습니다'] };
+    const tail = stderr.replace(ANSI, '').trim().split('\n').slice(-5).join('\n');
+    return { cases: [], errors: /No tests found/i.test(tail) ? [] : [tail || '테스트 목록을 읽지 못했습니다'] };
   }
   const cache = new Map<string, string[]>();
   const readSource = (file: string) => {
@@ -99,6 +100,7 @@ export async function listTestCases(serviceId: string): Promise<{ cases: TestCas
     }
     return cache.get(file)!;
   };
-  const errors = (json.errors ?? []).map((e) => (e.message ?? '').replace(ANSI, '').trim()).filter(Boolean);
+  // "No tests found" just means nothing has been written yet; the page shows that as its empty state.
+  const errors = (json.errors ?? []).map((e) => (e.message ?? '').replace(ANSI, '').trim()).filter((m) => m && !/^Error: No tests found\.?$/i.test(m));
   return { cases: flattenSuites(json.suites ?? [], readSource), errors };
 }
