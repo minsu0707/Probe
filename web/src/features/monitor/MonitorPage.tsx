@@ -3,7 +3,7 @@ import { api, type RunSummary, type ServiceOverview } from '../../core/api.ts';
 import { runButtonProps } from '../../core/runGuard.ts';
 import { RUN_STATUS_LABEL, startTime } from '../../core/format.ts';
 import { attempt, loadRun, loadRuns, useStore } from '../../core/store.ts';
-import { ConfirmModal, Empty, Icon } from '../../ui/index.ts';
+import { ConfirmModal, ContextMenu, Empty, Icon } from '../../ui/index.ts';
 import { RunView } from './RunView.tsx';
 
 /** 실시간 모니터링: follows the live run, or shows any earlier run picked from the list. */
@@ -24,6 +24,7 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
   /** The user chose an older run on purpose; stop auto-following new live runs. */
   const [pinned, setPinned] = useState(false);
   const [deleting, setDeleting] = useState<'one' | 'all' | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   const liveId = runs.find((r) => r.status === 'running' || r.status === 'starting')?.id;
   const runId = pinned && picked ? picked : (liveId ?? picked ?? runs[0]?.id ?? null);
@@ -82,14 +83,17 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
             ))}
           </select>
         </label>
-        <button className="btn btn-icon" aria-label="이 실행 기록 삭제" title="이 실행 기록 삭제" disabled={running} onClick={() => setDeleting('one')}>
-          <Icon name="trash" size={15} />
+        <button
+          className="btn"
+          aria-haspopup="menu"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            setMenu({ x: r.left, y: r.bottom + 4 });
+          }}
+        >
+          <Icon name="trash" size={14} />
+          기록 삭제
         </button>
-        {finished.length > 1 && (
-          <button className="btn" onClick={() => setDeleting('all')}>
-            끝난 기록 모두 삭제
-          </button>
-        )}
         </div>
       </div>
       <RunView
@@ -101,6 +105,17 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
           setPinned(true);
         }}
       />
+      {menu && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          onClose={() => setMenu(null)}
+          items={[
+            { label: '지금 보는 기록 삭제', disabled: running, hint: '실행 중인 기록은 먼저 중단하세요', onSelect: () => setDeleting('one') },
+            { label: `끝난 기록 모두 삭제 (${finished.length}건)`, danger: true, disabled: finished.length === 0, onSelect: () => setDeleting('all') },
+          ]}
+        />
+      )}
       {deleting && (
         <ConfirmModal
           title={deleting === 'one' ? '실행 기록 삭제' : '끝난 실행 기록 모두 삭제'}

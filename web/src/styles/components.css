@@ -221,9 +221,6 @@ input[aria-invalid='true'] {
 .run-tools .btn {
   height: 32px;
 }
-.run-tools .btn-icon {
-  width: 32px;
-}
 .run-picker {
   display: flex;
   flex-direction: column;

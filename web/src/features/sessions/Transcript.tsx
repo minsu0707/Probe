@@ -60,8 +60,9 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
             중단
           </button>
         ) : (
-          <button className="btn btn-icon btn-sm" aria-label="세션 삭제" title="세션 삭제" onClick={() => setConfirmDelete(true)}>
-            <Icon name="trash" size={16} />
+          <button className="btn btn-quiet btn-sm" onClick={() => setConfirmDelete(true)}>
+            <Icon name="trash" size={14} />
+            세션 삭제
           </button>
         )}
       </div>
