@@ -18,7 +18,7 @@ export function UpdateRows({ version }: { version: string | undefined }) {
 
   const line =
     update.phase === 'installing' ? `${update.version} 설치 중` :
-    update.phase === 'ready' ? `${update.version} 준비됨` :
+    update.phase === 'ready' ? (update.newerVersion ? `${update.version} 준비됨 · 더 새로운 ${update.newerVersion}을 받는 중` : `${update.version} 준비됨`) :
     update.phase === 'downloading' ? `${update.version} 내려받는 중` :
     update.phase === 'checking' ? '확인 중…' :
     update.phase === 'error' ? `확인 실패: ${update.message}` :
@@ -30,8 +30,8 @@ export function UpdateRows({ version }: { version: string | undefined }) {
       <br />새 버전은 내려받아 두고, 설치는 자동 설치 설정에 따릅니다.
     </>}>
       {update.phase === 'ready' ? (
-        <button className="btn btn-primary" onClick={() => void attempt(async () => installUpdate())}>
-          재시작해서 설치
+        <button className="btn btn-primary" disabled={Boolean(update.newerVersion)} title={update.newerVersion ? '더 새로운 버전을 받는 중입니다. 끝나면 그 버전이 설치됩니다.' : undefined} onClick={() => void attempt(async () => installUpdate())}>
+          {update.newerVersion ? '최신 버전 받는 중…' : '재시작해서 설치'}
         </button>
       ) : (
         <button

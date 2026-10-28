@@ -50,3 +50,12 @@ test('a release whose latest.yml is not up yet is not shown as a failure', () =>
   assert.deepEqual(reduceUpdate(idle, { type: 'error', message: gap }), idle);
   assert.equal(reduceUpdate(idle, { type: 'error', message: 'offline' }).phase, 'error', 'other errors still show');
 });
+
+test('a newer release that appears while one waits is fetched behind it, and the wait is not lost if that fails', () => {
+  const ready: UpdateState = { phase: 'ready', currentVersion: '1.0.0', version: '1.1.0' };
+  const behind = reduceUpdate(ready, { type: 'available', version: '1.2.0' });
+  assert.deepEqual(behind, { phase: 'ready', currentVersion: '1.0.0', version: '1.1.0', newerVersion: '1.2.0' });
+  assert.deepEqual(reduceUpdate(ready, { type: 'available', version: '1.1.0' }), ready, 'the same version again changes nothing');
+  assert.deepEqual(reduceUpdate(behind, { type: 'error', message: 'offline' }), ready, 'a failed fetch goes back to the one that is ready');
+  assert.deepEqual(reduceUpdate(behind, { type: 'downloaded', version: '1.2.0' }), { phase: 'ready', currentVersion: '1.0.0', version: '1.2.0' }, 'the newer one replaces it when downloaded');
+});

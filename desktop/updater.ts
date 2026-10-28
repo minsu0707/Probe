@@ -72,7 +72,8 @@ function apply(ev: UpdateEvent): void {
 export const updateState = (): UpdateState => state;
 
 export async function checkForUpdate(): Promise<UpdateState> {
-  if (!enabled || state.phase === 'checking' || state.phase === 'downloading' || state.phase === 'ready' || state.phase === 'installing') return state;
+  // A downloaded update does not stop the checks: a newer release may have come out since.
+  if (!enabled || state.phase === 'checking' || state.phase === 'downloading' || state.phase === 'installing') return state;
   apply({ type: 'checking' });
   try {
     await autoUpdater.checkForUpdates();
@@ -84,7 +85,7 @@ export async function checkForUpdate(): Promise<UpdateState> {
 
 /** Quit and run the installer, after `beforeInstall` has stopped the server. False if nothing is ready or the user declined. */
 export async function installUpdate(): Promise<boolean> {
-  if (state.phase !== 'ready') return false;
+  if (state.phase !== 'ready' || state.newerVersion) return false; // a newer one is on its way: install that, not this
   if (!(await beforeInstall())) return false;
   const version = state.version;
   log(`installing v${version}`);
@@ -104,9 +105,20 @@ export async function installUpdate(): Promise<boolean> {
  * learning job or Claude session working, and the window is hidden, minimized or not in front.
  * Until then it keeps asking every 30 s; the banner and the settings button work in the meantime.
  */
+let autoLoopRunning = false;
 async function installWhenSafe(): Promise<void> {
+  if (autoLoopRunning) return;
+  autoLoopRunning = true;
+  try {
+    await autoInstallLoop();
+  } finally {
+    autoLoopRunning = false;
+  }
+}
+
+async function autoInstallLoop(): Promise<void> {
   while (state.phase === 'ready' && autoInstallEnabled()) {
-    if (await isSafeToRestart()) {
+    if (!state.newerVersion && (await isSafeToRestart())) {
       log('installing: idle');
       if (await installUpdate()) return;
     }

@@ -90,7 +90,7 @@ export function StatusBar() {
       {update?.phase === 'ready' && (
         <a className="status-item status-link" href={settingsHref('general')} title="설정에서 설치">
           <span className="dot dot-ok" />
-          업데이트 {update.version} 준비됨
+          업데이트 {update.newerVersion ?? update.version} {update.newerVersion ? '받는 중' : '준비됨'}
         </a>
       )}
       {working && (

@@ -286,8 +286,8 @@ export type UpdateState =
   | { phase: 'idle'; currentVersion: string; checkedAt: number | null }
   | { phase: 'checking'; currentVersion: string }
   | { phase: 'downloading'; currentVersion: string; version: string; percent: number }
-  /** Downloaded; it installs when the app restarts. */
-  | { phase: 'ready'; currentVersion: string; version: string }
+  /** Downloaded; it installs when the app restarts. `newerVersion` is set while an even newer release is being downloaded behind it. */
+  | { phase: 'ready'; currentVersion: string; version: string; newerVersion?: string }
   /** The installer is about to take over: the window closes and the new version opens by itself. */
   | { phase: 'installing'; currentVersion: string; version: string }
   | { phase: 'error'; currentVersion: string; message: string };

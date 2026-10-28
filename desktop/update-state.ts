@@ -23,7 +23,13 @@ export function reduceUpdate(state: UpdateState, ev: UpdateEvent): UpdateState {
   const currentVersion = state.currentVersion;
   // A downloaded update stays the answer: a later check failing (offline) must not hide it.
   if (state.phase === 'installing') return state; // nothing changes the story once the installer has started
-  if (state.phase === 'ready' && ev.type !== 'downloaded' && ev.type !== 'installing') return state;
+  if (state.phase === 'ready' && ev.type !== 'downloaded' && ev.type !== 'installing') {
+    // Checks go on while a downloaded update waits: if an even newer release appears, it is fetched
+    // behind the ready one, so installing never lands on a version that is already out of date.
+    if (ev.type === 'available' && ev.version !== state.version) return { ...state, newerVersion: ev.version };
+    if (ev.type === 'error' && state.newerVersion) return { phase: 'ready', currentVersion: state.currentVersion, version: state.version };
+    return state;
+  }
   switch (ev.type) {
     case 'checking':
       return { phase: 'checking', currentVersion };
