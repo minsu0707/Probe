@@ -51,7 +51,8 @@ test('the session is told to write end-to-end scenarios and that writes are the 
   const p = buildSystemPrompt({ serviceName: 'S', baseUrl: 'https://prod.example', envNames: [], knowledgeFiles: ['flows.md'] });
   assert.match(p, /start to finish/);
   assert.match(p, /e2e-01-<scenario>\.spec\.ts/);
-  assert.match(p, /mode: 'serial'/);
+  assert.match(p, /test\.step/);
+  assert.match(p, /Skipping is the last resort/);
   assert.match(p, /do not refuse or ask again/);
   assert.match(p, /never enter wrong credentials/);
 });
