@@ -39,3 +39,21 @@ test('without answers the prompt still tells Claude what to do when unsure', () 
   assert.doesNotMatch(prompt, /ALREADY TOLD YOU/);
   assert.match(prompt, /do not guess and do not skip/);
 });
+
+test('defects can be deleted for good, only inside their own service, and the list is told', async () => {
+  const other = services.createService({ name: 'AnswersOther' });
+  const d = fail('Error: something unique to delete 123');
+  assert.deepEqual(defects.deleteDefects(other.id, [d.id]), [], 'another service cannot delete it');
+  assert.deepEqual(defects.deleteDefects(service.id, [d.id, d.id, 'nope']), [d.id]);
+  assert.equal(defects.listDefects({ serviceId: service.id }).some((x) => x.id === d.id), false);
+});
+
+test('tool steps read in Korean, with the detail that matters', async () => {
+  const { toolLabel } = await import('../shared/tool-labels.ts');
+  const { describeTool } = await import('../server/modules/learning/stream.ts');
+  assert.equal(toolLabel('mcp__probe__list_defects'), '결함 목록 조회');
+  assert.equal(toolLabel('ToolSearch'), '사용할 도구 찾기');
+  assert.equal(toolLabel('Mystery'), null);
+  assert.equal(describeTool('mcp__probe__update_defect', { status: 'false_positive' }), '결함 상태 변경: 오탐');
+  assert.equal(describeTool('mcp__probe__delete_defect', {}), '결함 삭제');
+});

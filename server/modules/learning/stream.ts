@@ -1,6 +1,7 @@
 /** Reading `claude -p --output-format stream-json`: one JSON object per stdout line. */
 import { basename } from 'node:path';
 import type { ClaudeUsage } from '../../../shared/models.ts';
+import { toolLabel } from '../../../shared/tool-labels.ts';
 import { parseRateLimit } from '../agents/claude-cli.ts';
 
 export type StreamEvent =
@@ -50,5 +51,8 @@ export function describeTool(name: string, input: any): string {
   if (name === 'Write' || name === 'Edit') return `작성 중: ${basename(target)}`;
   if (name === 'Glob' || name === 'Grep') return `자료 찾는 중: ${target}`;
   if (name.startsWith('mcp__') && name.includes('Drive')) return `Google Drive에서 읽는 중 (${name.split('__').pop()})`;
-  return name;
+  const STATUS: Record<string, string> = { candidate: '확인 필요', confirmed: '확정', false_positive: '오탐', fixed: '수정됨' };
+  if (name === 'mcp__probe__update_defect' && input?.status) return `결함 상태 변경: ${STATUS[input.status] ?? input.status}`;
+  if (name === 'Bash' && input?.command) return `명령 실행: ${String(input.command).split('\n')[0].slice(0, 80)}`;
+  return toolLabel(name) ?? name;
 }

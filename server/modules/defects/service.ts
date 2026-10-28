@@ -104,6 +104,14 @@ export function clearAnswer(id: string): Defect {
   return publish(id);
 }
 
+/** Remove defects for good (the owner asked, directly or through Claude). The screenshots stay in their run's folder. */
+export function deleteDefects(serviceId: string, ids: string[]): string[] {
+  requireService(serviceId);
+  const removed = repo.removeMany(serviceId, [...new Set(ids)]);
+  if (removed.length) broadcast({ type: 'defects:deleted', serviceId, ids: removed });
+  return removed;
+}
+
 /** Re-read from the database so what is broadcast is exactly what is stored. */
 function publish(id: string): Defect {
   const defect = repo.findById(id)!;

@@ -42,6 +42,10 @@ function handle(msg: ServerMessage): void {
       patch((s) => ({ defects: [msg.defect, ...s.defects.filter((d) => d.id !== msg.defect.id)] }));
       refreshSoon();
       break;
+    case 'defects:deleted':
+      patch((s) => ({ defects: s.defects.filter((d) => !msg.ids.includes(d.id)) }));
+      refreshSoon();
+      break;
     case 'job':
       patch((s) => ({ jobs: { ...s.jobs, [msg.job.serviceId]: msg.job } }));
       refreshSoon();

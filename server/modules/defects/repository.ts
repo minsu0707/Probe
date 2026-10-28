@@ -114,6 +114,9 @@ export function recordOccurrence(id: string, o: { runId: string; seenAt: number;
 
 export const updateFields = (id: string, f: { status: string; severity: string; title: string }): void => void run('UPDATE defects SET status = ?, severity = ?, title = ? WHERE id = ?', f.status, f.severity, f.title, id);
 
+export const removeMany = (serviceId: string, ids: string[]): string[] =>
+  ids.filter((id) => Number(run('DELETE FROM defects WHERE id = ? AND service_id = ?', id, serviceId).changes) > 0);
+
 export const countOpen = (serviceId: string): number => get<{ n: number }>(`SELECT COUNT(*) AS n FROM defects WHERE service_id = ? AND status IN ('candidate','confirmed')`, serviceId)!.n;
 
 /** Distinct by fingerprint: the same failure repeated in one run is one defect. */

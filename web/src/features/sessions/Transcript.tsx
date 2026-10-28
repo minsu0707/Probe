@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api, type QueuedMessage, type Session, type SessionMessage } from '../../core/api.ts';
 import { clock } from '../../core/format.ts';
+import { labelOfLine } from '../../../../shared/tool-labels.ts';
 import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
 import { ClaudeAvatar, ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
@@ -59,7 +60,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
             중단
           </button>
         ) : (
-          <button className="icon-btn" aria-label="세션 삭제" title="세션 삭제" onClick={() => setConfirmDelete(true)}>
+          <button className="btn btn-icon btn-sm" aria-label="세션 삭제" title="세션 삭제" onClick={() => setConfirmDelete(true)}>
             <Icon name="trash" size={16} />
           </button>
         )}
@@ -112,9 +113,13 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
           setAtBottom(near);
         }}
       >
-        {messages.map((m, i) => (
-          <Message key={m.id} m={m} first={!startsClaudeRun(messages[i - 1])} />
-        ))}
+        {groupMessages(messages).map((g, i, all) =>
+          g.kind === 'tools' ? (
+            <ToolGroup key={g.items[0].id} items={g.items} first={g.first} live={running && i === all.length - 1} />
+          ) : (
+            <Message key={g.m.id} m={g.m} first={g.first} />
+          ),
+        )}
         {running && (
           <div className="msg-row msg-row-claude">
             <span className="avatar-slot">{!messages.length || messages.at(-1)!.role === 'user' ? <ClaudeAvatar /> : null}</span>
@@ -173,6 +178,56 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
         </button>
       </div>
     </section>
+  );
+}
+
+type Item = { kind: 'msg'; m: SessionMessage; first: boolean } | { kind: 'tools'; items: SessionMessage[]; first: boolean };
+
+/** Consecutive tool notes become one group, so twelve identical calls are one line instead of twelve. */
+function groupMessages(messages: SessionMessage[]): Item[] {
+  const out: Item[] = [];
+  for (const m of messages) {
+    const first = !isClaudeSide(messages[messages.indexOf(m) - 1]);
+    const last = out.at(-1);
+    if (m.role === 'tool' && last?.kind === 'tools') last.items.push(m);
+    else if (m.role === 'tool') out.push({ kind: 'tools', items: [m], first });
+    else out.push({ kind: 'msg', m, first });
+  }
+  return out;
+}
+
+/** What Claude is doing or did, in one quiet line; click for every step. */
+function ToolGroup({ items, first, live }: { items: SessionMessage[]; first: boolean; live: boolean }) {
+  const labels = items.map((m) => labelOfLine(m.text));
+  const counts: [string, number][] = [];
+  for (const l of labels) {
+    const hit = counts.find(([x]) => x === l);
+    if (hit) hit[1]++;
+    else counts.push([l, 1]);
+  }
+  const part = ([l, n]: [string, number]) => (n > 1 ? `${l} ×${n}` : l);
+  const summary = counts.slice(0, 3).map(part).join(' · ') + (counts.length > 3 ? ` 외 ${counts.length - 3}종` : '');
+  return (
+    <div className="msg-row msg-row-claude">
+      <span className="avatar-slot">{first ? <ClaudeAvatar /> : null}</span>
+      <div className="msg-col">
+        {first && <div className="msg-name">Claude</div>}
+        <details className={`tool-group${live ? ' tool-live' : ''}`}>
+          <summary>
+            {live && <span className="dot dot-live" />}
+            <span className="tool-now">{live ? `${labels.at(-1)}${items.length > 1 ? ` · ${items.length}단계째` : ''}` : summary}</span>
+            {!live && items.length > 1 && <span className="muted small">{items.length}단계</span>}
+          </summary>
+          <ol>
+            {items.map((m, i) => (
+              <li key={m.id}>
+                <span className="tabular muted">{i + 1}</span> {labels[i]} <time className="muted small">{clock(m.ts)}</time>
+              </li>
+            ))}
+          </ol>
+        </details>
+      </div>
+    </div>
   );
 }
 

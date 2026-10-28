@@ -82,11 +82,11 @@ function MonitorBody({ service, runs }: { service: ServiceOverview; runs: RunSum
             ))}
           </select>
         </label>
-        <button className="icon-btn" aria-label="이 실행 기록 삭제" title="이 실행 기록 삭제" disabled={running} onClick={() => setDeleting('one')}>
+        <button className="btn btn-icon" aria-label="이 실행 기록 삭제" title="이 실행 기록 삭제" disabled={running} onClick={() => setDeleting('one')}>
           <Icon name="trash" size={15} />
         </button>
         {finished.length > 1 && (
-          <button className="btn btn-sm" onClick={() => setDeleting('all')}>
+          <button className="btn" onClick={() => setDeleting('all')}>
             끝난 기록 모두 삭제
           </button>
         )}

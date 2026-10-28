@@ -1645,3 +1645,48 @@ table.runs .num {
 .answer-foot .muted {
   margin-right: auto;
 }
+
+/* Claude's tool steps, grouped */
+.tool-group {
+  margin: 2px 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.tool-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  padding: 3px 0;
+}
+.tool-group > summary::-webkit-details-marker {
+  display: none;
+}
+.tool-group > summary::after {
+  content: '▸';
+  font-size: 10px;
+}
+.tool-group[open] > summary::after {
+  content: '▾';
+}
+.tool-group > summary:hover .tool-now {
+  color: var(--ink);
+}
+.tool-live .tool-now {
+  color: var(--ink);
+}
+.tool-group ol {
+  margin: 4px 0 6px;
+  padding: 0 0 0 4px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 2px solid var(--line);
+  padding-left: 10px;
+}
+.tool-now {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

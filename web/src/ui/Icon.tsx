@@ -9,7 +9,7 @@ const PATHS = {
   play: 'M7 4.5v15l12-7.5z',
   stop: 'M6 6h12v12H6z',
   upload: 'M12 16V4M7 9l5-5 5 5M5 20h14',
-  trash: 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
+  trash: 'M4 7h16M9 7V4.5h6V7M6.5 7l.8 12.5h9.4L17.5 7M10 11v5.5M14 11v5.5',
   file: 'M7 3h7l4 4v14H7zM14 3v4h4',
   drive: 'M8 4h8l5 9-4 7H7l-4-7zM8 4l5 9h8M13 13l-4 7',
   check: 'M5 12.5 10 17.5 19 7',

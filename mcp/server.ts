@@ -162,6 +162,15 @@ server.registerTool(
 );
 
 server.registerTool(
+  'delete_defect',
+  { description: 'Permanently delete defects. Use only when the user asks you to delete them; to dismiss a false alarm use update_defect with status false_positive instead. Pass the ids from list_defects.', inputSchema: { service, defectIds: z.array(z.string()).min(1).max(500) } },
+  tool(async ({ service: ref, defectIds }: { service: string; defectIds: string[] }) => {
+    const s = await resolveService(ref);
+    return api(`/api/services/${s.id}/defects/delete`, { method: 'POST', body: JSON.stringify({ ids: defectIds }) });
+  }),
+);
+
+server.registerTool(
   'start_learning',
   { description: 'Start the learning job: Claude reads the uploaded documents and Drive links and writes the knowledge files. The user normally presses the button in the dashboard.', inputSchema: { service } },
   tool(async ({ service: ref }: { service: string }) => {
