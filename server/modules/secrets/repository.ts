@@ -1,4 +1,5 @@
 import { all, run } from '../../core/db.ts';
+import { isSensitiveKey } from './classify.ts';
 
 export interface SecretRow {
   key: string;
@@ -13,7 +14,9 @@ interface Row {
   sensitive: number;
 }
 
-const toRow = (r: Row): SecretRow => ({ key: r.key, value: r.value, sensitive: r.sensitive === 1 });
+// The rule is applied on every read, not only when a file is uploaded, so a name the rule learns
+// later (like PW) is hidden for values stored before it did.
+const toRow = (r: Row): SecretRow => ({ key: r.key, value: r.value, sensitive: r.sensitive === 1 || isSensitiveKey(r.key) });
 
 export const findByService = (serviceId: string): SecretRow[] =>
   all<Row>('SELECT key, value, sensitive FROM secrets WHERE service_id = ? ORDER BY key', serviceId).map(toRow);

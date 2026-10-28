@@ -5,7 +5,7 @@
  * Claude, and scrubbed from logs. Deliberately broad; a harmless variable hidden by
  * mistake costs nothing, a leaked token does.
  */
-const SENSITIVE_NAME = /(pass|pwd|secret|token|key|cookie|credential|private|auth|session|cert)/i;
+const SENSITIVE_NAME = /(pass|pwd|pswd|secret|token|key|cookie|credential|private|auth|session|cert)|(^|[^a-z])pw($|[^a-z])/i;
 
 export const isSensitiveKey = (key: string): boolean => SENSITIVE_NAME.test(key);
 
