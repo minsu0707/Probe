@@ -170,3 +170,59 @@ test('every account is explored on its own, and a role that sees fewer menus sho
     site.close();
   }
 });
+
+test('실제 조작 학습: saves a form empty (refused) and filled (once), and never presses delete or approve', async () => {
+  isolatedHome();
+  const hits: string[] = [];
+  const bodies: string[] = [];
+  const shell = (body: string) => `<!doctype html><html><head><title>Mat</title></head><body><nav><a href="/">홈</a><a href="/new">원료 등록</a></nav>${body}</body></html>`;
+  const form = `<h1>원료 등록</h1><form id="f"><label>원료명 <input name="n"></label><label>구분 <select name="k"><option value="">선택</option><option value="a">원재료</option></select></label>
+    <button type="submit">저장</button><button type="button" id="del">삭제</button><button type="button" id="ok">승인</button></form><div id="msg"></div>
+    <script>
+      const msg = document.getElementById('msg');
+      document.getElementById('f').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!document.querySelector('[name=n]').value) { msg.className = 'error'; msg.textContent = '원료명을 입력하세요'; return; }
+        const r = await fetch('/api/materials', { method: 'POST', body: document.querySelector('[name=n]').value }).catch(() => null);
+        msg.className = 'toast'; msg.textContent = r && r.ok ? '등록되었습니다 PRD-0001' : '저장하지 못했습니다';
+      });
+      document.getElementById('del').addEventListener('click', () => fetch('/api/materials/1', { method: 'DELETE' }));
+      document.getElementById('ok').addEventListener('click', () => fetch('/api/approve', { method: 'POST' }));
+    </script>`;
+  const site = http.createServer((req, res) => {
+    hits.push(`${req.method} ${req.url}`);
+    if (req.method !== 'GET') {
+      let body = '';
+      req.on('data', (d) => (body += d));
+      return void req.on('end', () => (bodies.push(body), res.writeHead(200).end('ok')));
+    }
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(req.url === '/new' ? shell(form) : shell('<h1>홈</h1>'));
+  });
+  await new Promise<void>((r) => site.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${(site.address() as AddressInfo).port}`;
+  try {
+    const services = await import('../server/modules/services/service.ts');
+    const { exploreService, exploreDir } = await import('../server/modules/learning/explore.ts');
+    const s = services.createService({ name: 'Operable', baseUrl: url });
+
+    const looked = await exploreService(s.id, url, () => undefined, () => undefined);
+    assert.equal(looked.ok, true, looked.note);
+    assert.equal(looked.operated, 0);
+    assert.ok(!hits.some((h) => h.startsWith('POST') || h.startsWith('DELETE')), 'looking alone never writes');
+
+    const result = await exploreService(s.id, url, () => undefined, () => undefined, true);
+    assert.equal(result.ok, true, result.note);
+    assert.equal(result.operated, 1, result.note);
+    assert.deepEqual(hits.filter((h) => h.startsWith('POST') || h.startsWith('DELETE')), ['POST /api/materials'], 'one save, no delete, no approve');
+    assert.deepEqual(bodies, ['QA-AUTO-탐색']);
+
+    const actions = readFileSync(join(exploreDir(s.id), 'actions.md'), 'utf8');
+    assert.match(actions, /원료명 = QA-AUTO-탐색/);
+    assert.match(actions, /구분 = 원재료 \(선택\)/);
+    assert.match(actions, /비워 둔 채 저장: .*원료명을 입력하세요/);
+    assert.match(actions, /채워서 저장 후 안내: .*등록되었습니다 PRD-0001/);
+    assert.match(actions, /누른 버튼: 저장/);
+  } finally {
+    site.close();
+  }
+});

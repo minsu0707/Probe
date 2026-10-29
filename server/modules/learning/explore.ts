@@ -20,6 +20,8 @@ export const exploreDir = (serviceId: string): string => join(serviceDir(service
 export interface ExploreResult {
   ok: boolean;
   pages: number;
+  /** Forms saved for real in 실제 조작 학습 (0 when that was off). */
+  operated: number;
   note: string;
 }
 
@@ -34,7 +36,7 @@ export function exploreSummary(serviceId: string): { pages: number; signedIn: bo
 }
 
 /** Starts the explorer; `onChild` receives the process so a cancel request can kill it. */
-export function exploreService(serviceId: string, baseUrl: string, progress: (line: string) => void, onChild: (c: ChildProcess) => void): Promise<ExploreResult> {
+export function exploreService(serviceId: string, baseUrl: string, progress: (line: string) => void, onChild: (c: ChildProcess) => void, operate = false): Promise<ExploreResult> {
   const env = runtimeEnv(serviceId);
   const accounts = pickLogins(listSecrets(serviceId).map((s) => s.key)).map((p) => ({ name: p.name, user: env[p.userKey] ?? '', pass: env[p.passKey] ?? '' }));
 
@@ -46,6 +48,7 @@ export function exploreService(serviceId: string, baseUrl: string, progress: (li
         PROBE_EXPLORE_URL: baseUrl,
         PROBE_EXPLORE_OUT: exploreDir(serviceId),
         PROBE_EXPLORE_ACCOUNTS: JSON.stringify(accounts),
+        PROBE_EXPLORE_OPERATE: operate ? '1' : '',
         PROBE_BROWSER_CHANNEL: detectBrowserChannel() ?? '',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -54,6 +57,7 @@ export function exploreService(serviceId: string, baseUrl: string, progress: (li
     onChild(child);
 
     let pages = 0;
+    let operated = 0;
     let stderr = '';
     let pending = '';
     child.stderr!.on('data', (d: Buffer) => (stderr = (stderr + d.toString()).slice(-STDERR_TAIL)));
@@ -63,19 +67,19 @@ export function exploreService(serviceId: string, baseUrl: string, progress: (li
       pending = lines.pop() ?? '';
       for (const line of lines) {
         try {
-          const ev = JSON.parse(line) as { type: string; text?: string; pages?: number };
+          const ev = JSON.parse(line) as { type: string; text?: string; pages?: number; operated?: number };
           if (ev.type === 'progress' && ev.text) progress(ev.text);
-          if (ev.type === 'done') pages = ev.pages ?? pages;
+          if (ev.type === 'done') (pages = ev.pages ?? pages), (operated = ev.operated ?? 0);
         } catch {
           /* not one of ours */
         }
       }
     });
-    child.on('error', (e) => resolve({ ok: false, pages: 0, note: `둘러보기를 시작하지 못했습니다: ${e.message}` }));
+    child.on('error', (e) => resolve({ ok: false, pages: 0, operated: 0, note: `둘러보기를 시작하지 못했습니다: ${e.message}` }));
     child.on('close', (code) => {
       const summary = exploreSummary(serviceId);
-      if (code === 0 && summary) return resolve({ ok: true, pages: summary.pages, note: `${summary.pages}개 화면을 둘러봤습니다${summary.accounts && summary.accounts.length > 1 ? ` (계정 ${summary.accounts.length}개: ${summary.accounts.map((a) => `${a.name} ${a.signedIn ? a.pages : '로그인 실패'}`).join(', ')})` : ''}` });
-      resolve({ ok: false, pages: pages, note: `둘러보기가 끝나지 않았습니다${stderr ? `: ${stderr.trim().split('\n').slice(-2).join(' ')}` : ''}` });
+      if (code === 0 && summary) return resolve({ ok: true, pages: summary.pages, operated, note: `${summary.pages}개 화면을 둘러봤습니다${operate ? ` (입력 화면 ${operated}곳을 직접 저장해 봤습니다)` : ''}${summary.accounts && summary.accounts.length > 1 ? ` (계정 ${summary.accounts.length}개: ${summary.accounts.map((a) => `${a.name} ${a.signedIn ? a.pages : '로그인 실패'}`).join(', ')})` : ''}` });
+      resolve({ ok: false, pages: pages, operated, note: `둘러보기가 끝나지 않았습니다${stderr ? `: ${stderr.trim().split('\n').slice(-2).join(' ')}` : ''}` });
     });
   });
 }

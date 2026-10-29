@@ -27,8 +27,12 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
   const [explore, setExplore] = useState(true);
   /** After learning, Claude writes the test cases, grouped by feature. */
   const [writeTests, setWriteTests] = useState(true);
+  /** Also fill in forms and save them once, to see what the service does. Off by default: it creates data. */
+  const [operate, setOperate] = useState(false);
   const canExplore = Boolean(service?.baseUrl);
   const exploring = explore && canExplore;
+  const canOperate = exploring && !service?.readOnly;
+  const operating = operate && canOperate;
   const job = liveJob ?? lastJob;
   const claude = useStore((s) => s.claude);
   /** Known to be unusable: not installed or signed out. While still loading (null) the button stays enabled. */
@@ -66,7 +70,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
             학습 중단
           </button>
         ) : (
-          <button className="btn btn-primary" disabled={(!docs?.length && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring, writeTests }))}>
+          <button className="btn btn-primary" disabled={(!docs?.length && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring, writeTests, operate: operating }))}>
             <Icon name="learn" size={16} />
             {learnLabel}
           </button>
@@ -80,6 +84,19 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
           checked={exploring}
           disabled={!canExplore || learning}
           onChange={setExplore}
+        />
+        <OptionRow
+          title="실제 조작 학습"
+          desc={
+            service?.readOnly
+              ? '조회 전용 서비스라서 켤 수 없습니다.'
+              : !exploring
+                ? '서비스를 직접 둘러보는 학습을 켜면 선택할 수 있습니다.'
+                : '둘러본 뒤 입력 화면마다 비워서 한 번, 테스트 값(QA-AUTO-탐색)을 넣어 한 번 저장해 보고, 안내 문구와 저장 후 변화를 학습합니다. 테스트 데이터가 만들어지니 테스트 서버에서 쓰세요. 삭제와 승인·확정·발송·결제 버튼은 누르지 않습니다.'
+          }
+          checked={operating}
+          disabled={!canOperate || learning}
+          onChange={setOperate}
         />
         <OptionRow title="학습이 끝나면 테스트 케이스도 만들기" desc="기능별 테스트를 쓰고 우선순위(P0~P2)를 붙입니다. 결과는 테스트 케이스 탭에서 골라 실행할 수 있습니다." checked={writeTests} disabled={learning} onChange={setWriteTests} />
       </section>

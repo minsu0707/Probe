@@ -33,11 +33,13 @@ const children = new Map<string, ChildProcess>();
 export const listJobs = (serviceId: string, limit = 10): Job[] => repo.recent(serviceId, limit);
 export const isLearning = repo.isLearning;
 
-export async function startLearn(serviceId: string, opts: { explore?: boolean; writeTests?: boolean } = {}): Promise<Job> {
+export async function startLearn(serviceId: string, opts: { explore?: boolean; writeTests?: boolean; operate?: boolean } = {}): Promise<Job> {
   const service = requireService(serviceId);
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service');
   const docs = listDocs(serviceId);
   if (opts.explore && !service.baseUrl) throw unprocessable('서비스 주소를 먼저 입력해야 서비스를 둘러볼 수 있습니다');
+  if (opts.operate && !opts.explore) throw unprocessable('실제 조작 학습은 서비스를 직접 둘러보는 학습과 함께 켜야 합니다');
+  if (opts.operate && service.readOnly) throw unprocessable('조회 전용 서비스에서는 실제 조작 학습을 할 수 없습니다. 데이터를 바꾸지 않는 서비스로 지정되어 있습니다');
   if (docs.length === 0 && !opts.explore) throw unprocessable('Add at least one document or Drive link first');
   // Fail here with a clear message rather than as a cryptic exit code from the CLI.
   const env = await requireClaudeReady();
@@ -54,13 +56,14 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean; w
     broadcast({ type: 'job', job: repo.findById(id)! });
   };
   /** Phase two: Claude reads the documents (and what the exploration found) and writes the knowledge files. */
-  const begin = (explored: boolean) => {
+  const begin = (explored: boolean, operated = false) => {
     const prompt = buildLearnPrompt({
       serviceName: service.name,
       baseUrl: service.baseUrl,
       driveLinks: docs.filter((d) => d.kind === 'drive').map((d) => d.ref),
       hasExistingKnowledge: countKnowledge(serviceId) > 0,
       hasExploration: explored,
+      hasOperation: operated,
     });
     const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     children.set(id, child);
@@ -108,12 +111,12 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean; w
   };
 
   if (opts.explore) {
-    note('서비스를 직접 둘러보는 중입니다. 메뉴와 화면을 읽기만 하고 아무것도 저장하지 않습니다');
-    void exploreService(serviceId, service.baseUrl!, note, (c) => children.set(id, c)).then((r) => {
+    note(opts.operate ? '서비스를 직접 둘러본 뒤, 입력 화면에 테스트 값(QA-AUTO-탐색)을 넣고 저장해 봅니다. 삭제하거나 승인·확정·발송하는 버튼은 누르지 않습니다' : '서비스를 직접 둘러보는 중입니다. 메뉴와 화면을 읽기만 하고 아무것도 저장하지 않습니다');
+    void exploreService(serviceId, service.baseUrl!, note, (c) => children.set(id, c), Boolean(opts.operate)).then((r) => {
       if (repo.findById(id)?.status !== 'running') return; // cancelled while exploring
       note(r.note);
       if (!r.ok && docs.length === 0) return finish(id, serviceId, log, 'failed', null, r.note);
-      begin(r.ok);
+      begin(r.ok, r.operated > 0);
     });
   } else begin(false);
 

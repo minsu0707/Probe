@@ -11,9 +11,14 @@ import { join } from 'node:path';
 import { chromium, type Page } from '@playwright/test';
 import { allowRequest } from '../../../reporter/guard.ts';
 import { NOT_A_PAGE, isDangerousLabel, isDangerousUrl, pageKey, pagePattern, snapshotToMarkdown, type PageSnapshot } from './explore-helpers.ts';
+import { OPERATE_NAME, allowOperateRequest, fillValue, isSaveLabel, isSearchField, newLines, recordToMarkdown, type OperateRecord } from './operate-helpers.ts';
 
 const BASE = process.env.PROBE_EXPLORE_URL ?? '';
 const OUT = process.env.PROBE_EXPLORE_OUT ?? '';
+/** 실제 조작 학습: after looking, fill in the forms found and save each once. Off unless the owner turned it on for a service that may change data. */
+const OPERATE = process.env.PROBE_EXPLORE_OPERATE === '1';
+const MAX_OPERATE_FORMS = 25;
+const MAX_OPERATE_MS = 8 * 60_000;
 interface Account {
   /** Role label for the notes, e.g. ADMIN. Never the ID itself. */
   name: string;
@@ -50,6 +55,7 @@ const origin = new URL(BASE).origin;
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(join(OUT, 'shots'), { recursive: true });
+if (OPERATE) writeFileSync(join(OUT, 'actions.md'), `# 실제 조작 결과\n\n${BASE}에서 입력 화면에 테스트 값(${OPERATE_NAME})을 넣고 저장해 본 기록입니다. 삭제하거나 승인·확정·발송하는 버튼은 누르지 않았습니다.\n\n`);
 writeFileSync(join(OUT, 'pages.md'), `# 서비스 직접 둘러보기 결과\n\n${BASE}를 브라우저로 읽기만 하며 둘러본 화면입니다. 값을 입력하거나 저장하지 않았습니다.\n\n`);
 
 async function settle(page: Page, ms = 6000): Promise<void> {
@@ -129,17 +135,23 @@ async function signIn(page: Page, account: Account | null): Promise<boolean> {
   return ok;
 }
 
-async function exploreAccount(account: Account | null): Promise<{ name: string; signedIn: boolean; pages: number; stoppedBy: 'complete' | 'limit' | 'time' }> {
+async function exploreAccount(account: Account | null): Promise<{ name: string; signedIn: boolean; pages: number; stoppedBy: 'complete' | 'limit' | 'time'; operated: number }> {
   accountStarted = Date.now();
   const context = await browser.newContext({ locale: 'ko-KR', viewport: { width: 1366, height: 800 } });
-  // Looking only: reads and sign-in pass, everything else is refused.
+  // Looking only: reads and sign-in pass, everything else is refused. The operate pass opens the
+  // gate for the moment of one save (and never for deleting), then closes it again.
+  let writesAllowed = false;
   await context.route('**/*', (route) => {
     const r = route.request();
-    return allowRequest(r.method(), r.url(), r.postData()) ? route.fallback() : route.abort('blockedbyclient');
+    const ok = writesAllowed ? allowOperateRequest(r.method(), r.url()) : allowRequest(r.method(), r.url(), r.postData());
+    return ok ? route.fallback() : route.abort('blockedbyclient');
   });
   const page = await context.newPage();
   context.on('page', (p) => void (p !== page && p.close().catch(() => undefined)));
-  page.on('dialog', (d) => void d.dismiss().catch(() => undefined));
+  const dialogMessages: string[] = [];
+  // A dialog's text is what the page says (required, saved); it is read, then dismissed (a confirm is answered with cancel).
+  page.on('dialog', (d) => void (dialogMessages.push(d.message().slice(0, 120)), d.dismiss().catch(() => undefined)));
+  const visitedUrls: string[] = [];
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 30_000 });
   await settle(page);
@@ -176,6 +188,7 @@ async function exploreAccount(account: Account | null): Promise<{ name: string; 
     perPattern.set(pagePattern(landing), 1);
   }
   await snapshot(page, ++shotNumber); visitedCount++;
+  visitedUrls.push(page.url());
   say(`[${who}] 화면 ${visitedCount}: ${page.url()}`);
   await links();
 
@@ -219,6 +232,7 @@ async function exploreAccount(account: Account | null): Promise<{ name: string; 
           perPattern.set(pagePattern(key), (perPattern.get(pagePattern(key)) ?? 0) + 1);
           seenSignatures.add(sig);
           await snapshot(page, ++shotNumber); visitedCount++;
+          visitedUrls.push(page.url());
           say(`[${who}] 화면 ${visitedCount}: ${page.url()}`);
           await links();
         } else if (!seenSignatures.has(sig)) {
@@ -252,17 +266,161 @@ async function exploreAccount(account: Account | null): Promise<{ name: string; 
     // A session that expired sends us back to the login form; sign in again and carry on.
     if ((await page.locator('input[type=password]:visible').count()) > 0 && signedIn) await signIn(page, account);
     await snapshot(page, ++shotNumber); visitedCount++;
+    visitedUrls.push(page.url());
     say(`[${who}] 화면 ${visitedCount}: ${page.url()}`);
     await links();
     if (++visitedViaQueue < CLICK_PAGES) await clickMenus();
   }
   if (queue.length && visitedCount >= MAX_PAGES) stoppedBy = 'limit';
+  let operated = 0;
+  if (OPERATE && signedIn) operated = await operatePass(page, who, visitedUrls, dialogMessages, (on) => (writesAllowed = on));
   await context.close().catch(() => undefined);
-  return { name: who, signedIn, pages: visitedCount, stoppedBy };
+  return { name: who, signedIn, pages: visitedCount, stoppedBy, operated };
+}
+
+const FIELD_SELECTOR = 'input:not([type=hidden]):not([type=password]):not([type=checkbox]):not([type=radio]):not([type=file]):not([type=submit]):not([type=button]):not([type=reset]):not([type=image]), textarea, select';
+const BUTTON_SELECTOR = 'button, input[type=submit], [role=button]';
+const MESSAGE_SELECTOR = '[role=alert], [aria-live=assertive], .error, .errors, .invalid-feedback, .help-block, [class*="error"], [class*="invalid"], [class*="toast"], [class*="alert"], [class*="message"]';
+
+/** What the page says right now: error and toast texts, and the browser's own messages for invalid fields. */
+async function pageMessages(page: Page): Promise<string[]> {
+  return page
+    .evaluate((sel) => {
+      const visible = (el: Element) => {
+        const r = (el as HTMLElement).getBoundingClientRect();
+        const s = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none';
+      };
+      const out = new Set<string>();
+      for (const el of document.querySelectorAll(sel)) {
+        const t = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+        if (t && t.length <= 120 && visible(el)) out.add(t);
+      }
+      for (const el of document.querySelectorAll('input:invalid, select:invalid, textarea:invalid')) {
+        const f = el as HTMLInputElement;
+        if (visible(f) && f.validationMessage) out.add(`${f.getAttribute('aria-label') || f.name || f.placeholder || '입력칸'}: ${f.validationMessage}`);
+      }
+      return [...out].slice(0, 10);
+    }, MESSAGE_SELECTOR)
+    .catch(() => []);
+}
+
+/**
+ * 실제 조작 학습: on each kind of screen that holds a form, save it empty first (the write is refused
+ * in the browser, so only the page's own checks answer), then fill it with test values and save it for
+ * real, once. What the page said and what appeared is written to actions.md. A button that approves,
+ * confirms, sends, pays or cancels is never pressed, and nothing is ever deleted.
+ */
+async function operatePass(page: Page, who: string, urls: string[], dialogs: string[], allowWrites: (on: boolean) => void): Promise<number> {
+  const patterns = new Set<string>();
+  const targets = urls.filter((u) => {
+    const key = pageKey(u, origin);
+    const pattern = key && pagePattern(key);
+    if (!pattern || patterns.has(pattern)) return false;
+    patterns.add(pattern);
+    return true;
+  });
+  const started = Date.now();
+  const today = new Date().toISOString().slice(0, 10);
+  let done = 0;
+  appendFileSync(join(OUT, 'actions.md'), `# 계정: ${who}\n\n`);
+  say(`[${who}] 실제 조작: 입력 화면을 찾아 값을 넣고 저장해 봅니다`);
+
+  for (const url of targets) {
+    if (done >= MAX_OPERATE_FORMS || Date.now() - started > MAX_OPERATE_MS) break;
+    const open = async (): Promise<boolean> => {
+      try {
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+      } catch {
+        return false;
+      }
+      await settle(page);
+      return (await page.locator('input[type=password]:visible').count()) === 0;
+    };
+    if (!(await open())) continue;
+
+    const form = page.locator('form').filter({ has: page.locator(FIELD_SELECTOR) }).filter({ visible: true }).first();
+    const scope = (await form.count()) ? form : page.locator('body');
+    const fields = scope.locator(FIELD_SELECTOR).filter({ visible: true });
+    const fieldCount = Math.min(await fields.count(), 25);
+    const buttons = scope.locator(BUTTON_SELECTOR).filter({ visible: true });
+    const buttonCount = Math.min(await buttons.count(), 20);
+
+    let save: ReturnType<typeof buttons.nth> | null = null;
+    let saveLabel = '';
+    for (let i = 0; i < buttonCount && !save; i++) {
+      const b = buttons.nth(i);
+      const label = ((await b.innerText({ timeout: 1000 }).catch(() => '')) || (await b.getAttribute('value').catch(() => '')) || '').replace(/\s+/g, ' ').trim();
+      if (label && label.length <= 30 && isSaveLabel(label)) {
+        save = b;
+        saveLabel = label;
+      }
+    }
+    if (!save) continue;
+
+    const describe = (i: number) =>
+      fields.nth(i).evaluate((el) => {
+        const f = el as HTMLInputElement;
+        const l = (f.id && document.querySelector(`label[for="${CSS.escape(f.id)}"]`)) || f.closest('label');
+        // A wrapping label also holds the control's own text (a select's options): leave the controls out.
+        const clone = l ? (l.cloneNode(true) as HTMLElement) : null;
+        clone?.querySelectorAll('select, option, input, textarea').forEach((n) => n.remove());
+        return { tag: f.tagName, type: f.type || 'text', readOnly: f.readOnly, disabled: f.disabled, label: ((clone && (clone.textContent ?? '')) || f.getAttribute('aria-label') || f.placeholder || f.name || '').replace(/\s+/g, ' ').trim().slice(0, 40) };
+      });
+    const usable: { index: number; label: string; type: string; tag: string }[] = [];
+    for (let i = 0; i < fieldCount; i++) {
+      const d = await describe(i).catch(() => null);
+      if (d && !d.readOnly && !d.disabled && !isSearchField(d.label, d.type)) usable.push({ index: i, label: d.label || '입력칸', type: d.type, tag: d.tag });
+    }
+    if (!usable.length) continue;
+
+    const title = (await page.title().catch(() => '')) || url;
+    // Saving empty: the write is refused, so what answers is the page's own checking.
+    const messagesBefore = await pageMessages(page);
+    dialogs.length = 0;
+    await save.click({ timeout: 3000 }).catch(() => undefined);
+    await settle(page, 3000);
+    const emptyMessages = [...new Set([...(await pageMessages(page)).filter((m) => !messagesBefore.includes(m)), ...dialogs])].slice(0, 8);
+
+    // Saving filled in, for real.
+    if (!(await open())) continue;
+    const filled: string[] = [];
+    for (const u of usable) {
+      const el = fields.nth(u.index);
+      if (u.tag === 'SELECT') {
+        const chosen = await el.selectOption({ index: 1 }).then(() => el.evaluate((s) => (s as HTMLSelectElement).selectedOptions[0]?.text ?? '')).catch(() => '');
+        if (chosen) filled.push(`${u.label} = ${chosen.trim()} (선택)`);
+      } else {
+        const value = fillValue(u.label, u.type, today);
+        if (await el.fill(value, { timeout: 2000 }).then(() => true, () => false)) filled.push(`${u.label} = ${value}`);
+      }
+    }
+    const textBefore = await page.evaluate(() => document.body?.innerText ?? '').catch(() => '');
+    const messagesAfterFill = await pageMessages(page);
+    const urlBefore = page.url();
+    dialogs.length = 0;
+    allowWrites(true);
+    try {
+      await save.click({ timeout: 3000 }).catch(() => undefined);
+      await settle(page, 5000);
+    } finally {
+      allowWrites(false);
+    }
+    const messages = [...new Set([...(await pageMessages(page)).filter((m) => !messagesAfterFill.includes(m)), ...dialogs])].slice(0, 8);
+    const textAfter = await page.evaluate(() => document.body?.innerText ?? '').catch(() => '');
+    const shotName = `shots/${String(++shotNumber).padStart(3, '0')}.jpg`;
+    const shot = await page.screenshot({ path: join(OUT, shotName), type: 'jpeg', quality: 55, timeout: 5000 }).then(() => shotName).catch(() => null);
+
+    const record: OperateRecord = { n: ++done, title, url, filled, button: saveLabel, emptyMessages, messages, urlAfter: page.url() !== urlBefore ? page.url() : null, appeared: newLines(textBefore, textAfter), shot };
+    appendFileSync(join(OUT, 'actions.md'), `${recordToMarkdown(record)}\n\n`);
+    say(`[${who}] 조작 ${done}: ${title} (${saveLabel})`);
+  }
+  if (!done) appendFileSync(join(OUT, 'actions.md'), '저장해 볼 수 있는 입력 화면을 찾지 못했습니다.\n\n');
+  return done;
 }
 
 const browser = await chromium.launch({ channel: (process.env.PROBE_BROWSER_CHANNEL as 'msedge' | 'chrome' | undefined) || undefined, headless: true });
-const results: { name: string; signedIn: boolean; pages: number; stoppedBy: string }[] = [];
+const results: { name: string; signedIn: boolean; pages: number; stoppedBy: string; operated: number }[] = [];
 try {
   // Each account in its own browser session. Without any account the sign-in screen is still read.
   for (const account of ACCOUNTS.length ? ACCOUNTS : [null]) results.push(await exploreAccount(account));
@@ -271,7 +429,8 @@ try {
 }
 const visitedCount = results.reduce((n, r) => n + r.pages, 0);
 const signedIn = results.some((r) => r.signedIn);
+const operated = results.reduce((n, r) => n + r.operated, 0);
 const stoppedBy = results.find((r) => r.stoppedBy !== 'complete')?.stoppedBy ?? 'complete';
 
-writeFileSync(join(OUT, 'summary.json'), JSON.stringify({ url: BASE, pages: visitedCount, signedIn, stoppedBy, accounts: results, seconds: Math.round((Date.now() - started) / 1000) }));
-console.log(JSON.stringify({ type: 'done', pages: visitedCount, signedIn, stoppedBy }));
+writeFileSync(join(OUT, 'summary.json'), JSON.stringify({ url: BASE, pages: visitedCount, signedIn, stoppedBy, operated, accounts: results, seconds: Math.round((Date.now() - started) / 1000) }));
+console.log(JSON.stringify({ type: 'done', pages: visitedCount, signedIn, stoppedBy, operated }));

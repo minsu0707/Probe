@@ -21,9 +21,11 @@ export interface PromptInput {
   hasExistingKnowledge: boolean;
   /** Probe walked through the live service first; its notes are in ./explore. */
   hasExploration?: boolean;
+  /** Probe also filled in and saved forms on the live service (실제 조작 학습); the notes are in ./explore/actions.md. */
+  hasOperation?: boolean;
 }
 
-export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExistingKnowledge, hasExploration }: PromptInput): string {
+export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExistingKnowledge, hasExploration, hasOperation }: PromptInput): string {
   const drive = driveLinks.length
     ? `- Google Drive links (read them with the Google Drive tools; if a link is a folder, read its readable contents):\n${driveLinks.map((l) => `  - ${l}`).join('\n')}`
     : '- No Google Drive links were added.';
@@ -35,12 +37,16 @@ export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExisting
   const explored = hasExploration
     ? `- ./explore holds what Probe saw when it walked through the live service in a browser (read-only; nothing was saved or changed). Read ./explore/pages.md in full: one section per screen with its address, headings, menus, table columns, input fields and buttons. ./explore/shots/NNN.jpg are screenshots of those screens (the number is the section number); open the landing page and at least one screen per menu group with the Read tool. This shows what the service really does, so cite it as [탐색: <address>] and treat it as a source equal to the documents. pages.md has one part per account ("# 계정: ADMIN", "# 계정: RES1"…): every account that Probe has a login for was walked separately, because each role sees different menus. Compare the accounts: a menu or screen that one role has and another lacks is a permission fact, so write it into rules.md as a role-by-role permission table citing [탐색: <account> <address>], and note in screens.md which roles can open each screen. A part marked 로그인 실패 saw only the sign-in screen. Where the live service and a document disagree, record both in open-questions.md. Do not take the walk-through to be complete: list in open-questions.md every menu, tab or screen that documents or screenshots mention but pages.md has no section for, as "미확인 화면", so the owner knows which parts were never looked at, and never describe such a screen in screens.md as if it had been seen. The exploration saw only what each account's sign-in could reach and stopped at a per-account page limit, so say so in open-questions.md where it matters.\n`
     : '';
+  const operated = hasOperation
+    ? `- ./explore/actions.md holds what Probe saw when it really operated the live service: on each kind of screen with a form it saved the form empty (only the page's own checks answered) and then filled in with test values (the name QA-AUTO-탐색, 1 for numbers, today for dates, the first option of a list) and saved it once. Read it in full. It is the only source here that shows what the service does after an input, so use it: write the validation messages into rules.md next to the field they belong to, the behaviour after saving (a new address, a generated number, a status shown, a new row) into flows.md, and cite each as [조작: <address>]. The values were made up by Probe: never present a test value as a business rule, and where the outcome is unclear say so in open-questions.md. Approving, confirming, sending and deleting were never tried, so say in open-questions.md that those steps are known only from documents. Records named QA-AUTO-탐색 exist on the service now; mention them once in your summary so the owner can remove them.
+`
+    : '';
   return `You are building the domain knowledge base for QA test automation of the service "${serviceName}"${baseUrl ? ` (${baseUrl})` : ''}.
 
 Source material:
 - Local files are in ./docs. For any file that has a sibling "<name>.extracted.txt", read that text file instead of the original. Read every file; images and PDFs are readable with the Read tool. Use Glob to list them.
 ${drive}
-${explored}${existing}
+${explored}${operated}${existing}
 Write these files into ./knowledge (Markdown, in the language the source documents are written in):
 - overview.md: what the service is, who uses it, user roles, glossary of domain terms.
 - screens.md: menu and screen inventory. For each screen: purpose, main fields and actions, who can access it.

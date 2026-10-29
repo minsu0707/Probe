@@ -8,7 +8,7 @@ import { cancelLearn, listJobs, startLearn } from './service.ts';
 export const learningRoutes = new Hono()
   .post('/services/:id/learn', async (c) => {
     // The body is optional: older callers (and the MCP tool) post nothing, which means documents only.
-    const opts = z.object({ explore: z.boolean().optional(), writeTests: z.boolean().optional() }).safeParse(await c.req.json().catch(() => ({}))).data ?? {};
+    const opts = z.object({ explore: z.boolean().optional(), writeTests: z.boolean().optional(), operate: z.boolean().optional() }).safeParse(await c.req.json().catch(() => ({}))).data ?? {};
     return c.json(await startLearn(c.req.param('id'), opts), 202);
   })
   .post('/services/:id/learn/cancel', (c) => (cancelLearn(c.req.param('id')), c.body(null, 204)))
