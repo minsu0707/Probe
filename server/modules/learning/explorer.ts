@@ -22,11 +22,11 @@ interface Account {
 }
 const ACCOUNTS: Account[] = JSON.parse(process.env.PROBE_EXPLORE_ACCOUNTS ?? '[]');
 /** Limits are per account, so one account cannot use up the budget of the next. */
-const MAX_PAGES = Number(process.env.PROBE_EXPLORE_MAX_PAGES ?? 50);
-const MAX_MS = Number(process.env.PROBE_EXPLORE_MAX_MS ?? 6 * 60_000);
+const MAX_PAGES = Number(process.env.PROBE_EXPLORE_MAX_PAGES ?? 150);
+const MAX_MS = Number(process.env.PROBE_EXPLORE_MAX_MS ?? 15 * 60_000);
 const SAMPLES_PER_PATTERN = 2;
-const CLICK_PAGES = 3; // menus are explored by clicking only on the first few screens
-const MAX_CLICKS = 90;
+const CLICK_PAGES = 15; // menus are explored by clicking on the first screens (a label is clicked once per account, so later screens add only what is new)
+const MAX_CLICKS = 300;
 const MENU_SELECTOR = [
   'nav button', 'nav [role=button]', 'nav li', 'nav a:not([href])', 'nav [role=menuitem]',
   'aside button', 'aside li', 'aside a:not([href])',
@@ -190,7 +190,7 @@ async function exploreAccount(account: Account | null): Promise<{ name: string; 
   const clickedLabels = new Set<string>();
   let totalClicks = 0;
   const menuLabels = async (): Promise<Set<string>> => {
-    const texts = await page.locator(MENU_SELECTOR).evaluateAll((els) => els.map((e) => (e.textContent ?? '').replace(/s+/g, ' ').trim()));
+    const texts = await page.locator(MENU_SELECTOR).evaluateAll((els) => els.map((e) => (e.textContent ?? '').replace(/\s+/g, ' ').trim()));
     return new Set(texts.filter(Boolean));
   };
   /** `only`: just these labels (the submenu a click opened), so a sibling click cannot close it first. */
