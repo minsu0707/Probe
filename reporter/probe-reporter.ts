@@ -44,7 +44,8 @@ export default class ProbeReporter implements Reporter {
         retry: result.retry,
         error: result.error?.message,
         errorStack: result.error?.stack,
-        screenshot: attach('screenshot'),
+        // Playwright's own failure screenshot is of the `page` fixture, which is blank when the spec opened its own page.
+        screenshot: attach('probe-screenshot'),
         trace: attach('trace'),
       },
     ]);

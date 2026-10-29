@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { test as base, expect, type Page } from '@playwright/test';
 import { allowRequest } from './guard.ts';
 import { connected, send, sendFrame } from './transport.ts';
@@ -69,7 +70,7 @@ async function startStream(page: Page): Promise<{ stop: () => void; lastFrameAt:
  */
 export const test = base.extend<{ _probe: void }>({
   _probe: [
-    async ({ page }, use, testInfo) => {
+    async ({ page, browser }, use, testInfo) => {
       // 조회 전용 service: refuse requests that would change data. Applies to the whole context, so popups are covered too.
       if (process.env.PROBE_READ_ONLY === '1') {
         const blocked = new Set<string>();
@@ -107,11 +108,35 @@ export const test = base.extend<{ _probe: void }>({
           busy = false;
         }
       }, FALLBACK_INTERVAL_MS);
+      // Specs often open their own context (to log in through the API first), so the failure
+      // screen is whichever real page the test left open, not the unused `page` fixture.
+      let lastShot: Buffer | null = null;
+      const keepScreen = async () => {
+        const pages = [page, ...browser.contexts().flatMap((c) => c.pages())].filter((p) => !p.isClosed() && p.url() !== 'about:blank');
+        const current = pages.at(-1);
+        if (!current) return;
+        try {
+          lastShot = await current.screenshot({ type: 'png', timeout: 3000 });
+        } catch {
+          /* page is navigating or closing; keep the previous one */
+        }
+      };
+      const screenTimer = setInterval(() => void keepScreen(), FALLBACK_INTERVAL_MS);
       try {
         await use();
       } finally {
         clearInterval(timer);
+        clearInterval(screenTimer);
         stream?.stop();
+        if (testInfo.status !== testInfo.expectedStatus) {
+          await keepScreen();
+          if (lastShot) {
+            // The reporter reads attachments by file path, so a body-only attachment would be invisible to it.
+            const path = testInfo.outputPath('probe-screenshot.png');
+            await writeFile(path, lastShot);
+            await testInfo.attach('probe-screenshot', { path, contentType: 'image/png' });
+          }
+        }
       }
     },
     { auto: true },

@@ -38,8 +38,7 @@ export function ingestEvents(runId: string, token: string | undefined, events: I
       feature: f.feature,
       page: f.page,
       error: f.end.error,
-      // No page was ever opened (an API-only test), so Playwright shot an empty about:blank.
-      screenshot: f.page ? f.end.screenshot : undefined,
+      screenshot: f.end.screenshot,
       trace: f.end.trace,
     });
     if (!first) run.firstFailureByFile.set(f.file, defect.id);
