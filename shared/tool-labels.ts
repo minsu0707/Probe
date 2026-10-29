@@ -11,6 +11,7 @@ const PROBE_TOOLS: Record<string, string> = {
   update_defect: '결함 상태 변경',
   delete_defect: '결함 삭제',
   run_tests: '테스트 실행',
+  get_run: '실행 결과 기다리기',
   start_learning: '학습 시작',
   open_dashboard: '대시보드 열기',
 };

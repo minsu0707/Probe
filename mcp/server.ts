@@ -111,23 +111,36 @@ server.registerTool(
     const s = await resolveService(ref);
     if (!process.env.PROBE_MCP_NO_OPEN) openBrowser(BASE);
     const started = await api<any>(`/api/services/${s.id}/runs`, { method: 'POST', body: JSON.stringify({ grep, file }) });
-    const deadline = Date.now() + (timeoutSec ?? 600) * 1000;
-    let run = started;
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 1500));
-      run = (await api<any>(`/api/runs/${started.id}`)).run;
-      if (run.endedAt) break;
-    }
-    const detail = await api<any>(`/api/runs/${started.id}`);
-    const defects = await api<any[]>(`/api/defects?runId=${started.id}`);
-    return {
-      runId: run.id,
-      status: run.endedAt ? run.status : 'still running (timed out waiting; check the dashboard)',
-      totals: run.totals,
-      failures: defects.map((d) => ({ defectId: d.id, severity: d.severity, test: d.title, feature: d.feature, page: d.page, error: d.error.split('\n').slice(0, 20).join('\n') })),
-      systemNotes: detail.log.filter((l: any) => l.kind === 'system').map((l: any) => l.text),
-    };
+    return await waitForRun(started.id, timeoutSec);
   }),
+);
+
+/** Waits for a run to end (or the time to pass) and describes it: totals, failures with their errors, system notes. */
+async function waitForRun(runId: string, timeoutSec?: number) {
+  const deadline = Date.now() + (timeoutSec ?? 600) * 1000;
+  let run = (await api<any>(`/api/runs/${runId}`)).run;
+  while (!run.endedAt && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 1500));
+    run = (await api<any>(`/api/runs/${runId}`)).run;
+  }
+  const detail = await api<any>(`/api/runs/${runId}`);
+  const defects = await api<any[]>(`/api/defects?runId=${runId}`);
+  return {
+    runId: run.id,
+    status: run.endedAt ? run.status : 'still running (not finished in the time given; call get_run with this runId to keep waiting, never poll with a shell sleep)',
+    totals: run.totals,
+    failures: defects.map((d) => ({ defectId: d.id, severity: d.severity, test: d.title, feature: d.feature, page: d.page, error: d.error.split('\n').slice(0, 20).join('\n') })),
+    systemNotes: detail.log.filter((l: any) => l.kind === 'system').map((l: any) => l.text),
+  };
+}
+
+server.registerTool(
+  'get_run',
+  {
+    description: 'Keep waiting for a run that run_tests reported as still running, and return its result. Waits up to timeoutSec (default 600).',
+    inputSchema: { runId: z.string(), timeoutSec: z.number().int().min(10).max(1800).optional() },
+  },
+  tool(async ({ runId, timeoutSec }: { runId: string; timeoutSec?: number }) => await waitForRun(runId, timeoutSec)),
 );
 
 server.registerTool(

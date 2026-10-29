@@ -38,7 +38,12 @@ export default {
   workers: 1,
   retries: 0,
   reporter: [['${posix(join(ROOT, 'reporter', 'probe-reporter.ts'))}'], ['line']],
+  // Without these a wrong locator waits for the whole test timeout (minutes), so a failing step shows
+  // up only after the scenario's full time budget. Each action and assertion gets its own short limit.
+  expect: { timeout: 10_000 },
   use: {
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
     baseURL: process.env.BASE_URL,
     // 'msedge' | 'chrome' use the installed browser; undefined uses Playwright's own Chromium.
     channel: process.env.PROBE_BROWSER_CHANNEL || undefined,
