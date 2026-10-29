@@ -172,8 +172,19 @@
   max-height: 260px;
   overflow-y: auto;
 }
+.shot-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shot-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .shot {
   display: block;
+  width: 100%;
   cursor: zoom-in;
 }
 .shot img {

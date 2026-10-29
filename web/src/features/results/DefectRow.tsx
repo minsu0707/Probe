@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { explainCause } from '../../../../shared/cause.ts';
 import { api, type Defect } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
@@ -6,6 +7,25 @@ import { attempt } from '../../core/store.ts';
 import { Icon } from '../../ui/index.ts';
 import { AnswerPanel } from './AnswerPanel.tsx';
 import { analysisRequest } from './analysis.ts';
+
+const SHOT_SIZES = [
+  { id: 'small', label: '작게', width: '420px' },
+  { id: 'medium', label: '보통', width: '720px' },
+  { id: 'large', label: '크게', width: '1100px' },
+  { id: 'full', label: '꽉 차게', width: '100%' },
+] as const;
+type ShotSize = (typeof SHOT_SIZES)[number]['id'];
+const SHOT_SIZE_KEY = 'probe.shotSize';
+
+/** The chosen screenshot size is remembered; storage can be blocked, so it is only a convenience. */
+function readShotSize(): ShotSize {
+  try {
+    const saved = localStorage.getItem(SHOT_SIZE_KEY);
+    return SHOT_SIZES.find((s) => s.id === saved)?.id ?? 'medium';
+  } catch {
+    return 'medium';
+  }
+}
 
 /** One row in the list: severity dot and title, where it is, and one quiet line of facts. */
 export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Defect; selected: boolean; onSelect: () => void; now: number }) {
@@ -32,6 +52,15 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
   const guess = explainCause(d.error);
   const analyze = async () => {
     if (await attempt(() => api.createSession(d.serviceId, { kind: 'chat', message: analysisRequest(d, followedFrom), parallel: true }))) goService(d.serviceId, 'sessions');
+  };
+  const [shotSize, setShotSize] = useState<ShotSize>(readShotSize);
+  const chooseShotSize = (id: ShotSize) => {
+    setShotSize(id);
+    try {
+      localStorage.setItem(SHOT_SIZE_KEY, id);
+    } catch {
+      /* not remembered */
+    }
   };
   const evidenceUrl = (file: string) => `/api/runs/${d.runId}/files/${file}`;
 
@@ -101,9 +130,19 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
       {followedFrom && <p className="muted small">같은 파일에서 먼저 실패한 “{followedFrom}” 뒤에 이어서 실패했습니다. 앞의 원인을 고치면 같이 해결될 수 있습니다.</p>}
 
       {d.screenshot && (
-        <a href={evidenceUrl(d.screenshot)} target="_blank" rel="noreferrer noopener" className="shot" title="새 탭에서 원본 크기로 보기">
-          <img src={evidenceUrl(d.screenshot)} alt="실패 시점의 화면" loading="lazy" />
-        </a>
+        <div className="shot-box">
+          <div className="shot-size" role="group" aria-label="스크린샷 크기">
+            <span className="muted small">화면 크기</span>
+            {SHOT_SIZES.map((s) => (
+              <button key={s.id} type="button" className={`btn btn-sm${shotSize === s.id ? ' btn-primary' : ''}`} aria-pressed={shotSize === s.id} onClick={() => chooseShotSize(s.id)}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <a href={evidenceUrl(d.screenshot)} target="_blank" rel="noreferrer noopener" className="shot" style={{ maxWidth: SHOT_SIZES.find((s) => s.id === shotSize)!.width }} title="새 탭에서 원본 크기로 보기">
+            <img src={evidenceUrl(d.screenshot)} alt="실패 시점의 화면" loading="lazy" />
+          </a>
+        </div>
       )}
 
       <pre className="error-block">{d.error}</pre>
