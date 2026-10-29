@@ -15,6 +15,28 @@
 .docs li + li {
   border-top: 1px solid var(--line);
 }
+.docs li.doc-new {
+  box-shadow: inset 3px 0 0 var(--fail);
+  background: var(--fail-soft);
+}
+.doc-alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--fail);
+  border-radius: var(--radius);
+  background: var(--fail-soft);
+}
+.doc-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 8px;
+  font-weight: 600;
+}
 .doc-main {
   display: flex;
   flex-direction: column;

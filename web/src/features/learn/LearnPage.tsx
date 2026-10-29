@@ -29,6 +29,9 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
   const [writeTests, setWriteTests] = useState(true);
   /** Also fill in forms and save them once, to see what the service does. Off by default: it creates data. */
   const [operate, setOperate] = useState(false);
+  /** Ids of the documents the next run will read. New documents join the selection; learned ones start unchecked. */
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [known, setKnown] = useState<Set<string>>(new Set());
   const canExplore = Boolean(service?.baseUrl);
   const exploring = explore && canExplore;
   const canOperate = exploring && !service?.readOnly;
@@ -56,8 +59,26 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
     };
   }, [serviceId, version, liveJob?.status]);
 
+  // Keep the selection in step with the list: drop deleted documents, check ones not seen before if they are unlearned.
+  // The first load with nothing unlearned checks everything, so the plain "다시 학습" still works as before.
+  useEffect(() => {
+    if (!docs) return;
+    const ids = new Set(docs.map((d) => d.id));
+    const firstLoad = known.size === 0;
+    const fresh = docs.filter((d) => !known.has(d.id));
+    setKnown(ids);
+    setPicked((prev) => {
+      const next = new Set([...prev].filter((id) => ids.has(id)));
+      const allLearned = docs.every((d) => d.learnedAt);
+      for (const d of fresh) if (!d.learnedAt || (firstLoad && allLearned)) next.add(d.id);
+      return next;
+    });
+  }, [docs]);
+
   const unlearned = docs?.filter((d) => !d.learnedAt).length ?? 0;
-  const learnLabel = !knowledge.length ? '학습 시작' : unlearned ? `새 문서 ${unlearned}개 포함해 다시 학습` : '다시 학습';
+  const pickedCount = docs?.filter((d) => picked.has(d.id)).length ?? 0;
+  const learnLabel = !knowledge.length ? '학습 시작' : '다시 학습';
+  const countLabel = docs?.length ? ` · 자료 ${pickedCount}/${docs.length}개 선택` : '';
 
   return (
     <>
@@ -70,9 +91,10 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
             학습 중단
           </button>
         ) : (
-          <button className="btn btn-primary" disabled={(!docs?.length && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring, writeTests, operate: operating }))}>
+          <button className="btn btn-primary" disabled={(!pickedCount && !exploring) || !claudeReady} onClick={() => void attempt(() => api.learn(serviceId, { explore: exploring, writeTests, operate: operating, docIds: docs?.filter((d) => picked.has(d.id)).map((d) => d.id) ?? [] }))}>
             <Icon name="learn" size={16} />
             {learnLabel}
+            {countLabel}
           </button>
         )}
       </div>
@@ -111,7 +133,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
       )}
 
       <div className="split split-learn">
-        <SourcesPanel serviceId={serviceId} docs={docs} supported={supported} />
+        <SourcesPanel serviceId={serviceId} docs={docs} supported={supported} picked={picked} onPick={setPicked} unlearned={unlearned} locked={learning} />
         <div className="stack">
           {job && (job.status === 'running' || job.endedAt) && <JobCard job={job} />}
           <KnowledgePanel serviceId={serviceId} files={knowledge} onSaved={(f) => setKnowledge((all) => all.map((x) => (x.name === f.name ? f : x)))} />

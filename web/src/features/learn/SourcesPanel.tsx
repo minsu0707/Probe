@@ -5,7 +5,7 @@ import { attempt, toast } from '../../core/store.ts';
 import { ConfirmModal, FileDrop, Icon, Pill, useNow } from '../../ui/index.ts';
 
 /** 자료: uploaded files and Drive links, and which of them Claude has already learned. */
-export function SourcesPanel({ serviceId, docs, supported }: { serviceId: string; docs: Doc[] | null; supported: string[] }) {
+export function SourcesPanel({ serviceId, docs, supported, picked, onPick, unlearned, locked }: { serviceId: string; docs: Doc[] | null; supported: string[]; picked: Set<string>; onPick: (s: Set<string>) => void; unlearned: number; locked: boolean }) {
   const [busy, setBusy] = useState(false);
   const [link, setLink] = useState('');
   const [deleting, setDeleting] = useState<Doc | null>(null);
@@ -24,6 +24,15 @@ export function SourcesPanel({ serviceId, docs, supported }: { serviceId: string
     e.preventDefault();
     if (await attempt(() => api.addDrive(serviceId, link), 'Drive 링크를 추가했습니다')) setLink('');
   };
+
+  const toggle = (id: string, on: boolean) => {
+    const next = new Set(picked);
+    if (on) next.add(id);
+    else next.delete(id);
+    onPick(next);
+  };
+  const allPicked = Boolean(docs?.length) && docs!.every((d) => picked.has(d.id));
+  const somePicked = Boolean(docs?.some((d) => picked.has(d.id)));
 
   return (
     <section className="panel">
@@ -44,9 +53,29 @@ export function SourcesPanel({ serviceId, docs, supported }: { serviceId: string
       {docs === null ? null : docs.length === 0 ? (
         <p className="muted small">아직 올린 자료가 없습니다.</p>
       ) : (
+        <>
+          {unlearned > 0 && (
+            <div className="doc-alert" role="status">
+              <span>
+                <b>학습 안 된 자료 {unlearned}개</b>
+                <span className="muted"> · 지식 문서에 아직 반영되지 않았습니다</span>
+              </span>
+              <button className="btn btn-sm" disabled={locked} onClick={() => onPick(new Set(docs.filter((d) => !d.learnedAt).map((d) => d.id)))}>
+                이것만 선택
+              </button>
+            </div>
+          )}
+          <label className="doc-all">
+            <input type="checkbox" disabled={locked} checked={allPicked} ref={(el) => void (el && (el.indeterminate = somePicked && !allPicked))} onChange={(e) => onPick(e.target.checked ? new Set(docs.map((d) => d.id)) : new Set())} />
+            <span>전체 선택</span>
+            <span className="muted small">
+              {docs.filter((d) => picked.has(d.id)).length}/{docs.length}개 선택됨 · 선택한 자료만 읽습니다
+            </span>
+          </label>
         <ul className="docs">
           {docs.map((d) => (
-            <li key={d.id}>
+            <li key={d.id} className={d.learnedAt ? undefined : 'doc-new'}>
+              <input type="checkbox" disabled={locked} checked={picked.has(d.id)} onChange={(e) => toggle(d.id, e.target.checked)} aria-label={`${d.name} 학습에 포함`} />
               <Icon name={d.kind === 'drive' ? 'drive' : 'file'} size={18} />
               <div className="doc-main">
                 <span className="ellipsis" title={d.kind === 'drive' ? d.ref : d.name}>
@@ -54,13 +83,14 @@ export function SourcesPanel({ serviceId, docs, supported }: { serviceId: string
                 </span>
                 <span className="muted small">{d.kind === 'drive' ? 'Google Drive' : bytes(d.size)}</span>
               </div>
-              {d.learnedAt ? <Pill tone="pass">학습됨 · {ago(d.learnedAt, now)}</Pill> : <Pill tone="warn">새 자료</Pill>}
+              {d.learnedAt ? <Pill tone="pass">학습됨 · {ago(d.learnedAt, now)}</Pill> : <Pill tone="fail" dot>학습 안 됨</Pill>}
               <button className="btn btn-quiet btn-icon btn-sm" aria-label={`${d.name} 삭제`} onClick={() => setDeleting(d)}>
                 <Icon name="trash" size={15} />
               </button>
             </li>
           ))}
         </ul>
+        </>
       )}
 
       {deleting && (

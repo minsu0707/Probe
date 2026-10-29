@@ -48,3 +48,16 @@ test('the learning job may not run shell commands or browse the web', () => {
 test('knowledge files sort in canonical order, extras last', () => {
   assert.deepEqual(sortKnowledgeNames(['rules.md', 'zzz.md', 'overview.md', 'aaa.md', 'flows.md']), ['overview.md', 'flows.md', 'rules.md', 'aaa.md', 'zzz.md']);
 });
+
+test('prompt: with a selection Claude reads only the chosen local files', () => {
+  const p = buildLearnPrompt({ serviceName: 'S', baseUrl: null, driveLinks: [], hasExistingKnowledge: false, localFiles: ['a.pdf', 'b.md'] });
+  assert.match(p, /Read only these files/);
+  assert.match(p, /- a\.pdf/);
+  assert.match(p, /- b\.md/);
+  assert.ok(!p.includes('Read every file'));
+});
+
+test('prompt: no selection means every file, an empty selection means none', () => {
+  assert.match(buildLearnPrompt({ serviceName: 'S', baseUrl: null, driveLinks: [], hasExistingKnowledge: false }), /Read every file/);
+  assert.match(buildLearnPrompt({ serviceName: 'S', baseUrl: null, driveLinks: [], hasExistingKnowledge: false, localFiles: [] }), /Do not read \.\/docs/);
+});

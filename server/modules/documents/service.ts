@@ -109,8 +109,8 @@ export function deleteDoc(serviceId: string, docId: string): void {
   broadcast({ type: 'docs', serviceId });
 }
 
-export function markLearned(serviceId: string): void {
-  repo.markAllLearned(serviceId, Date.now());
+export function markLearned(serviceId: string, docIds: string[]): void {
+  repo.markLearned(serviceId, docIds, Date.now());
   broadcast({ type: 'docs', serviceId });
 }
 

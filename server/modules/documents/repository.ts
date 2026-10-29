@@ -31,8 +31,10 @@ export function insert(d: Omit<Doc, 'learnedAt' | 'mime'>): Doc {
 
 export const remove = (docId: string): void => void run('DELETE FROM documents WHERE id = ?', docId);
 
-/** Called after a successful learning job: everything currently attached has been read. */
-export const markAllLearned = (serviceId: string, at: number): void => void run('UPDATE documents SET learned_at = ? WHERE service_id = ?', at, serviceId);
+/** Called after a successful learning job: only the documents that job read are marked. */
+export const markLearned = (serviceId: string, docIds: string[], at: number): void => {
+  if (docIds.length) run(`UPDATE documents SET learned_at = ? WHERE service_id = ? AND id IN (${docIds.map(() => '?').join(',')})`, at, serviceId, ...docIds);
+};
 
 export const count = (serviceId: string): number => get<{ n: number }>('SELECT COUNT(*) AS n FROM documents WHERE service_id = ?', serviceId)!.n;
 export const countUnlearned = (serviceId: string): number => get<{ n: number }>('SELECT COUNT(*) AS n FROM documents WHERE service_id = ? AND learned_at IS NULL', serviceId)!.n;

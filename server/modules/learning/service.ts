@@ -33,14 +33,16 @@ const children = new Map<string, ChildProcess>();
 export const listJobs = (serviceId: string, limit = 10): Job[] => repo.recent(serviceId, limit);
 export const isLearning = repo.isLearning;
 
-export async function startLearn(serviceId: string, opts: { explore?: boolean; writeTests?: boolean; operate?: boolean } = {}): Promise<Job> {
+/** `docIds` is the user's selection; leave it out to read every attached document, as older callers expect. */
+export async function startLearn(serviceId: string, opts: { explore?: boolean; writeTests?: boolean; operate?: boolean; docIds?: string[] } = {}): Promise<Job> {
   const service = requireService(serviceId);
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service');
-  const docs = listDocs(serviceId);
+  const all = listDocs(serviceId);
+  const docs = opts.docIds ? all.filter((d) => opts.docIds!.includes(d.id)) : all;
   if (opts.explore && !service.baseUrl) throw unprocessable('서비스 주소를 먼저 입력해야 서비스를 둘러볼 수 있습니다');
   if (opts.operate && !opts.explore) throw unprocessable('실제 조작 학습은 서비스를 직접 둘러보는 학습과 함께 켜야 합니다');
   if (opts.operate && service.readOnly) throw unprocessable('조회 전용 서비스에서는 실제 조작 학습을 할 수 없습니다. 데이터를 바꾸지 않는 서비스로 지정되어 있습니다');
-  if (docs.length === 0 && !opts.explore) throw unprocessable('Add at least one document or Drive link first');
+  if (docs.length === 0 && !opts.explore) throw unprocessable(all.length ? '학습할 자료를 하나 이상 선택해야 합니다' : 'Add at least one document or Drive link first');
   // Fail here with a clear message rather than as a cryptic exit code from the CLI.
   const env = await requireClaudeReady();
   if (repo.findRunning(serviceId)) throw conflict('Learning is already running for this service'); // re-check: the await above let another request in
@@ -61,6 +63,7 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean; w
       serviceName: service.name,
       baseUrl: service.baseUrl,
       driveLinks: docs.filter((d) => d.kind === 'drive').map((d) => d.ref),
+      localFiles: opts.docIds ? docs.filter((d) => d.kind === 'file').map((d) => d.ref) : null,
       hasExistingKnowledge: countKnowledge(serviceId) > 0,
       hasExploration: explored,
       hasOperation: operated,
@@ -68,7 +71,7 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean; w
     const child = spawn('claude', buildClaudeArgs(prompt), { cwd: serviceDir(serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     children.set(id, child);
 
-    if (docs.length) note(`자료 ${docs.length}개를 읽기 시작합니다`);
+    if (docs.length) note(opts.docIds && docs.length < all.length ? `선택한 자료 ${docs.length}개를 읽기 시작합니다 (나머지 ${all.length - docs.length}개는 이번에 읽지 않습니다)` : `자료 ${docs.length}개를 읽기 시작합니다`);
     else note('올린 자료 없이 둘러본 내용만으로 정리합니다');
 
     // Outcome is collected while streaming and decided once the process exits.
@@ -101,7 +104,7 @@ export async function startLearn(serviceId: string, opts: { explore?: boolean; w
         return finish(id, serviceId, log, 'failed', null, reportedError ?? `claude exited with code ${code}${stderrTail ? `: ${stderrTail.trim()}` : ''}`);
       }
       if (countKnowledge(serviceId) === 0) return finish(id, serviceId, log, 'failed', summary, 'Claude finished but wrote no knowledge files');
-      markLearned(serviceId);
+      markLearned(serviceId, docs.map((d) => d.id));
       if (opts.writeTests) log.push('이어서 Claude 세션에서 기능별 테스트 케이스를 만듭니다. 진행은 Claude 세션 탭에서 볼 수 있습니다');
       finish(id, serviceId, log, 'done', summary);
       // After the job is closed, so a busy or signed-out Claude cannot turn a good learning run into a failed one.

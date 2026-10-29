@@ -17,6 +17,8 @@ export interface PromptInput {
   baseUrl: string | null;
   /** Drive links Claude must read with its Drive connector. */
   driveLinks: string[];
+  /** The uploaded files this run should read. null = every file in ./docs (no selection was made). */
+  localFiles?: string[] | null;
   /** True when ./knowledge already has files from an earlier run. */
   hasExistingKnowledge: boolean;
   /** Probe walked through the live service first; its notes are in ./explore. */
@@ -25,10 +27,21 @@ export interface PromptInput {
   hasOperation?: boolean;
 }
 
-export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExistingKnowledge, hasExploration, hasOperation }: PromptInput): string {
+export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, localFiles = null, hasExistingKnowledge, hasExploration, hasOperation }: PromptInput): string {
   const drive = driveLinks.length
     ? `- Google Drive links (read them with the Google Drive tools; if a link is a folder, read its readable contents):\n${driveLinks.map((l) => `  - ${l}`).join('\n')}`
     : '- No Google Drive links were added.';
+
+  const local =
+    localFiles === null
+      ? '- Local files are in ./docs. For any file that has a sibling "<name>.extracted.txt", read that text file instead of the original. Read every file; images and PDFs are readable with the Read tool. Use Glob to list them.'
+      : localFiles.length
+        ? [
+            '- The user chose which local files this run covers. Read only these files in ./docs, and ignore every other file there (earlier runs already covered them):',
+            ...localFiles.map((f) => `  - ${f}`),
+            '  For a file that has a sibling "<name>.extracted.txt", read that text file instead of the original. Images and PDFs are readable with the Read tool.',
+          ].join('\n')
+        : '- No local files were chosen for this run. Do not read ./docs.';
 
   const existing = hasExistingKnowledge
     ? '- ./knowledge already holds an earlier version. Read it first, keep what is still supported by the sources, and update it. Do not drop information the user may have edited by hand unless a source contradicts it.\n'
@@ -44,7 +57,7 @@ export function buildLearnPrompt({ serviceName, baseUrl, driveLinks, hasExisting
   return `You are building the domain knowledge base for QA test automation of the service "${serviceName}"${baseUrl ? ` (${baseUrl})` : ''}.
 
 Source material:
-- Local files are in ./docs. For any file that has a sibling "<name>.extracted.txt", read that text file instead of the original. Read every file; images and PDFs are readable with the Read tool. Use Glob to list them.
+${local}
 ${drive}
 ${explored}${operated}${existing}
 Write these files into ./knowledge (Markdown, in the language the source documents are written in):
