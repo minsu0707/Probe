@@ -52,6 +52,10 @@ const children = new Map<string, ChildProcess>();
 const cancelled = new Set<string>();
 /** Automatic follow-ups already sent since the user last wrote, by session id. */
 const followUps = new Map<string, number>();
+/** Sessions whose current turn runs beside another one and may not change files (see createSession's `parallel`). */
+const readerTurns = new Set<string>();
+/** Whether a turn that may write files is running in this service. Readers can run beside it. */
+const writerBusy = (serviceId: string): boolean => repo.runningAll(serviceId).some((s) => !readerTurns.has(s.id));
 const RUN_TESTS_LABEL = toolLabel('mcp__probe__run_tests');
 
 export const listSessions = (serviceId: string): Session[] => repo.forService(requireService(serviceId).id);
@@ -63,20 +67,25 @@ export function getSession(id: string): { session: Session; messages: SessionMes
   return { session, messages: repo.messages(id), queue: repo.queue(id) };
 }
 
-/** Create a session and send its first message. */
-export async function createSession(serviceId: string, input: { kind: SessionKind; message?: string }): Promise<Session> {
+/**
+ * Create a session and send its first message. With `parallel`, a turn started while another one is
+ * writing runs as a reader: it cannot write files or use the shell, so it cannot overwrite what the
+ * other turn is writing. Used for the defect analysis, which should not wait for a long test-writing turn.
+ */
+export async function createSession(serviceId: string, input: { kind: SessionKind; message?: string; parallel?: boolean }): Promise<Session> {
   requireService(serviceId);
   const typed = input.message?.trim() ?? '';
   const first = openingMessage(input.kind, typed);
   if (!first) throw unprocessable('Type a message to start a conversation');
-  await assertCanRun(serviceId);
+  const asReader = Boolean(input.parallel) && writerBusy(serviceId);
+  await assertCanRun(serviceId, asReader);
 
   const id = newId();
   const title = input.kind === 'write-tests' ? '테스트 작성' : shorten(first);
   repo.insert({ id, serviceId, title, kind: input.kind, claudeSessionId: randomUUID(), now: Date.now() });
   broadcast({ type: 'session', session: repo.findById(id)! });
   // The transcript shows the user's own words, not the longer instruction behind the button.
-  await takeTurn(id, first, typed || (input.kind === 'write-tests' ? '테스트 작성 시작' : first));
+  await takeTurn(id, first, typed || (input.kind === 'write-tests' ? '테스트 작성 시작' : first), false, asReader);
   return repo.findById(id)!;
 }
 
@@ -152,26 +161,27 @@ export function deleteSession(id: string): void {
 }
 
 /** Refuse before touching anything: another turn in this service, or Claude not usable. */
-async function assertCanRun(serviceId: string): Promise<void> {
-  if (repo.runningIn(serviceId)) throw conflict('Claude is already working in this service. Wait for it or stop it first.');
+async function assertCanRun(serviceId: string, asReader = false): Promise<void> {
+  if (!asReader && writerBusy(serviceId)) throw conflict('Claude is already working in this service. Wait for it or stop it first.');
   await requireClaudeReady();
-  if (repo.runningIn(serviceId)) throw conflict('Claude is already working in this service.'); // re-check: the await let another request in
+  if (!asReader && writerBusy(serviceId)) throw conflict('Claude is already working in this service.'); // re-check: the await let another request in
 }
 
 /** One `claude -p` process. `prompt` goes to Claude, `shown` is what the transcript records as the user's message. */
-async function takeTurn(id: string, prompt: string, shown: string, automatic = false): Promise<void> {
+async function takeTurn(id: string, prompt: string, shown: string, automatic = false, asReader = false): Promise<void> {
   if (!automatic) followUps.delete(id);
   const session = repo.findById(id)!;
   const ids = repo.cli(id)!;
   const env = await requireClaudeReady();
-  if (repo.runningIn(session.serviceId)) throw conflict('Claude is already working in this service.');
+  if (!asReader && writerBusy(session.serviceId)) throw conflict('Claude is already working in this service.');
 
+  if (asReader) readerTurns.add(id);
   say(id, 'user', shown);
   setStatus(id, 'running');
   broadcast({ type: 'service', serviceId: session.serviceId });
 
   const specsBefore = snapshotSpecs(session.serviceId);
-  const args = buildArgs({ prompt, claudeSessionId: ids.claudeSessionId, resume: ids.started, system: buildSystemPrompt(contextFor(session.serviceId)), prefs: getPrefs(session.serviceId), readOnly: requireService(session.serviceId).readOnly });
+  const args = buildArgs({ prompt, claudeSessionId: ids.claudeSessionId, resume: ids.started, system: buildSystemPrompt({ ...contextFor(session.serviceId), parallelReader: asReader }), prefs: getPrefs(session.serviceId), readOnly: requireService(session.serviceId).readOnly, noWrites: asReader });
   const child = spawn('claude', args, { cwd: serviceDir(session.serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
 
@@ -206,6 +216,7 @@ async function takeTurn(id: string, prompt: string, shown: string, automatic = f
     if (closed) return; // 'error' can be followed by 'close'
     closed = true;
     children.delete(id);
+    readerTurns.delete(id);
     const removed = sweepDeletedSpecs(session.serviceId, specsBefore);
     if (removed.length) say(id, 'tool', `컴퓨터 휴지통으로 옮긴 파일: ${removed.join(', ')}`);
     if (note) say(id, 'error', note);
@@ -261,7 +272,7 @@ function probeMcpConfig(): string {
  * mode: Auto and Bypass permissions open the shell and the web. A 조회 전용 service always keeps them
  * closed, whatever the mode, because there a stray command could change data the owner wants untouched.
  */
-export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: boolean; system: string; prefs?: SessionPrefs; readOnly?: boolean }): string[] {
+export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: boolean; system: string; prefs?: SessionPrefs; readOnly?: boolean; noWrites?: boolean }): string[] {
   const prefs = o.prefs ?? DEFAULT_PREFS;
   const open = (prefs.mode === 'auto' || prefs.mode === 'bypassPermissions') && !o.readOnly;
   return [
@@ -283,7 +294,7 @@ export function buildArgs(o: { prompt: string; claudeSessionId: string; resume: 
     '--allowedTools',
     ...BACKGROUND_ALLOWED_TOOLS,
     ...SESSION_EXTRA_TOOLS,
-    ...(open ? [] : ['--disallowedTools', ...BACKGROUND_DENIED_TOOLS]),
+    ...(open && !o.noWrites ? [] : ['--disallowedTools', ...BACKGROUND_DENIED_TOOLS, ...(o.noWrites ? ['Write', 'Edit'] : [])]),
   ];
 }
 

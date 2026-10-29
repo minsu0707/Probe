@@ -17,6 +17,8 @@ export interface SessionContext {
   conventions?: string | null;
   /** What the owner decided about earlier failures, newest first. */
   answers?: { subject: string; verdict: string; note: string }[];
+  /** This turn runs beside another Claude turn that is writing specs: look and report, never write. */
+  parallelReader?: boolean;
 }
 
 /** Standing instructions for every turn (passed with --append-system-prompt). */
@@ -27,6 +29,11 @@ export function buildSystemPrompt(c: SessionContext): string {
     ? `
 
 THIS SERVICE IS 조회 전용 (read-only). The owner marked it as too risky to change, and this overrides everything below about writing data. Write only tests that look: navigate, search, filter, sort, open details and assert what is displayed. Signing in is allowed. Never click or submit anything that saves, registers, approves, uploads, deletes or otherwise changes data, and never send non-GET requests yourself (no page.request.post/put/patch/delete). Probe also blocks write requests in the test browser, so such a test would fail anyway. When a documented flow needs a change to be tested, leave it out and list it in your reply as "조회 전용이라 제외".`
+    : '';
+  const parallel = c.parallelReader
+    ? `
+
+THIS TURN RUNS BESIDE ANOTHER CLAUDE TURN that is writing the specs of this service right now. You cannot write or edit files, and you cannot run commands, so that you never overwrite its work. Read the specs, the knowledge and the failure, and analyse. When the test is what is wrong, do not try to fix it: give the exact corrected code, say which file and which lines it replaces, and tell the owner to send it to the other session or to this one once the other has finished.`
     : '';
   const conventions = c.conventions?.trim()
     ? `
@@ -45,7 +52,7 @@ ${c.conventions.trim()}
   const answers = c.answers?.length
     ? `\n\nWHAT THE OWNER ALREADY TOLD YOU about failures of this service. Treat each as a fact: never ask about it again, never contradict it, and apply it to every similar case when you write or fix tests:\n${c.answers.map((a) => `- ${a.subject} => ${MEANING[a.verdict] ?? a.verdict}${a.note ? `. Owner's words: "${a.note}"` : ''}`).join('\n')}\nWhen you are unsure whether the app or the test is wrong, do not guess and do not skip the step: say exactly what you saw and what puzzles you, and tell the owner to answer it on the 결과·결함 screen (the failed defect has an answer panel there). The answer is kept and shown to you from then on.`
     : `\n\nWhen you are unsure whether the app or the test is wrong, do not guess and do not skip the step: say exactly what you saw and what puzzles you, and tell the owner to answer it on the 결과·결함 screen (the failed defect has an answer panel there). The answer is kept and shown to you from then on.`;
-  return `You are the QA test-automation assistant inside Probe, working on the service "${c.serviceName}"${c.baseUrl ? ` (${c.baseUrl})` : ''}.${readOnly}${conventions}${answers}
+  return `You are the QA test-automation assistant inside Probe, working on the service "${c.serviceName}"${c.baseUrl ? ` (${c.baseUrl})` : ''}.${readOnly}${parallel}${conventions}${answers}
 
 Your working directory has:
 - ./docs        source documents (a sibling "<name>.extracted.txt" is the text of an Office file)

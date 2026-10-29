@@ -8,7 +8,7 @@ import { cancelSession, createSession, deleteSession, dispatchNext, getSession, 
 export const sessionsRoutes = new Hono()
   .get('/services/:id/sessions', (c) => c.json(listSessions(c.req.param('id'))))
   .post('/services/:id/sessions', async (c) => {
-    const body = await parseBody(c, z.object({ kind: z.enum(['write-tests', 'chat']), message: z.string().max(8000).optional() }));
+    const body = await parseBody(c, z.object({ kind: z.enum(['write-tests', 'chat']), message: z.string().max(8000).optional(), parallel: z.boolean().optional() }));
     return c.json(await createSession(c.req.param('id'), body), 202);
   })
   .get('/services/:id/session-prefs', (c) => c.json(getPrefs(c.req.param('id'))))

@@ -41,3 +41,9 @@ test('Auto and Bypass open the shell and web, except on a read-only service', ()
   }
   assert.ok(buildArgs({ ...base, prefs: { mode: 'plan', model: 'default', effort: 'default' } }).includes('--disallowedTools'));
 });
+
+test('a turn running beside a writer cannot write files or run commands, even in a wide mode', () => {
+  const args = buildArgs({ ...base, noWrites: true, prefs: { mode: 'bypassPermissions', model: 'default', effort: 'default' } });
+  const denied = args.slice(args.indexOf('--disallowedTools') + 1);
+  for (const tool of ['Write', 'Edit', 'Bash']) assert.ok(denied.includes(tool), tool);
+});

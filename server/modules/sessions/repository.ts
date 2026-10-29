@@ -35,6 +35,8 @@ export const runningIn = (serviceId: string): Session | undefined => {
   return row && toSession(row);
 };
 
+export const runningAll = (serviceId: string): Session[] => all<Row>('SELECT * FROM sessions WHERE service_id = ? AND status = ?', serviceId, 'running').map(toSession);
+
 export const insert = (s: { id: string; serviceId: string; title: string; kind: SessionKind; claudeSessionId: string; now: number }): void =>
   void run('INSERT INTO sessions (id, service_id, title, kind, status, claude_session_id, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?)', s.id, s.serviceId, s.title, s.kind, 'idle', s.claudeSessionId, s.now, s.now);
 

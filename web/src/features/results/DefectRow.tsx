@@ -31,7 +31,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
   const closed = d.status === 'fixed' || d.status === 'false_positive';
   const guess = explainCause(d.error);
   const analyze = async () => {
-    if (await attempt(() => api.createSession(d.serviceId, { kind: 'chat', message: analysisRequest(d, followedFrom) }))) goService(d.serviceId, 'sessions');
+    if (await attempt(() => api.createSession(d.serviceId, { kind: 'chat', message: analysisRequest(d, followedFrom), parallel: true }))) goService(d.serviceId, 'sessions');
   };
   const evidenceUrl = (file: string) => `/api/runs/${d.runId}/files/${file}`;
 
