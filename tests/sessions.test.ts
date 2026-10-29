@@ -53,7 +53,8 @@ test('the system prompt gives env names, never values, and the knowledge list', 
   const p = buildSystemPrompt({ serviceName: 'Shop', baseUrl: 'https://s.example', envNames: ['ADMIN_ID', 'ADMIN_PW'], knowledgeFiles: ['flows.md'] });
   assert.match(p, /ADMIN_ID, ADMIN_PW/);
   assert.match(p, /flows\.md/);
-  assert.match(p, /cannot run commands/);
+  assert.match(p, /cannot run shell commands/);
+  assert.match(p, /not finished until you have run it/);
   assert.match(buildSystemPrompt({ serviceName: 'Shop', baseUrl: null, envNames: [], knowledgeFiles: [] }), /nothing yet/);
 });
 

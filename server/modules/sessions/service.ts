@@ -30,10 +30,14 @@ import { recentAnswers } from '../defects/service.ts';
 import { getPrefs } from './prefs.ts';
 import { buildSystemPrompt, openingMessage } from './prompt.ts';
 import * as repo from './repository.ts';
+import { findSkips, followUpFor, specsChanged } from './review.ts';
 import { snapshotSpecs, sweepDeletedSpecs } from './sweep.ts';
+import { toolLabel } from '../../../shared/tool-labels.ts';
 
 const STDERR_TAIL_CHARS = 2000;
 const QUEUE_MAX = 10;
+/** Follow-up turns Probe starts by itself after one user message; the next user message starts the count again. */
+const AUTO_FOLLOW_UPS_MAX = 2;
 const TITLE_MAX = 40;
 
 /** Cut at TITLE_MAX characters and say so, instead of stopping mid-sentence. */
@@ -46,6 +50,9 @@ const shorten = (text: string): string => {
 const children = new Map<string, ChildProcess>();
 /** Sessions whose current turn was stopped by the user, so the exit isn't reported as a failure. */
 const cancelled = new Set<string>();
+/** Automatic follow-ups already sent since the user last wrote, by session id. */
+const followUps = new Map<string, number>();
+const RUN_TESTS_LABEL = toolLabel('mcp__probe__run_tests');
 
 export const listSessions = (serviceId: string): Session[] => repo.forService(requireService(serviceId).id);
 export const isSessionRunning = (serviceId: string): boolean => Boolean(repo.runningIn(serviceId));
@@ -152,7 +159,8 @@ async function assertCanRun(serviceId: string): Promise<void> {
 }
 
 /** One `claude -p` process. `prompt` goes to Claude, `shown` is what the transcript records as the user's message. */
-async function takeTurn(id: string, prompt: string, shown: string): Promise<void> {
+async function takeTurn(id: string, prompt: string, shown: string, automatic = false): Promise<void> {
+  if (!automatic) followUps.delete(id);
   const session = repo.findById(id)!;
   const ids = repo.cli(id)!;
   const env = await requireClaudeReady();
@@ -167,6 +175,7 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
   const child = spawn('claude', args, { cwd: serviceDir(session.serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
 
+  let ranTests = false;
   let resultOk: boolean | null = null; // null: the stream ended without a result
   let stderrTail = '';
   let pending = '';
@@ -181,7 +190,10 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
         if (ev.kind === 'init') repo.markStarted(id);
         else if (ev.kind === 'usage') recordUsage(ev.usage);
         else if (ev.kind === 'text') say(id, 'assistant', ev.text);
-        else if (ev.kind === 'progress') say(id, 'tool', ev.text);
+        else if (ev.kind === 'progress') {
+          if (ev.text === RUN_TESTS_LABEL) ranTests = true;
+          say(id, 'tool', ev.text);
+        }
         else {
           resultOk = ev.ok;
           if (!ev.ok) say(id, 'error', ev.text);
@@ -203,6 +215,8 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
     // for the user, who sees them and chooses (send now, or remove).
     if (status === 'idle' && !note && repo.queue(id)[0]) {
       dispatchNext(id).catch((e: unknown) => say(id, 'error', `예약한 메시지를 보내지 못했습니다: ${e instanceof Error ? e.message : String(e)}`));
+    } else if (status === 'idle' && !note) {
+      reviewTurn(id, session.serviceId, specsBefore, ranTests);
     }
   };
   child.on('error', (e) => close('failed', `Could not start the claude CLI: ${e.message}`));
@@ -212,6 +226,22 @@ async function takeTurn(id: string, prompt: string, shown: string): Promise<void
     // A reported error is already in the transcript; otherwise say what the process said.
     close('failed', resultOk === false ? undefined : `claude exited with code ${code}${stderrTail ? `: ${stderrTail.trim()}` : ''}`);
   });
+}
+
+/** A turn that wrote specs but skipped parts or never ran them gets one follow-up from Probe, so the owner does not have to ask. */
+function reviewTurn(id: string, serviceId: string, before: ReadonlyMap<string, string>, ranTests: boolean): void {
+  const after = snapshotSpecs(serviceId);
+  if (!specsChanged(after, before)) return;
+  const sent = followUps.get(id) ?? 0;
+  if (sent >= AUTO_FOLLOW_UPS_MAX) return;
+  const skips = findSkips(after, before);
+  const message = followUpFor({ skips, ranTests });
+  if (!message) return;
+  followUps.set(id, sent + 1);
+  say(id, 'tool', skips.length && !ranTests ? `자동 점검: 건너뛴 테스트 ${skips.length}건, 실행하지 않음. 다시 진행시킵니다.` : skips.length ? `자동 점검: 건너뛴 테스트 ${skips.length}건. 다시 진행시킵니다.` : '자동 점검: 작성한 테스트를 실행하지 않았습니다. 실행해서 고치도록 합니다.');
+  assertCanRun(serviceId)
+    .then(() => takeTurn(id, message, '자동 점검: 빠진 부분을 마저 진행', true))
+    .catch((e: unknown) => say(id, 'error', `자동 점검을 시작하지 못했습니다: ${e instanceof Error ? e.message : String(e)}`));
 }
 
 function contextFor(serviceId: string) {

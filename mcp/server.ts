@@ -124,7 +124,7 @@ server.registerTool(
       runId: run.id,
       status: run.endedAt ? run.status : 'still running (timed out waiting; check the dashboard)',
       totals: run.totals,
-      failures: defects.map((d) => ({ defectId: d.id, severity: d.severity, test: d.title, feature: d.feature, page: d.page, error: d.error.split('\n').slice(0, 8).join('\n') })),
+      failures: defects.map((d) => ({ defectId: d.id, severity: d.severity, test: d.title, feature: d.feature, page: d.page, error: d.error.split('\n').slice(0, 20).join('\n') })),
       systemNotes: detail.log.filter((l: any) => l.kind === 'system').map((l: any) => l.text),
     };
   }),
