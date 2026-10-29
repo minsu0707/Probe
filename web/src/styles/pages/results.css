@@ -278,3 +278,9 @@ table.runs .num {
 .answer-foot .muted {
   margin-right: auto;
 }
+
+.cause-points {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 1.2rem;
+  overflow-wrap: anywhere;
+}

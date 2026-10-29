@@ -81,8 +81,16 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
 
       <div className="cause">
         <p className="muted small">
-          <strong>{CAUSE_LABEL[d.cause]}</strong> · {guess.why ?? CAUSE_HINT[d.cause]}
+          <strong>{CAUSE_LABEL[d.cause]}</strong> · {guess.detail?.summary ?? guess.why ?? CAUSE_HINT[d.cause]}
         </p>
+        {guess.detail && guess.detail.points.length > 0 && (
+          <ul className="cause-points muted small">
+            {guess.detail.points.map((p, i) => (
+              <li key={i}>{p}</li>
+            ))}
+          </ul>
+        )}
+        {guess.detail?.fix && <p className="small">고치려면: {guess.detail.fix}</p>}
         {guess.matched && (
           <p className="muted small">
             판단 근거: 오류 문구의 <code>{guess.matched}</code> 부분. 오류 문구만 보고 추정한 것이라 틀릴 수 있습니다.

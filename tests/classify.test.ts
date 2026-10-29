@@ -51,3 +51,25 @@ test('the explanation names the part of the error that decided the cause', async
   assert.equal(g.matched, 'strict mode violation');
   assert.equal(explainCause('something odd').matched, null);
 });
+
+test('the explanation says what happened in this failure, not only what kind it is', async () => {
+  const { explainCause } = await import('../shared/cause.ts');
+  const strict = explainCause(`Error: expect(locator).toBeVisible() failed
+
+Locator: getByRole('button', { name: '저장' })
+Error: strict mode violation: getByRole('button', { name: '저장' }) resolved to 2 elements:
+    1) <button type="button" class="btn">저장</button> aka getByRole('button', { name: '저장', exact: true })
+    2) <button type="button">임시 저장</button> aka locator('button').nth(1)`).detail!;
+  assert.match(strict.summary, /2개/);
+  assert.match(strict.points.join('\n'), /1번: <button type="button" class="btn">저장<\/button>$/m);
+  assert.ok(strict.fix);
+
+  const missing = explainCause("Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('승인')\nExpected: visible\nError: element(s) not found").detail!;
+  assert.match(missing.summary, /getByText\('승인'\).*보이는지/);
+
+  const wrong = explainCause("Error: expect(locator).toHaveText(expected) failed\n\nLocator: locator('#total')\nExpected string: \"100\"\nReceived string: \"90\"").detail!;
+  assert.deepEqual(wrong.points, ['기대한 값: "100"', '화면의 값: "90"']);
+
+  assert.match(explainCause('Test timeout of 300000ms exceeded.').detail!.summary, /300초/);
+  assert.equal(explainCause('something odd').detail, null);
+});
