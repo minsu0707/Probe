@@ -76,7 +76,7 @@ function LearnBody({ serviceId, serviceName, learning }: { serviceId: string; se
       <section className="panel option-list">
         <OptionRow
           title="서비스를 직접 둘러보며 학습"
-          desc={canExplore ? '환경 변수의 계정(최대 8개)으로 로그인해 메뉴와 화면을 열어 보고, 계정별로 보이는 메뉴의 차이도 정리합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다.' : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
+          desc={canExplore ? '환경 변수에 있는 계정으로 각각 로그인해 메뉴와 화면을 열어 보고, 계정별로 보이는 메뉴의 차이도 정리합니다. 읽기만 하고 저장·수정·삭제는 하지 않습니다.' : '서비스 주소를 먼저 입력하면 켤 수 있습니다.'}
           checked={exploring}
           disabled={!canExplore || learning}
           onChange={setExplore}

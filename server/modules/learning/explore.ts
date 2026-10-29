@@ -12,9 +12,6 @@ import { detectBrowserChannel } from '../runs/browser.ts';
 import { listSecrets, runtimeEnv } from '../secrets/service.ts';
 import { pickLogins } from './explore-helpers.ts';
 
-/** More than this is a lot of waiting for little extra information. */
-const MAX_ACCOUNTS = 8;
-
 const EXPLORER = fileURLToPath(new URL('./explorer.ts', import.meta.url));
 const STDERR_TAIL = 1500;
 
@@ -39,9 +36,7 @@ export function exploreSummary(serviceId: string): { pages: number; signedIn: bo
 /** Starts the explorer; `onChild` receives the process so a cancel request can kill it. */
 export function exploreService(serviceId: string, baseUrl: string, progress: (line: string) => void, onChild: (c: ChildProcess) => void): Promise<ExploreResult> {
   const env = runtimeEnv(serviceId);
-  const accounts = pickLogins(listSecrets(serviceId).map((s) => s.key))
-    .slice(0, MAX_ACCOUNTS)
-    .map((p) => ({ name: p.name, user: env[p.userKey] ?? '', pass: env[p.passKey] ?? '' }));
+  const accounts = pickLogins(listSecrets(serviceId).map((s) => s.key)).map((p) => ({ name: p.name, user: env[p.userKey] ?? '', pass: env[p.passKey] ?? '' }));
 
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [EXPLORER], {
