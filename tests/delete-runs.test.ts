@@ -25,3 +25,9 @@ test('a run in progress cannot be deleted', () => {
   assert.throws(() => runs.deleteRuns(['r2']), /실행 중/);
   assert.ok(repo.findRun('r2'));
 });
+
+test('spec file names may be in Korean, but never an option or a path out of specs/', async () => {
+  const { isSafeSpecName } = await import('../server/modules/runs/delete.ts');
+  for (const ok of ['e2e-01-흑임자쿠키-신제품.spec.ts', '01-login.spec.ts', 'sub/원료 등록.spec.ts'.replace(' ', '')]) assert.equal(isSafeSpecName(ok), true, ok);
+  for (const bad of ['--config=x', '../x.spec.ts', 'a/../b.spec.ts', 'a b.spec.ts', 'a;b.spec.ts', 'a\b.spec.ts', '']) assert.equal(isSafeSpecName(bad), false, bad);
+});

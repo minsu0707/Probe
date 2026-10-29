@@ -15,8 +15,11 @@ import { listTestCases } from './cases.ts';
 
 const TEST_START = /^\s*test(\.\w+)?\s*\(/;
 
+/** A spec path relative to specs/: letters of any language (spec files are named after features, often in Korean), digits and _ @ . / -. No leading dash (an option), no `..`. */
+export const isSafeSpecName = (file: string): boolean => /^[\p{L}\p{N}_@.\/-]+$/u.test(file) && !file.startsWith('-') && !file.includes('..');
+
 const specPath = (serviceId: string, file: string) => {
-  if (!/^[\w@.\/-]+$/.test(file) || file.startsWith('-') || file.includes('..')) throw unprocessable('Bad file name');
+  if (!isSafeSpecName(file)) throw unprocessable('Bad file name');
   return join(testsDir(serviceId), 'specs', file);
 };
 
