@@ -345,3 +345,22 @@ table.runs {
   font-size: 12px;
   color: var(--muted);
 }
+
+/* Files Claude made only to look at the site: kept apart and quieter than the real cases. */
+.case-temp {
+  opacity: 0.85;
+}
+.case-temp-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.case-temp-note p {
+  margin: 0;
+}
+.case-temp-note .btn {
+  flex: none;
+}

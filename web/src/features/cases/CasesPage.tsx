@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type ServiceOverview, type TestCase } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
+import { isTemporarySpec } from '../../../../shared/temp-spec.ts';
 import { useStore, attempt } from '../../core/store.ts';
 import { ConfirmModal, Empty, Icon, Loading, Pill } from '../../ui/index.ts';
 
@@ -40,7 +41,12 @@ function CasesBody({ service }: { service: ServiceOverview }) {
   useEffect(() => void load(), [load, service.claudeWorking]);
 
   const q = query.trim().toLowerCase();
-  const visible = useMemo(() => (cases ?? []).filter((c) => !q || `${c.title} ${c.feature} ${c.file} ${c.source ?? ''} ${c.tags.join(' ')}`.toLowerCase().includes(q)), [cases, q]);
+  const matching = useMemo(() => (cases ?? []).filter((c) => !q || `${c.title} ${c.feature} ${c.file} ${c.source ?? ''} ${c.tags.join(' ')}`.toLowerCase().includes(q)), [cases, q]);
+  // Files Claude made only to look at the site stay out of the real list, the counts and "전체 실행".
+  const real = useMemo(() => (cases ?? []).filter((c) => !isTemporarySpec(c.file)), [cases]);
+  const temporary = useMemo(() => (cases ?? []).filter((c) => isTemporarySpec(c.file)), [cases]);
+  const visible = useMemo(() => matching.filter((c) => !isTemporarySpec(c.file)), [matching]);
+  const visibleTemporary = useMemo(() => matching.filter((c) => isTemporarySpec(c.file)), [matching]);
   const groups = useMemo(() => {
     const by = new Map<string, TestCase[]>();
     for (const c of visible) by.set(c.feature, [...(by.get(c.feature) ?? []), c]);
@@ -56,7 +62,9 @@ function CasesBody({ service }: { service: ServiceOverview }) {
   const allVisiblePicked = visible.length > 0 && visible.every((c) => picked.has(c.id));
 
   const start = async (list: TestCase[] | null) => {
-    const body = list ? { tests: list.map((c) => ({ file: c.file, line: c.line })), title: `${service.name} · 선택한 ${list.length}개` } : {};
+    // "전체 실행" with temporary files around names the real cases, so those files are not run.
+    const only = list ?? (temporary.length ? real : null);
+    const body = only ? { tests: only.map((c) => ({ file: c.file, line: c.line })), title: list ? `${service.name} · 선택한 ${list.length}개` : `${service.name} · 전체 (임시 ${temporary.length}개 제외)` } : {};
     if (await attempt(() => api.startRun(service.id, body))) goService(service.id, 'monitor');
   };
   const remove = async (list: TestCase[]) => {
@@ -115,7 +123,7 @@ function CasesBody({ service }: { service: ServiceOverview }) {
           <div className="case-bar">
             <label className="case-check">
               <input type="checkbox" checked={allVisiblePicked} ref={(el) => void (el && (el.indeterminate = picked.size > 0 && !allVisiblePicked))} onChange={(e) => setMany(visible, e.target.checked)} aria-label="보이는 케이스 모두 선택" />
-              <span>{picked.size ? `${picked.size}개 선택` : `${cases.length}개 케이스`}</span>
+              <span>{picked.size ? `${picked.size}개 선택` : `${real.length}개 케이스`}</span>
             </label>
             <input type="search" className="case-search" aria-label="케이스 검색" placeholder="제목, 기능, 근거로 찾기" value={query} onChange={(e) => setQuery(e.target.value)} />
             <span className="spacer" />
@@ -127,12 +135,12 @@ function CasesBody({ service }: { service: ServiceOverview }) {
               <Icon name="play" size={14} />
               선택한 {chosen.length}개 실행
             </button>
-            <button className="btn" disabled={running} onClick={() => void start(null)} title={running ? '다른 실행이 진행 중입니다' : undefined}>
+            <button className="btn" disabled={running || real.length === 0} onClick={() => void start(null)} title={running ? '다른 실행이 진행 중입니다' : temporary.length ? `임시 탐색 파일 ${temporary.length}개는 빼고 실행합니다` : undefined}>
               전체 실행
             </button>
           </div>
 
-          {visible.length === 0 && <p className="muted small">검색 결과가 없습니다.</p>}
+          {visible.length === 0 && visibleTemporary.length === 0 && <p className="muted small">검색 결과가 없습니다.</p>}
           {groups.map(([feature, list]) => {
             const all = list.every((c) => picked.has(c.id));
             const some = list.some((c) => picked.has(c.id));
@@ -177,6 +185,41 @@ function CasesBody({ service }: { service: ServiceOverview }) {
               </details>
             );
           })}
+
+          {visibleTemporary.length > 0 && (
+            <details className="panel case-group case-temp">
+              <summary>
+                <Icon name="chevron" size={14} />
+                <strong className="ellipsis">임시 탐색 파일</strong>
+                <span className="count">{visibleTemporary.length}</span>
+              </summary>
+              <div className="case-temp-note">
+                <p className="muted small">Claude가 화면을 살펴보려고 만든 파일로 보입니다. 전체 실행과 위의 개수에서는 빠져 있습니다. 필요 없으면 지워도 됩니다(휴지통으로 이동).</p>
+                <button className="btn btn-sm" onClick={() => setDeleting(visibleTemporary)}>
+                  <Icon name="trash" size={14} />
+                  임시 파일 {visibleTemporary.length}개 삭제
+                </button>
+              </div>
+              <ul className="case-list">
+                {visibleTemporary.map((c) => (
+                  <li key={c.id}>
+                    <label className="case-row">
+                      <input type="checkbox" checked={picked.has(c.id)} onChange={(e) => setMany([c], e.target.checked)} />
+                      <span className="case-main">
+                        <span className="case-title">
+                          {c.title}
+                          <Pill tone="neutral">임시</Pill>
+                        </span>
+                      </span>
+                      <code className="case-file">
+                        {c.file}:{c.line}
+                      </code>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </>
       )}
 
