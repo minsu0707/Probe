@@ -54,7 +54,7 @@ test('the system prompt gives env names, never values, and the knowledge list', 
   assert.match(p, /ADMIN_ID, ADMIN_PW/);
   assert.match(p, /flows\.md/);
   assert.match(p, /cannot run shell commands/);
-  assert.match(p, /not finished until you have run it/);
+  assert.match(p, /running them is the user's step/);
   assert.match(buildSystemPrompt({ serviceName: 'Shop', baseUrl: null, envNames: [], knowledgeFiles: [] }), /nothing yet/);
 });
 

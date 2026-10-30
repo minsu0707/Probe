@@ -32,7 +32,6 @@ import { buildSystemPrompt, openingMessage } from './prompt.ts';
 import * as repo from './repository.ts';
 import { findSkips, followUpFor, specsChanged } from './review.ts';
 import { snapshotSpecs, sweepDeletedSpecs } from './sweep.ts';
-import { toolLabel } from '../../../shared/tool-labels.ts';
 
 const STDERR_TAIL_CHARS = 2000;
 const QUEUE_MAX = 10;
@@ -56,7 +55,6 @@ const followUps = new Map<string, number>();
 const readerTurns = new Set<string>();
 /** Whether a turn that may write files is running in this service. Readers can run beside it. */
 const writerBusy = (serviceId: string): boolean => repo.runningAll(serviceId).some((s) => !readerTurns.has(s.id));
-const RUN_TESTS_LABEL = toolLabel('mcp__probe__run_tests');
 
 export const listSessions = (serviceId: string): Session[] => repo.forService(requireService(serviceId).id);
 export const isSessionRunning = (serviceId: string): boolean => Boolean(repo.runningIn(serviceId));
@@ -185,7 +183,6 @@ async function takeTurn(id: string, prompt: string, shown: string, automatic = f
   const child = spawn('claude', args, { cwd: serviceDir(session.serviceId), env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
   children.set(id, child);
 
-  let ranTests = false;
   let resultOk: boolean | null = null; // null: the stream ended without a result
   let stderrTail = '';
   let pending = '';
@@ -200,10 +197,7 @@ async function takeTurn(id: string, prompt: string, shown: string, automatic = f
         if (ev.kind === 'init') repo.markStarted(id);
         else if (ev.kind === 'usage') recordUsage(ev.usage);
         else if (ev.kind === 'text') say(id, 'assistant', ev.text);
-        else if (ev.kind === 'progress') {
-          if (ev.text === RUN_TESTS_LABEL) ranTests = true;
-          say(id, 'tool', ev.text);
-        }
+        else if (ev.kind === 'progress') say(id, 'tool', ev.text);
         else {
           resultOk = ev.ok;
           if (!ev.ok) say(id, 'error', ev.text);
@@ -227,7 +221,7 @@ async function takeTurn(id: string, prompt: string, shown: string, automatic = f
     if (status === 'idle' && !note && repo.queue(id)[0]) {
       dispatchNext(id).catch((e: unknown) => say(id, 'error', `예약한 메시지를 보내지 못했습니다: ${e instanceof Error ? e.message : String(e)}`));
     } else if (status === 'idle' && !note) {
-      reviewTurn(id, session.serviceId, specsBefore, ranTests);
+      reviewTurn(id, session.serviceId, specsBefore);
     }
   };
   child.on('error', (e) => close('failed', `Could not start the claude CLI: ${e.message}`));
@@ -239,17 +233,17 @@ async function takeTurn(id: string, prompt: string, shown: string, automatic = f
   });
 }
 
-/** A turn that wrote specs but skipped parts or never ran them gets one follow-up from Probe, so the owner does not have to ask. */
-function reviewTurn(id: string, serviceId: string, before: ReadonlyMap<string, string>, ranTests: boolean): void {
+/** A turn that wrote specs and left parts skipped gets one follow-up from Probe, so the owner does not have to ask. Running the specs is the owner's step, not Claude's, so a turn that did not run them is not followed up. */
+function reviewTurn(id: string, serviceId: string, before: ReadonlyMap<string, string>): void {
   const after = snapshotSpecs(serviceId);
   if (!specsChanged(after, before)) return;
   const sent = followUps.get(id) ?? 0;
   if (sent >= AUTO_FOLLOW_UPS_MAX) return;
   const skips = findSkips(after, before);
-  const message = followUpFor({ skips, ranTests });
+  const message = followUpFor({ skips });
   if (!message) return;
   followUps.set(id, sent + 1);
-  say(id, 'tool', skips.length && !ranTests ? `자동 점검: 건너뛴 테스트 ${skips.length}건, 실행하지 않음. 다시 진행시킵니다.` : skips.length ? `자동 점검: 건너뛴 테스트 ${skips.length}건. 다시 진행시킵니다.` : '자동 점검: 작성한 테스트를 실행하지 않았습니다. 실행해서 고치도록 합니다.');
+  say(id, 'tool', `자동 점검: 건너뛴 테스트 ${skips.length}건. 다시 진행시킵니다.`);
   assertCanRun(serviceId)
     .then(() => takeTurn(id, message, '자동 점검: 빠진 부분을 마저 진행', true))
     .catch((e: unknown) => say(id, 'error', `자동 점검을 시작하지 못했습니다: ${e instanceof Error ? e.message : String(e)}`));

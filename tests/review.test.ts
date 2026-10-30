@@ -15,9 +15,11 @@ test('skips are found only in files written this turn', () => {
   assert.equal(specsChanged(before, before), false);
 });
 
-test('a follow-up is sent for skips or for specs never run, and not otherwise', () => {
-  assert.equal(followUpFor({ skips: [], ranTests: true }), null);
-  assert.match(followUpFor({ skips: [], ranTests: false })!, /run_tests/);
+test('a follow-up is sent for skips only; specs that were never run are the owner to run, not Claude', () => {
+  assert.equal(followUpFor({ skips: [] }), null);
   const skip = [{ file: 'a.spec.ts', line: 4, text: 'test.skip(true)' }];
-  assert.match(followUpFor({ skips: skip, ranTests: true })!, /a\.spec\.ts:4/);
+  const message = followUpFor({ skips: skip })!;
+  assert.match(message, /a.spec.ts:4/);
+  assert.doesNotMatch(message, /call run_tests|Run them now/);
+  assert.match(message, /Do not run the tests/);
 });
