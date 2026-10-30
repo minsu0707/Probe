@@ -72,16 +72,10 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
               세션 삭제
             </button>
           )}
-          <dl className="chat-dates muted small">
-            <div>
-              <dt>시작</dt>
-              <dd>{dateTime(session.createdAt)}</dd>
-            </div>
-            <div>
-              <dt>마지막 작업</dt>
-              <dd>{running ? '지금 작업 중' : dateTime(session.updatedAt)}</dd>
-            </div>
-          </dl>
+          <p className="chat-dates muted small tabular">
+            <Icon name="clock" size={13} />
+            {dateTime(session.createdAt)} ~ {running ? '지금 작업 중' : dateTime(session.updatedAt)}
+          </p>
         </div>
       </div>
 

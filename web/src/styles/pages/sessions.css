@@ -388,22 +388,10 @@
 .chat-dates {
   margin: 0;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
+  align-items: center;
+  gap: 5px;
   font-size: 11.5px;
-}
-.chat-dates div {
-  display: flex;
-  gap: 6px;
-}
-.chat-dates dt {
-  color: var(--muted);
-}
-.chat-dates dd {
-  margin: 0;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* Node view: this turn as a chain of nodes. Finished nodes sit still; the one being worked on breathes. */
