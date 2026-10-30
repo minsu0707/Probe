@@ -8,6 +8,7 @@
  */
 import { basename } from 'node:path';
 import { encodeAct } from '../../../shared/actions.ts';
+import { isDiagnosticDump } from '../../../shared/need.ts';
 import { isTemporarySpec } from '../../../shared/temp-spec.ts';
 import type { IngestEvent } from '../../../shared/events.ts';
 import type { LogKind, RunCurrent, RunSummary, RunTotals, TestStatus } from '../../../shared/models.ts';
@@ -112,8 +113,9 @@ export function reduceEvents(state: RunState, events: IngestEvent[]): Reduction 
         active.delete(ev.id);
         tally(s.totals, ev);
         log('result', `${(test?.title ?? []).join(' › ')} (${(ev.durationMs / 1000).toFixed(1)}s)`, ev.status);
-        // A spec Claude wrote only to look at the site fails on purpose (it prints what it saw); that is not a defect of the site.
-        if (test && ev.status !== 'passed' && ev.status !== 'skipped' && !isTemporarySpec(test.file)) {
+        // A spec Claude wrote only to look at the site fails on purpose to print what it saw; that printout is not a defect of the site.
+        // Anything else it hits (a timeout, a server error, a wrong value) may be real, so it is kept.
+        if (test && ev.status !== 'passed' && ev.status !== 'skipped' && !(isTemporarySpec(test.file) && isDiagnosticDump(ev.error ?? ''))) {
           out.failures.push({ title: test.title, file: test.file, feature: featureOf(test.title, test.file), page: s.current.page, end: ev });
         }
         if (s.current.testId === ev.id) s.current = { ...s.current, testId: null, test: null, step: null, view: null };

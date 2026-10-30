@@ -38,6 +38,9 @@ const dumpKeys = (error: string): string[] => {
 
 const isProbePlumbing = (error: string): boolean => /Expected|Received|Locator:|Timeout \d+ms|strict mode|element\(s\) not found|Call log:/.test(error);
 
+/** A failure that is only the test printing what it saw (DOM, URL, button lists), not a problem it found. */
+export const isDiagnosticDump = (error: string): boolean => !HTTP.test(error) && dumpKeys(error).length > 0 && !isProbePlumbing(error);
+
 export function reviewNeed({ error, page, feature, hasScreenshot }: Input): ReviewNeed {
   const where = [feature, page].filter(Boolean).join(' · ');
   const shot = hasScreenshot ? '아래 스크린샷은 실패한 순간의 화면입니다.' : '이 실패에는 스크린샷이 없습니다. 화면은 직접 열어서 확인해야 합니다.';

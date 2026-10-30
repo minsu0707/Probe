@@ -44,6 +44,12 @@ test('a failing temporary exploration spec is counted as failed but never become
   assert.ok(out.logs.some((l) => l.kind === 'result'));
 });
 
+test('a temporary spec that hits a real problem still raises a defect', () => {
+  const s = newState();
+  const out = reduceEvents(s, [begin('a', ['scratch'], '/x/99-scratch.spec.ts'), end('a', 'failed', { error: "TimeoutError: locator.apply: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: '성분 줄 추가' })" })]);
+  assert.equal(out.failures.length, 1);
+});
+
 test('a failed test is reported as a failure with its feature and page', () => {
   const s = newState();
   const out = reduceEvents(s, [begin('a', ['장바구니', '합계']), { type: 'page', id: 'a', url: 'http://h/cart?x=1' }, end('a', 'failed', { error: 'boom' })]);

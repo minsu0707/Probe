@@ -332,3 +332,7 @@ table.runs .num {
   flex-direction: column;
   gap: 2px;
 }
+
+.defect-case {
+  overflow-wrap: anywhere;
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { explainCause } from '../../../../shared/cause.ts';
 import { reviewNeed } from '../../../../shared/need.ts';
+import { isTemporarySpec } from '../../../../shared/temp-spec.ts';
 import { api, type Defect } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
 import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, dateTime, startTime } from '../../core/format.ts';
@@ -31,16 +32,17 @@ function readShotSize(): ShotSize {
 /** One row in the list: severity dot and title, where it is, and one quiet line of facts. */
 export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Defect; selected: boolean; onSelect: () => void; now: number }) {
   const closed = d.status === 'fixed' || d.status === 'false_positive';
-  const facts = [d.status !== 'candidate' ? DEFECT_STATUS_LABEL[d.status] : null, d.cause !== 'unknown' ? CAUSE_LABEL[d.cause] : null, d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회` : null, `${startTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${ago(d.lastSeen, now)}` : null].filter(Boolean);
+  const headline = reviewNeed({ error: d.error, page: d.page, feature: d.feature, hasScreenshot: Boolean(d.screenshot) }).headline;
+  const facts = [d.status !== 'candidate' ? DEFECT_STATUS_LABEL[d.status] : null, d.cause !== 'unknown' ? CAUSE_LABEL[d.cause] : null, d.answer ? '답변함' : null, d.feature && isTemporarySpec(d.feature) ? '임시 탐색에서 나옴' : null, d.occurrences > 1 ? `${d.occurrences}회` : null, `${startTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${ago(d.lastSeen, now)}` : null].filter(Boolean);
   return (
     <li className={`defect-item${closed ? ' defect-done' : ''}${selected ? ' selected' : ''}`}>
       <button onClick={onSelect} aria-current={selected}>
         <span className="defect-title">
           <span className={`sev sev-${d.severity}`} role="img" aria-label={`심각도 ${SEVERITY_LABEL[d.severity]}`} title={`심각도 ${SEVERITY_LABEL[d.severity]}`} />
-          {d.title}
+          {headline}
         </span>
+        <span className="defect-case muted small">테스트 · {d.title}</span>
         <span className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</span>
-        {!closed && <span className="defect-why small">{reviewNeed({ error: d.error, page: d.page, feature: d.feature, hasScreenshot: Boolean(d.screenshot) }).headline}</span>}
         <span className="muted small">{facts.join(' · ')}</span>
       </button>
     </li>
@@ -70,7 +72,8 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
   return (
     <div className="defect-detail">
       <div className="defect-detail-head">
-        <h3>{d.title}</h3>
+        <h3>{need.headline}</h3>
+        <div className="defect-case muted small">테스트 · {d.title}</div>
         <div className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</div>
         <div className="muted small">
           {[SEVERITY_LABEL[d.severity], DEFECT_STATUS_LABEL[d.status], d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회 발생` : null, `${dateTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${dateTime(d.lastSeen)}` : null].filter(Boolean).join(' · ')}
