@@ -16,6 +16,7 @@ import { refreshFavicon } from '../services/favicon.ts';
 import * as servicesRepo from '../services/repository.ts';
 import { normalizeUrl, requireService } from '../services/service.ts';
 import { BASE_URL_KEYS, MIN_REDACTABLE_LENGTH, isSensitiveKey } from './classify.ts';
+import { extractCredentials, type CredentialFormat } from './extract.ts';
 import * as repo from './repository.ts';
 
 export const countSecrets = repo.count;
@@ -36,16 +37,34 @@ export function importEnv(serviceId: string, text: string, passphrase?: string):
   if (encrypted && !passphrase) throw unprocessable('This .enc file needs a passphrase');
 
   const entries = parseDotenv(encrypted ? decodeEnc(text, passphrase!) : text);
-  const keys = Object.keys(entries);
-  if (keys.length === 0) throw unprocessable('No KEY=VALUE lines found in the file');
+  if (Object.keys(entries).length === 0) throw unprocessable('No KEY=VALUE lines found in the file');
+  return { keys: storeEntries(serviceId, service.baseUrl, entries), encrypted };
+}
 
+/**
+ * Import any file that holds account details: a .enc, a .env, or something else (a spreadsheet, CSV, JSON, a note)
+ * whose accounts Probe finds for itself. The values are sealed with the same key as an imported .env, and the
+ * file itself is not kept anywhere.
+ */
+export function importFile(serviceId: string, name: string, data: Uint8Array, passphrase?: string): { keys: string[]; encrypted: boolean; format: CredentialFormat | 'enc' } {
+  const service = requireService(serviceId);
+  const asText = new TextDecoder('utf-8').decode(data);
+  if (isEncFile(asText)) return { ...importEnv(serviceId, asText, passphrase), format: 'enc' };
+
+  const { entries, format } = extractCredentials(name, data);
+  if (!format) throw unprocessable('이 파일에서 계정 정보(아이디·비밀번호 등)를 찾지 못했습니다. 아이디와 비밀번호가 "이름: 값" 형태의 줄이나 표로 들어 있는지 확인해 주세요.');
+  return { keys: storeEntries(serviceId, service.baseUrl, entries), encrypted: false, format };
+}
+
+/** Seal and keep the entries, overwriting keys that already exist. Returns the key names. */
+function storeEntries(serviceId: string, baseUrl: string | null, entries: Record<string, string>): string[] {
+  const keys = Object.keys(entries);
   tx(() => {
     for (const key of keys) repo.upsert(serviceId, { key, value: encryptValue(entries[key]), sensitive: isSensitiveKey(key) });
   });
-
-  if (!service.baseUrl) adoptBaseUrl(serviceId, entries);
+  if (!baseUrl) adoptBaseUrl(serviceId, entries);
   broadcast({ type: 'service', serviceId });
-  return { keys, encrypted };
+  return keys;
 }
 
 /** A malformed BASE_URL in the file must not fail an otherwise good import, so errors are ignored. */

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api, type SecretMeta, type ServiceOverview } from '../../core/api.ts';
 import { attempt, toast, useStore } from '../../core/store.ts';
 import { ConfirmModal, FileDrop, Icon } from '../../ui/index.ts';
-import { downloadText, looksEncrypted, safeFileName } from './envFile.ts';
+import { downloadText, FORMAT_LABEL, fileToBase64, looksEncrypted, safeFileName } from './envFile.ts';
 import { PassphraseModal } from './PassphraseModal.tsx';
 
 /** A service's environment variables: import from .env/.enc, list (values masked), delete, export. */
@@ -43,6 +43,17 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
     }
   };
 
+  /** Any other file (a spreadsheet, CSV, JSON, a note): the server finds the accounts in it. */
+  const importAny = async (file: File) => {
+    setBusy(true);
+    const result = await attempt(async () => api.importEnvFile(service.id, file.name, await fileToBase64(file)));
+    setBusy(false);
+    if (result) {
+      const names = result.keys.slice(0, 6).join(', ') + (result.keys.length > 6 ? ` 외 ${result.keys.length - 6}개` : '');
+      toast(`${FORMAT_LABEL[result.format] ?? '파일'}에서 ${result.keys.length}개 변수를 찾아 암호화해 등록했습니다: ${names}`);
+    }
+  };
+
   return (
     <section className="panel">
       <div className="panel-head">
@@ -56,13 +67,13 @@ export function EnvPanel({ service }: { service: ServiceOverview }) {
       </div>
 
       <FileDrop
-        label=".env 또는 .enc 파일을 끌어다 놓거나 선택"
+        label="계정 정보 파일을 끌어다 놓거나 선택 (.env, .enc, 엑셀, CSV, JSON, 메모)"
         hint="같은 이름의 변수는 덮어씁니다. 값은 이 컴퓨터에 암호화되어 저장되고, Claude에는 이름만 전달되고, 비밀번호처럼 가려진 값은 눈 아이콘을 눌러야 보입니다."
         busy={busy}
         onFiles={async ([file]) => {
           const text = await file.text();
           if (looksEncrypted(file.name, text)) setPendingEnc(text);
-          else await importText(text);
+          else await importAny(file);
         }}
       />
 

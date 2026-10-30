@@ -3,13 +3,13 @@ import { api } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
 import { attempt, selectService, toast } from '../../core/store.ts';
 import { FileDrop, Icon, Modal } from '../../ui/index.ts';
-import { looksEncrypted } from './envFile.ts';
+import { fileToBase64, looksEncrypted } from './envFile.ts';
 
 /** Register a service in one step: name, URL, and optionally an env file to import with it. */
 export function AddServiceModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
-  const [file, setFile] = useState<{ name: string; text: string } | null>(null);
+  const [file, setFile] = useState<{ name: string; text: string; data: string } | null>(null);
   const [passphrase, setPassphrase] = useState('');
   const [readOnly, setReadOnly] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -23,7 +23,7 @@ export function AddServiceModal({ onClose }: { onClose: () => void }) {
       selectService(created.id);
       goService(created.id);
       // The service already exists if the file fails; the user can retry it from the service page.
-      if (file && !(await attempt(() => api.importEnv(created.id, file.text, passphrase || undefined)))) {
+      if (file && !(await attempt(() => api.importEnvFile(created.id, file.name, file.data, passphrase || undefined)))) {
         setBusy(false);
         return onClose();
       }
@@ -63,7 +63,7 @@ export function AddServiceModal({ onClose }: { onClose: () => void }) {
               </button>
             </div>
           ) : (
-            <FileDrop label=".env 또는 .enc 파일 선택" onFiles={async ([f]) => setFile({ name: f.name, text: await f.text() })} />
+            <FileDrop label="계정 정보 파일 선택 (.env, .enc, 엑셀, CSV, JSON, 메모)" onFiles={async ([f]) => setFile({ name: f.name, text: await f.text(), data: await fileToBase64(f) })} />
           )}
         </div>
         {encrypted && (
