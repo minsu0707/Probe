@@ -19,6 +19,7 @@ function CasesBody({ service }: { service: ServiceOverview }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<TestCase[] | null>(null);
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
   const running = Boolean(service.activeRun);
 
   const load = useCallback(async () => {
@@ -52,6 +53,13 @@ function CasesBody({ service }: { service: ServiceOverview }) {
     for (const c of visible) by.set(c.feature, [...(by.get(c.feature) ?? []), c]);
     return [...by.entries()];
   }, [visible]);
+
+  const toggleOpen = (id: string) =>
+    setOpened((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   const setMany = (list: TestCase[], on: boolean) =>
     setPicked((prev) => {
@@ -162,23 +170,40 @@ function CasesBody({ service }: { service: ServiceOverview }) {
                 <ul className="case-list">
                   {list.map((c) => (
                     <li key={c.id}>
-                      <label className="case-row">
-                        <input type="checkbox" checked={picked.has(c.id)} onChange={(e) => setMany([c], e.target.checked)} />
-                        <span className="case-main">
-                          <span className="case-title">
-                            {c.title}
-                            {c.tags.map((t) => (
-                              <Pill key={t} tone="accent">
-                                {t.replace(/^@/, '')}
-                              </Pill>
-                            ))}
+                      <div className="case-line">
+                        {c.steps.length > 0 ? (
+                          <button type="button" className={`case-toggle${opened.has(c.id) ? ' open' : ''}`} onClick={() => toggleOpen(c.id)} aria-expanded={opened.has(c.id)} aria-label={`${c.title} 단계 ${opened.has(c.id) ? '접기' : '펼치기'}`}>
+                            <Icon name="chevron" size={14} />
+                          </button>
+                        ) : (
+                          <span className="case-toggle-gap" />
+                        )}
+                        <label className="case-row">
+                          <input type="checkbox" checked={picked.has(c.id)} onChange={(e) => setMany([c], e.target.checked)} />
+                          <span className="case-main">
+                            <span className="case-title">
+                              {c.title}
+                              {c.steps.length > 0 && <span className="case-steps-count">{c.steps.length}단계</span>}
+                              {c.tags.map((t) => (
+                                <Pill key={t} tone="accent">
+                                  {t.replace(/^@/, '')}
+                                </Pill>
+                              ))}
+                            </span>
+                            {c.source && <span className="case-source">근거 · {c.source}</span>}
                           </span>
-                          {c.source && <span className="case-source">근거 · {c.source}</span>}
-                        </span>
-                        <code className="case-file">
-                          {c.file}:{c.line}
-                        </code>
-                      </label>
+                          <code className="case-file">
+                            {c.file}:{c.line}
+                          </code>
+                        </label>
+                      </div>
+                      {opened.has(c.id) && (
+                        <ol className="case-steps">
+                          {c.steps.map((s, i) => (
+                            <li key={i}>{s}</li>
+                          ))}
+                        </ol>
+                      )}
                     </li>
                   ))}
                 </ul>

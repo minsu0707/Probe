@@ -3,7 +3,7 @@ import { decodeAct, describeAct } from '../../../../shared/actions.ts';
 import { clock } from '../../core/format.ts';
 
 /** Leading symbol per log kind. Results get a symbol from their status instead. */
-const KIND_MARK: Record<string, string> = { test: '▸', step: '·', page: '→', view: '◇', action: '✎', system: '!' };
+const KIND_MARK: Record<string, string> = { test: '▸', step: '·', stage: '◦', page: '→', view: '◇', action: '✎', system: '!' };
 
 function resultTone(status: string | null | undefined): 'pass' | 'skip' | 'fail' {
   return status === 'passed' ? 'pass' : status === 'skipped' ? 'skip' : 'fail';

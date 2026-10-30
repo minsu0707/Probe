@@ -104,3 +104,8 @@ test('pagePath drops the host and survives non-URLs', () => {
   assert.equal(pagePath('https://x.com/a/b?c=1#d'), '/a/b?c=1#d');
   assert.equal(pagePath('not a url'), 'not a url');
 });
+
+test('a finished step is logged with its outcome, so the failing one can be found', () => {
+  const out = reduceEvents(newState(), [begin('a', ['t']), { type: 'stage', id: 'a', title: '단계 1: 로그인', status: 'passed' }, { type: 'stage', id: 'a', title: '단계 2: 등록', status: 'failed' }]);
+  assert.deepEqual(out.logs.filter((l) => l.kind === 'stage').map((l) => [l.text, l.status]), [['단계 1: 로그인', 'passed'], ['단계 2: 등록', 'failed']]);
+});

@@ -30,6 +30,11 @@ export default class ProbeReporter implements Reporter {
     void send([{ type: 'step', id: test.id, title: step.title }]);
   }
 
+  onStepEnd(test: TestCase, _result: TestResult, step: TestStep) {
+    if (step.category !== 'test.step' || step.parent) return;
+    void send([{ type: 'stage', id: test.id, title: step.title, status: step.error ? 'failed' : 'passed' }]);
+  }
+
   onTestEnd(test: TestCase, result: TestResult) {
     const failed = result.status === 'failed' || result.status === 'timedOut' || result.status === 'interrupted';
     // A failed attempt that will be retried is not a result yet.

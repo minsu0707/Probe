@@ -51,6 +51,7 @@ function toCase(spec: JsonSpec, describePath: string[], readSource: (file: strin
     feature: describePath.join(' › ') || '(그룹 없음)',
     tags: spec.tags ?? [],
     source: sourceComment(readSource(spec.file), spec.line),
+    steps: stepTitles(readSource(spec.file), spec.line),
   };
 }
 
@@ -59,6 +60,17 @@ export function sourceComment(lines: string[], line: number): string | null {
   const found: string[] = [];
   for (let i = line - 2; i >= 0 && /^\s*\/\//.test(lines[i] ?? ''); i--) found.unshift(lines[i].replace(/^\s*\/\/\s?/, '').trim());
   return found.length ? found.join(' ') : null;
+}
+
+const NEXT_TEST = /^\s*test(?:\.(?:only|skip|fixme|fail|slow))?\s*\(\s*['"`]/;
+const STEP_CALL = /test\.step\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
+
+/** The `test.step('…')` titles between the test(...) line and the next test, as written in the source. */
+export function stepTitles(lines: string[], line: number): string[] {
+  let end = line;
+  while (end < lines.length && !NEXT_TEST.test(lines[end])) end++;
+  const block = lines.slice(line, end).join('\n');
+  return [...block.matchAll(STEP_CALL)].map((m) => m[2]);
 }
 
 export async function listTestCases(serviceId: string): Promise<{ cases: TestCase[]; errors: string[] }> {

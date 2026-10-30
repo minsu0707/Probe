@@ -43,12 +43,50 @@ export function RunList({ serviceId }: { serviceId: string }) {
   );
 }
 
+/** A test's steps finish before its result line, so each result takes the step lines that came since the previous one. */
+function withStages(lines: LogLine[]): { line: LogLine; stages: LogLine[] }[] {
+  const out: { line: LogLine; stages: LogLine[] }[] = [];
+  let pending: LogLine[] = [];
+  for (const l of lines) {
+    if (l.kind === 'stage') pending.push(l);
+    else {
+      out.push({ line: l, stages: l.kind === 'result' ? pending : [] });
+      if (l.kind === 'result') pending = [];
+    }
+  }
+  return out;
+}
+
+function ResultItem({ line, stages }: { line: LogLine; stages: LogLine[] }) {
+  const [open, setOpen] = useState(line.kind === 'result' && line.status !== 'passed' && line.status !== 'skipped');
+  if (stages.length === 0) return <LogRow line={line} />;
+  return (
+    <>
+      <LogRow line={line} />
+      <li className="stage-wrap">
+        <button type="button" className="btn btn-quiet btn-sm" onClick={() => setOpen(!open)} aria-expanded={open}>
+          단계 {stages.length}개 {open ? '접기' : '펼치기'}
+        </button>
+        {open && (
+          <ol className="stage-list">
+            {stages.map((s, i) => (
+              <li key={i} className={s.status === 'passed' ? 'stage-pass' : 'stage-fail'}>
+                <span aria-hidden="true">{s.status === 'passed' ? '✓' : '✕'}</span> {s.text}
+              </li>
+            ))}
+          </ol>
+        )}
+      </li>
+    </>
+  );
+}
+
 function RunRow({ run: r, open, onToggle }: { run: RunSummary; open: boolean; onToggle: () => void }) {
   const [results, setResults] = useState<LogLine[] | null>(null);
 
-  // Fetched on first expand; only results and system notes, since steps would bury them.
+  // Fetched on first expand; results, system notes and the finished steps of each test (not every click, which would bury them).
   useEffect(() => {
-    if (open && !results) api.run(r.id).then((d) => setResults(d.log.filter((l) => l.kind === 'result' || l.kind === 'system')), () => setResults([]));
+    if (open && !results) api.run(r.id).then((d) => setResults(d.log.filter((l) => l.kind === 'result' || l.kind === 'system' || l.kind === 'stage')), () => setResults([]));
   }, [open, results, r.id]);
 
   const tone = runTone(r.status);
@@ -74,8 +112,8 @@ function RunRow({ run: r, open, onToggle }: { run: RunSummary; open: boolean; on
               <span className="muted small">불러오는 중…</span>
             ) : (
               <ol className="log log-flat">
-                {results.map((l, i) => (
-                  <LogRow key={i} line={l} />
+                {withStages(results).map(({ line, stages }, i) => (
+                  <ResultItem key={i} line={line} stages={stages} />
                 ))}
               </ol>
             )}

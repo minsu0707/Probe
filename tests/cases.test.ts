@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import { isolatedHome } from './helpers.ts';
 
 isolatedHome();
-const { flattenSuites, sourceComment, listTestCases } = await import('../server/modules/runs/cases.ts');
+const { flattenSuites, sourceComment, stepTitles, listTestCases } = await import('../server/modules/runs/cases.ts');
 const { testsDir } = await import('../server/config.ts');
 const services = await import('../server/modules/services/service.ts');
 
@@ -53,4 +53,23 @@ test.describe('장바구니', () => {
   const r = spawnSync(process.execPath, [require.resolve('@playwright/test/cli'), 'test', '--config', join(testsDir(s.id), 'playwright.config.ts'), '--reporter=json', `${cases[1].file}:${cases[1].line}`], { cwd: testsDir(s.id), encoding: 'utf8' });
   const ran = [...r.stdout.matchAll(/"title": "(합계 계산|수량 변경)"/g)].map((m) => m[1]);
   assert.deepEqual([...new Set(ran)], ['수량 변경']);
+});
+
+test('the steps of a test are read from its source, up to the next test', () => {
+  const lines = [
+    "test('첫째', async ({ page }) => {",
+    "  await test.step('단계 1: 로그인', async () => {});",
+    '  await test.step(`단계 2: "등록"`, async () => {});',
+    '  await test.step(',
+    String.raw`    '단계 3: it\'s done',`,
+    '    async () => {},',
+    '  );',
+    '});',
+    "test('둘째', async () => {",
+    "  await test.step('다른 시나리오', async () => {});",
+    '});',
+  ];
+  assert.deepEqual(stepTitles(lines, 1), ['단계 1: 로그인', '단계 2: "등록"', String.raw`단계 3: it\'s done`]);
+  assert.deepEqual(stepTitles(lines, 9), ['다른 시나리오']);
+  assert.deepEqual(stepTitles(["test('x', async () => {});"], 1), []);
 });

@@ -13,6 +13,8 @@ export type IngestEvent =
   | { type: 'test:begin'; id: string; title: string[]; file: string; project: string }
   /** One Playwright action or `test.step`, shown in the log's "동작 단계". */
   | { type: 'step'; id: string; title: string }
+  /** A top-level `test.step` finished; `failed` is the one the test stopped in. */
+  | { type: 'stage'; id: string; title: string; status: 'passed' | 'failed' }
   | { type: 'page'; id: string; url: string }
   /** Something the test typed, picked, pressed or sent (see shared/actions.ts). */
   | { type: 'act'; id: string; what: ActKind; target: string; value?: string }
@@ -33,7 +35,7 @@ export type IngestEvent =
   | { type: 'run:end'; status: 'passed' | 'failed' | 'timedOut' | 'interrupted' };
 
 /** Every event type the reporter may send; the server rejects anything else. */
-export const INGEST_TYPES = ['run:plan', 'test:begin', 'step', 'page', 'act', 'view', 'test:end', 'run:end'] as const satisfies readonly IngestEvent['type'][];
+export const INGEST_TYPES = ['run:plan', 'test:begin', 'step', 'stage', 'page', 'act', 'view', 'test:end', 'run:end'] as const satisfies readonly IngestEvent['type'][];
 // Fails to compile when an event type is added above but not to the list.
 const _allListed: Exclude<IngestEvent['type'], (typeof INGEST_TYPES)[number]> extends never ? true : never = true;
 void _allListed;

@@ -91,6 +91,10 @@ export function reduceEvents(state: RunState, events: IngestEvent[]): Reduction 
         log('step', ev.title);
         break;
 
+      case 'stage':
+        log('stage', ev.title, ev.status);
+        break;
+
       case 'page': {
         const path = pagePath(ev.url);
         if (s.current.page !== path) log('page', path); // reloads of the same page aren't news

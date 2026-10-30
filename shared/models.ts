@@ -49,6 +49,8 @@ export interface TestCase {
   tags: string[];
   /** The comment above the test, where the expectation cites its document. */
   source: string | null;
+  /** Titles of the `test.step`s inside it, in order: the parts of one scenario, shown when the case is expanded. */
+  steps: string[];
 }
 
 /** An environment variable as shown to the UI. Sensitive values are never included. */
@@ -129,7 +131,7 @@ export interface RunSummary {
   current: RunCurrent;
 }
 
-export type LogKind = 'test' | 'step' | 'page' | 'view' | 'action' | 'result' | 'system';
+export type LogKind = 'test' | 'step' | 'stage' | 'page' | 'view' | 'action' | 'result' | 'system';
 
 export interface LogLine {
   id?: number;

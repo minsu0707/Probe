@@ -364,3 +364,45 @@ table.runs {
 .case-temp-note .btn {
   flex: none;
 }
+
+.case-line {
+  display: flex;
+  align-items: flex-start;
+}
+.case-toggle,
+.case-toggle-gap {
+  flex: none;
+  width: 22px;
+  margin-top: 8px;
+}
+.case-toggle {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+  line-height: 0;
+}
+.case-toggle svg {
+  transition: transform 0.12s;
+}
+.case-toggle.open svg {
+  transform: rotate(90deg);
+}
+.case-line .case-row {
+  flex: 1;
+  min-width: 0;
+}
+.case-steps-count {
+  color: var(--muted);
+  font-size: 12px;
+}
+.case-steps {
+  margin: 0 0 8px 54px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.case-steps li {
+  padding: 2px 0;
+}
