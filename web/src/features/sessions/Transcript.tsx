@@ -5,6 +5,7 @@ import { labelOfLine } from '../../../../shared/tool-labels.ts';
 import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
 import { ClaudeAvatar, ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
+import { flowOfTurn, NodeMapModal, stepsOfTurn } from './NodeMap.tsx';
 
 const EMPTY: SessionMessage[] = [];
 const NO_QUEUE: QueuedMessage[] = [];
@@ -22,6 +23,10 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
   const [atBottom, setAtBottom] = useState(true);
   const atBottomRef = useRef(true);
   const running = session.status === 'running';
+  const [showNodes, setShowNodes] = useState(false);
+  // Offered once Claude has taken a few steps this turn, so a one-line answer doesn't grow a button.
+  const turnSteps = stepsOfTurn(flowOfTurn(messages));
+  const nodeButtonAt = turnSteps >= 3 ? messages.findLastIndex((m) => m.role === 'tool') : -1;
 
   useEffect(() => void loadTranscript(session.id).catch(() => undefined), [session.id]);
   // Follow the newest message while Claude works.
@@ -79,6 +84,8 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
         </div>
       </div>
 
+      {showNodes && <NodeMapModal messages={messages} running={running} onClose={() => setShowNodes(false)} />}
+
       {confirmStop && (
         <ConfirmModal
           title="작업 중단"
@@ -128,7 +135,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
       >
         {groupMessages(messages).map((g, i, all) =>
           g.kind === 'tools' ? (
-            <ToolGroup key={g.items[0].id} items={g.items} first={g.first} live={running && i === all.length - 1} />
+            <ToolGroup key={g.items[0].id} items={g.items} first={g.first} live={running && i === all.length - 1} onNodes={g.items.some((m) => m.id === messages[nodeButtonAt]?.id) ? () => setShowNodes(true) : undefined} />
           ) : (
             <Message key={g.m.id} m={g.m} first={g.first} />
           ),
@@ -210,7 +217,7 @@ function groupMessages(messages: SessionMessage[]): Item[] {
 }
 
 /** What Claude is doing or did, in one quiet line; click for every step. */
-function ToolGroup({ items, first, live }: { items: SessionMessage[]; first: boolean; live: boolean }) {
+function ToolGroup({ items, first, live, onNodes }: { items: SessionMessage[]; first: boolean; live: boolean; onNodes?: () => void }) {
   const labels = items.map((m) => labelOfLine(m.text));
   const counts: [string, number][] = [];
   for (const l of labels) {
@@ -239,6 +246,11 @@ function ToolGroup({ items, first, live }: { items: SessionMessage[]; first: boo
             ))}
           </ol>
         </details>
+        {onNodes && (
+          <button className="btn btn-sm node-btn" onClick={onNodes}>
+            노드로 보기
+          </button>
+        )}
       </div>
     </div>
   );
