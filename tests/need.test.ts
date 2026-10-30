@@ -20,9 +20,8 @@ test('an unimplemented API is said to be unimplemented, not called a failure of 
 
 test("a test's own dump is recognised as a printout, with what it printed", () => {
   const n = need('Error: PRD=PRD-069662 URL=https://x/#product NAV:["M0 홈","M1 제품 개발"] CARDS:["개발 과제"]');
-  assert.match(n.headline, /화면 정보를 출력하고 멈춤/);
-  assert.match(n.headline, /PRD/);
-  assert.match(n.headline, /NAV/);
+  assert.match(n.headline, /화면 정보 출력 후 멈춤/);
+  assert.match(n.headline, /PRD·URL 외 2/);
   assert.match(n.why, /일부러 실패시킨/);
   assert.ok(n.checks.some((c) => c.includes('스크린샷')));
 

@@ -73,7 +73,8 @@ export function reviewNeed({ error, page, feature, hasScreenshot }: Input): Revi
   if (keys.length && !isProbePlumbing(error)) {
     const sample = clip(error.replace(/^\w*Error:\s*/, ''), 160);
     return {
-      headline: `테스트가 화면 정보를 출력하고 멈춤 (${keys.join('·')})`,
+      // Two names are enough to tell printouts apart; a long list of them only makes the title wrap.
+      headline: `화면 정보 출력 후 멈춤 (${keys.slice(0, 2).join('·')}${keys.length > 2 ? ` 외 ${keys.length - 2}` : ''})`,
       happened: `테스트가 ${where || '화면'}에서 찾은 내용을 오류 메시지로 던지고 멈췄습니다. 출력 항목: ${keys.join(', ')}. 시작은 “${sample}”.`,
       why: '앱이 틀린 것이 아니라, 테스트 작성 중 화면 상태를 눈으로 보려고 일부러 실패시킨 코드일 가능성이 큽니다. Probe는 메시지만으로 의도를 알 수 없습니다.',
       checks: ['출력된 내용이 정상 화면의 상태라면 → ‘테스트가 틀렸어요’ 또는 ‘오탐’으로 분류 (테스트 정리가 필요합니다)', shot, '출력 내용에 이상한 점(빠진 항목, 엉뚱한 값)이 있다면 → 어떤 점인지 아래 칸에 적어 주세요'],

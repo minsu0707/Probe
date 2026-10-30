@@ -39,9 +39,13 @@ export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Def
       <button onClick={onSelect} aria-current={selected}>
         <span className="defect-title">
           <span className={`sev sev-${d.severity}`} role="img" aria-label={`심각도 ${SEVERITY_LABEL[d.severity]}`} title={`심각도 ${SEVERITY_LABEL[d.severity]}`} />
-          {headline}
+          <span className="defect-headline" title={headline}>
+            {headline}
+          </span>
         </span>
-        <span className="defect-case muted small">테스트 · {d.title}</span>
+        <span className="defect-case muted small" title={d.title}>
+          테스트 · {d.title}
+        </span>
         <span className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</span>
         <span className="muted small">{facts.join(' · ')}</span>
       </button>

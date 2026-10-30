@@ -336,3 +336,25 @@ table.runs .num {
 .defect-case {
   overflow-wrap: anywhere;
 }
+
+/* In the list a defect stays compact: the summary takes two lines at most, the test case one. Both are whole in the detail. */
+.defect-item .defect-title {
+  display: flex;
+  align-items: flex-start;
+}
+.defect-item .sev {
+  flex: none;
+  margin-top: 0.48em;
+}
+.defect-headline {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.defect-item .defect-case {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
