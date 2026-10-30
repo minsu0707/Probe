@@ -44,7 +44,7 @@ export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Def
           </span>
         </span>
         <span className="defect-case muted small" title={d.title}>
-          테스트 · {d.title}
+          {d.title}
         </span>
         <span className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</span>
         <span className="muted small">{facts.join(' · ')}</span>
@@ -77,7 +77,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
     <div className="defect-detail">
       <div className="defect-detail-head">
         <h3>{need.headline}</h3>
-        <div className="defect-case muted small">테스트 · {d.title}</div>
+        <div className="defect-case muted small">{d.title}</div>
         <div className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</div>
         <div className="muted small">
           {[SEVERITY_LABEL[d.severity], DEFECT_STATUS_LABEL[d.status], d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회 발생` : null, `${dateTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${dateTime(d.lastSeen)}` : null].filter(Boolean).join(' · ')}
