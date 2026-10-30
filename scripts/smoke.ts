@@ -118,6 +118,11 @@ test.describe('장바구니', () => {
   assert.ok(first.log.some((l: any) => l.kind === 'view' && l.text === '로그인 › 로그인 폼'), 'view() reaches the log');
   assert.ok(first.log.some((l: any) => l.kind === 'page' && l.text === '/cart'), 'page navigation reaches the log');
 
+  // --- what the test typed and pressed reaches the log, which is what the session's node view reads
+  const acts = first.log.filter((l: any) => l.kind === 'action').map((l: any) => JSON.parse(l.text));
+  assert.ok(acts.some((a: any) => a.what === 'fill' && a.target === '#p'), 'typing into a field is reported');
+  assert.ok(acts.some((a: any) => a.what === 'click' && a.target === '로그인'), 'a click is reported by the button\'s name');
+
   // --- the password the test typed must not appear anywhere a user can read it
   assert.ok(!JSON.stringify(first.log).includes(SECRET), 'password is masked in the run log');
   assert.ok(first.log.some((l: any) => l.text.includes('••••')), 'the mask is visible where the password was');

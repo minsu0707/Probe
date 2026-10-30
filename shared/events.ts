@@ -4,6 +4,7 @@
  *  - IngestEvent:   Playwright worker/reporter  →  server   (HTTP POST /api/ingest/:runId)
  *  - ServerMessage: server                      →  browser  (WebSocket /ws)
  */
+import type { ActKind } from './actions.ts';
 import type { Defect, Job, LogKind, QueuedMessage, RunSummary, Session, SessionMessage, TestStatus } from './models.ts';
 
 export type IngestEvent =
@@ -13,6 +14,8 @@ export type IngestEvent =
   /** One Playwright action or `test.step`, shown in the log's "동작 단계". */
   | { type: 'step'; id: string; title: string }
   | { type: 'page'; id: string; url: string }
+  /** Something the test typed, picked, pressed or sent (see shared/actions.ts). */
+  | { type: 'act'; id: string; what: ActKind; target: string; value?: string }
   /** Emitted by the `view()` helper in specs. */
   | { type: 'view'; id: string; name: string; feature?: string }
   | {

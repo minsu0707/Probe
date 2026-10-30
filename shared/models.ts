@@ -129,7 +129,7 @@ export interface RunSummary {
   current: RunCurrent;
 }
 
-export type LogKind = 'test' | 'step' | 'page' | 'view' | 'result' | 'system';
+export type LogKind = 'test' | 'step' | 'page' | 'view' | 'action' | 'result' | 'system';
 
 export interface LogLine {
   id?: number;

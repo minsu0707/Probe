@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { test as base, expect, type Page } from '@playwright/test';
 import { allowRequest } from './guard.ts';
+import { instrument, setCurrentTest } from './instrument.ts';
 import { connected, send, sendFrame } from './transport.ts';
 
 /** Fallback polling, used only while the live stream is silent (and for engines without DevTools). */
@@ -87,6 +88,8 @@ export const test = base.extend<{ _probe: void }>({
       }
       if (!connected) return use();
       const id = testInfo.testId;
+      instrument(browser, page);
+      setCurrentTest(id);
       page.on('framenavigated', (frame) => {
         if (frame === page.mainFrame() && frame.url() !== 'about:blank') void send([{ type: 'page', id, url: frame.url() }]);
       });
@@ -127,6 +130,7 @@ export const test = base.extend<{ _probe: void }>({
       } finally {
         clearInterval(timer);
         clearInterval(screenTimer);
+        setCurrentTest(null);
         stream?.stop();
         if (testInfo.status !== testInfo.expectedStatus) {
           await keepScreen();

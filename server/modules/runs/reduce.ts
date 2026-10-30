@@ -7,6 +7,7 @@
  * The caller (ingest.ts) performs the side effects.
  */
 import { basename } from 'node:path';
+import { encodeAct } from '../../../shared/actions.ts';
 import type { IngestEvent } from '../../../shared/events.ts';
 import type { LogKind, RunCurrent, RunSummary, RunTotals, TestStatus } from '../../../shared/models.ts';
 
@@ -94,6 +95,10 @@ export function reduceEvents(state: RunState, events: IngestEvent[]): Reduction 
         s.current.page = path;
         break;
       }
+
+      case 'act':
+        log('action', encodeAct({ what: ev.what, target: ev.target, value: ev.value }));
+        break;
 
       case 'view':
         s.current.view = ev.name;

@@ -5,7 +5,7 @@ import { labelOfLine } from '../../../../shared/tool-labels.ts';
 import { useDraft } from '../../core/drafts.ts';
 import { attempt, loadTranscript, useStore } from '../../core/store.ts';
 import { ClaudeAvatar, ConfirmModal, Icon, Markdown } from '../../ui/index.ts';
-import { flowOfTurn, NodeMapModal, stepsOfTurn } from './NodeMap.tsx';
+import { NodeMapModal } from './NodeMap.tsx';
 
 const EMPTY: SessionMessage[] = [];
 const NO_QUEUE: QueuedMessage[] = [];
@@ -24,9 +24,10 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
   const atBottomRef = useRef(true);
   const running = session.status === 'running';
   const [showNodes, setShowNodes] = useState(false);
-  // Offered once Claude has taken a few steps this turn, so a one-line answer doesn't grow a button.
-  const turnSteps = stepsOfTurn(flowOfTurn(messages));
-  const nodeButtonAt = turnSteps >= 3 ? messages.findLastIndex((m) => m.role === 'tool') : -1;
+  // Offered once a test run has started since the user's last message: that run is what the nodes show.
+  const turnStart = messages.findLast((m) => m.role === 'user')?.ts ?? 0;
+  const turnRun = useStore((s) => Object.values(s.runs).filter((r) => r.serviceId === session.serviceId && r.startedAt >= turnStart - 5000).sort((a, b) => b.startedAt - a.startedAt)[0]);
+  const nodeButtonAt = turnRun ? messages.findLastIndex((m) => m.role === 'tool') : -1;
 
   useEffect(() => void loadTranscript(session.id).catch(() => undefined), [session.id]);
   // Follow the newest message while Claude works.
@@ -84,7 +85,7 @@ export function Transcript({ session, claudeReady, onDeleted }: { session: Sessi
         </div>
       </div>
 
-      {showNodes && <NodeMapModal messages={messages} running={running} onClose={() => setShowNodes(false)} />}
+      {showNodes && turnRun && <NodeMapModal run={turnRun} onClose={() => setShowNodes(false)} />}
 
       {confirmStop && (
         <ConfirmModal
