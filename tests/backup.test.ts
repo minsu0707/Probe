@@ -1,15 +1,14 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { isolatedHome } from './helpers.ts';
+import { isolatedHome, tempDir } from './helpers.ts';
 
 isolatedHome();
 const { pack, unpack, safeTarget, BAD_BACKUP } = await import('../server/modules/backup/archive.ts');
 const { applyPendingRestore, PENDING_NAME, STAGING_NAME } = await import('../server/core/restore-boot.ts');
 
-const temp = () => mkdtempSync(join(tmpdir(), 'probe-bak-'));
+const temp = () => tempDir('probe-bak-');
 const sample = () => {
   const src = temp();
   writeFileSync(join(src, 'manifest.json'), '{"format":1}');

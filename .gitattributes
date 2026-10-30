@@ -1,0 +1,5 @@
+# One line ending in the repository, so edits and diffs do not depend on who checked out where.
+* text=auto eol=lf
+# Windows batch files only work with CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf

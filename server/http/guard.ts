@@ -13,10 +13,18 @@ import { PORT } from '../config.ts';
 /** 5173 is the Vite dev server, which proxies to us during frontend development. */
 export const allowedHosts = (): Set<string> => new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`, '127.0.0.1:5173', 'localhost:5173']);
 
+/** Whether a browser's Origin header names this app. Anything unreadable (`null`, junk) is not ours. */
+export function isAllowedOrigin(origin: string): boolean {
+  try {
+    return allowedHosts().has(new URL(origin).host);
+  } catch {
+    return false;
+  }
+}
+
 export const guard: MiddlewareHandler = async (c, next) => {
-  const hosts = allowedHosts();
-  if (!hosts.has(c.req.header('host') ?? '')) return c.json({ error: 'Forbidden host' }, 403);
+  if (!allowedHosts().has(c.req.header('host') ?? '')) return c.json({ error: 'Forbidden host' }, 403);
   const origin = c.req.header('origin');
-  if (origin && c.req.method !== 'GET' && !hosts.has(new URL(origin).host)) return c.json({ error: 'Forbidden origin' }, 403);
+  if (origin && c.req.method !== 'GET' && !isAllowedOrigin(origin)) return c.json({ error: 'Forbidden origin' }, 403);
   await next();
 };

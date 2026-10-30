@@ -32,6 +32,12 @@ export type IngestEvent =
     }
   | { type: 'run:end'; status: 'passed' | 'failed' | 'timedOut' | 'interrupted' };
 
+/** Every event type the reporter may send; the server rejects anything else. */
+export const INGEST_TYPES = ['run:plan', 'test:begin', 'step', 'page', 'act', 'view', 'test:end', 'run:end'] as const satisfies readonly IngestEvent['type'][];
+// Fails to compile when an event type is added above but not to the list.
+const _allListed: Exclude<IngestEvent['type'], (typeof INGEST_TYPES)[number]> extends never ? true : never = true;
+void _allListed;
+
 export type ServerMessage =
   | { type: 'run'; run: RunSummary }
   | { type: 'log'; runId: string; ts: number; kind: LogKind; text: string; status?: TestStatus }

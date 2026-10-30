@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { tempDir } from './helpers.ts';
 
 // The count reads the specs of one service; point Probe at a throwaway data folder first.
-process.env.PROBE_HOME = mkdtempSync(join(tmpdir(), 'probe-count-'));
+process.env.PROBE_HOME = tempDir('probe-count-');
 const { countTestCases } = await import('../server/modules/runs/cases.ts');
 const { testsDir } = await import('../server/config.ts');
 

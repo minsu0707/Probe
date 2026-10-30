@@ -4,8 +4,8 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { notFound } from '../../core/errors.ts';
 import { runDir } from '../../config.ts';
-import type { IngestEvent } from '../../../shared/events.ts';
 import { parseBody } from '../../http/validate.ts';
+import { parseIngestEvents, RUN_ID } from './ingest-input.ts';
 import { listTestCases } from './cases.ts';
 import { deleteTests, isSafeSpecName } from './delete.ts';
 import { isSessionRunning } from '../sessions/service.ts';
@@ -45,16 +45,17 @@ export const runsRoutes = new Hono()
   // Failure screenshots and traces kept from a run.
   .get('/runs/:id/files/:name', (c) => {
     const name = c.req.param('name');
+    // An id or a name that is not a plain token ("..", a separator) could point outside the run folder.
+    if (!RUN_ID.test(c.req.param('id'))) throw notFound('File not found');
     const path = join(runDir(c.req.param('id')), name);
-    // A name containing a separator could point outside the run folder.
-    if (name !== name.replace(/[\\/]/g, '') || !existsSync(path)) throw notFound('File not found');
+    if (name !== name.replace(/[\\/]/g, '') || name === '..' || name === '.' || !existsSync(path)) throw notFound('File not found');
     const type = CONTENT_TYPES[name.split('.').pop() ?? ''];
     return c.body(new Uint8Array(readFileSync(path)), 200, type ? { 'content-type': type } : { 'content-type': 'application/octet-stream', 'content-disposition': `attachment; filename="${name}"` });
   })
 
   // Called by the Playwright reporter/fixture, authenticated by the per-run token.
   .post('/ingest/:id', async (c) => {
-    ingestEvents(c.req.param('id'), c.req.header('x-probe-token'), (await c.req.json()) as IngestEvent[]);
+    ingestEvents(c.req.param('id'), c.req.header('x-probe-token'), parseIngestEvents(await c.req.json().catch(() => null)));
     return c.body(null, 204);
   })
   .post('/ingest/:id/frame', async (c) => {
