@@ -21,9 +21,13 @@ export function NodeMapModal({ run, onClose }: { run: RunSummary; onClose: () =>
   const active = useRef<HTMLLIElement>(null);
 
   // The log may not have been fetched yet (the monitor tab was never opened); live lines then follow over the socket.
-  useEffect(() => void loadRun(run.id).catch(() => undefined), [run.id]);
+  useEffect(() => {
+    loadRun(run.id).catch(() => undefined);
+  }, [run.id]);
   // Keep the node in progress in view as new ones arrive.
-  useEffect(() => active.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), [nodes.length, running]);
+  useEffect(() => {
+    active.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [nodes.length, running]);
 
   const doing = all.filter((n) => n.kind === 'act').length;
   return (

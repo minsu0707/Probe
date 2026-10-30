@@ -1087,3 +1087,26 @@ input[type='checkbox']:not(.switch):disabled {
     animation-duration: 6s;
   }
 }
+
+/* Shown by the error boundary instead of a blank window. */
+.crash {
+  max-width: 560px;
+  margin: 12vh auto 0;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+.crash pre {
+  max-width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App.tsx';
 import { initTheme } from './core/theme.ts';
+import { ErrorBoundary } from './ui/ErrorBoundary.tsx';
 // Order matters: tokens first (variables), responsive last (overrides).
 import './styles/tokens.css';
 import './styles/base.css';
@@ -20,6 +21,8 @@ initTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
