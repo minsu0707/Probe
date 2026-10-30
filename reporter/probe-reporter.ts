@@ -14,6 +14,9 @@ import { send } from './transport.ts';
 const REPORTED_STEPS = new Set(['test.step', 'pw:api', 'expect']);
 
 export default class ProbeReporter implements Reporter {
+  /** Top-level `test.step`s that began and have not ended, per test. A timeout never ends the step it hit, so the test's end closes them as failed. */
+  private openStages = new Map<string, Set<TestStep>>();
+
   onBegin(_config: FullConfig, suite: Suite) {
     void send([{ type: 'run:plan', total: suite.allTests().length }]);
   }
@@ -24,6 +27,7 @@ export default class ProbeReporter implements Reporter {
   }
 
   onStepBegin(test: TestCase, _result: TestResult, step: TestStep) {
+    if (step.category === 'test.step' && !step.parent) this.openStages.set(test.id, (this.openStages.get(test.id) ?? new Set()).add(step));
     if (!REPORTED_STEPS.has(step.category)) return;
     // Only top-level steps, or direct children of a test.step, so one click is one line.
     if (step.parent && step.parent.category !== 'test.step') return;
@@ -32,11 +36,15 @@ export default class ProbeReporter implements Reporter {
 
   onStepEnd(test: TestCase, _result: TestResult, step: TestStep) {
     if (step.category !== 'test.step' || step.parent) return;
+    this.openStages.get(test.id)?.delete(step);
     void send([{ type: 'stage', id: test.id, title: step.title, status: step.error ? 'failed' : 'passed' }]);
   }
 
   onTestEnd(test: TestCase, result: TestResult) {
     const failed = result.status === 'failed' || result.status === 'timedOut' || result.status === 'interrupted';
+    const hung = [...(this.openStages.get(test.id) ?? [])];
+    this.openStages.delete(test.id);
+    if (failed) for (const step of hung) void send([{ type: 'stage', id: test.id, title: step.title, status: 'failed' }]);
     // A failed attempt that will be retried is not a result yet.
     if (failed && result.retry < test.retries) return;
     const attach = (name: string) => result.attachments.find((a) => a.name === name)?.path;
