@@ -3,7 +3,7 @@ import { explainCause } from '../../../../shared/cause.ts';
 import { reviewNeed } from '../../../../shared/need.ts';
 import { api, type Defect } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
-import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago } from '../../core/format.ts';
+import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago, dateTime, startTime } from '../../core/format.ts';
 import { attempt } from '../../core/store.ts';
 import { Icon } from '../../ui/index.ts';
 import { AnswerPanel } from './AnswerPanel.tsx';
@@ -31,7 +31,7 @@ function readShotSize(): ShotSize {
 /** One row in the list: severity dot and title, where it is, and one quiet line of facts. */
 export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Defect; selected: boolean; onSelect: () => void; now: number }) {
   const closed = d.status === 'fixed' || d.status === 'false_positive';
-  const facts = [d.status !== 'candidate' ? DEFECT_STATUS_LABEL[d.status] : null, d.cause !== 'unknown' ? CAUSE_LABEL[d.cause] : null, d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회` : null, ago(d.lastSeen, now)].filter(Boolean);
+  const facts = [d.status !== 'candidate' ? DEFECT_STATUS_LABEL[d.status] : null, d.cause !== 'unknown' ? CAUSE_LABEL[d.cause] : null, d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회` : null, `${startTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${ago(d.lastSeen, now)}` : null].filter(Boolean);
   return (
     <li className={`defect-item${closed ? ' defect-done' : ''}${selected ? ' selected' : ''}`}>
       <button onClick={onSelect} aria-current={selected}>
@@ -73,7 +73,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
         <h3>{d.title}</h3>
         <div className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</div>
         <div className="muted small">
-          {[SEVERITY_LABEL[d.severity], DEFECT_STATUS_LABEL[d.status], d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회 발생` : null].filter(Boolean).join(' · ')}
+          {[SEVERITY_LABEL[d.severity], DEFECT_STATUS_LABEL[d.status], d.answer ? '답변함' : null, d.occurrences > 1 ? `${d.occurrences}회 발생` : null, `${dateTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${dateTime(d.lastSeen)}` : null].filter(Boolean).join(' · ')}
         </div>
       </div>
 
