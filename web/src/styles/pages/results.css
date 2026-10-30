@@ -295,3 +295,40 @@ table.runs .num {
   padding-left: 1.2rem;
   overflow-wrap: anywhere;
 }
+
+/* One line in the list saying what this failure is, so failures of the same test can be told apart. */
+.defect-why {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Why a person is needed, and what to look at: the first thing under the actions. */
+.need {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px 12px;
+  background: var(--warn-soft);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13px;
+}
+.need h4 {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--warn);
+}
+.need h4:first-child {
+  margin-top: 0;
+}
+.need p,
+.need ol {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.need ol {
+  padding-left: 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

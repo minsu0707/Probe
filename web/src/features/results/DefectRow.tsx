@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { explainCause } from '../../../../shared/cause.ts';
+import { reviewNeed } from '../../../../shared/need.ts';
 import { api, type Defect } from '../../core/api.ts';
 import { goService } from '../../app/router.ts';
 import { CAUSE_HINT, CAUSE_LABEL, DEFECT_STATUS_LABEL, SEVERITY_LABEL, ago } from '../../core/format.ts';
@@ -39,6 +40,7 @@ export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Def
           {d.title}
         </span>
         <span className="defect-where muted small">{[d.feature, d.page].filter(Boolean).join(' · ') || '위치 정보 없음'}</span>
+        {!closed && <span className="defect-why small">{reviewNeed({ error: d.error, page: d.page, feature: d.feature, hasScreenshot: Boolean(d.screenshot) }).headline}</span>}
         <span className="muted small">{facts.join(' · ')}</span>
       </button>
     </li>
@@ -50,6 +52,7 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
   const update = (patch: Parameters<typeof api.updateDefect>[1]) => void attempt(() => api.updateDefect(d.id, patch));
   const closed = d.status === 'fixed' || d.status === 'false_positive';
   const guess = explainCause(d.error);
+  const need = reviewNeed({ error: d.error, page: d.page, feature: d.feature, hasScreenshot: Boolean(d.screenshot) });
   const analyze = async () => {
     if (await attempt(() => api.createSession(d.serviceId, { kind: 'chat', message: analysisRequest(d, followedFrom), parallel: true }))) goService(d.serviceId, 'sessions');
   };
@@ -108,10 +111,28 @@ export function DefectDetail({ defect: d, followedFrom }: { defect: Defect; foll
         </label>
       </div>
 
+      {!closed && (
+        <section className="need" aria-label="확인이 필요한 이유">
+          <h4>무슨 일이 있었나</h4>
+          <p>{need.happened}</p>
+          <h4>왜 사람이 봐야 하나</h4>
+          <p>{need.why}</p>
+          <h4>이렇게 확인해 주세요</h4>
+          <ol>
+            {need.checks.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       <div className="cause">
-        <p className="muted small">
-          <strong>{CAUSE_LABEL[d.cause]}</strong> · {guess.detail?.summary ?? guess.why ?? CAUSE_HINT[d.cause]}
-        </p>
+        {/* "원인 불명" says nothing the block above does not say better, so it is left out. */}
+        {(d.cause !== 'unknown' || closed) && (
+          <p className="muted small">
+            <strong>{CAUSE_LABEL[d.cause]}</strong> · {guess.detail?.summary ?? guess.why ?? CAUSE_HINT[d.cause]}
+          </p>
+        )}
         {guess.detail && guess.detail.points.length > 0 && (
           <ul className="cause-points muted small">
             {guess.detail.points.map((p, i) => (
