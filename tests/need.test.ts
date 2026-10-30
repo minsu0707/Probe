@@ -20,12 +20,35 @@ test('an unimplemented API is said to be unimplemented, not called a failure of 
 
 test("a test's own dump is recognised as a printout, with what it printed", () => {
   const n = need('Error: PRD=PRD-069662 URL=https://x/#product NAV:["M0 홈","M1 제품 개발"] CARDS:["개발 과제"]');
-  assert.match(n.headline, /화면 정보 출력 후 멈춤/);
-  assert.match(n.headline, /PRD·URL 외 2/);
+  assert.equal(n.headline, '화면 정보 출력 · 제품·주소 외 2');
+  assert.match(n.peek, /PRD-069662/);
   assert.match(n.why, /일부러 실패시킨/);
   assert.ok(n.checks.some((c) => c.includes('스크린샷')));
 
-  assert.match(need('Error: DOM:<td><button id="prd-add">제품 등록</button></td>').headline, /DOM/);
+  assert.match(need('Error: DOM:<td><button id="prd-add">제품 등록</button></td>').headline, /화면 구조/);
+});
+
+test('printouts of the same kind are told apart by what they printed, in words', () => {
+  const buttons = need('Error: REV1 BTNS:.D. | ac-save.submit.원자료로 저장 | ac-calc.submit.계산');
+  const text = need('Error: TEXT:안 상태 복사 원본 다시 계산 ALERTS:["",""]');
+  assert.equal(buttons.headline, '화면 정보 출력 · 버튼 목록');
+  assert.equal(text.headline, '화면 정보 출력 · 화면 글·알림');
+  assert.match(buttons.peek, /원자료로 저장/);
+  assert.match(text.peek, /안 상태 복사/);
+  assert.notEqual(buttons.peek, text.peek);
+  assert.equal(need('Error: ZZTOP:1').headline, '화면 정보 출력 · ZZTOP'); // a name we do not know stays as written
+});
+
+test('a timed-out wait names what it waited for in words, not as a selector', () => {
+  const n = need("TimeoutError: locator.click: Timeout 15000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: '성분 줄 추가' })");
+  assert.equal(n.headline, '15초 기다려도 성분 줄 추가 못 찾음');
+  assert.equal(n.peek, '기다린 것: 성분 줄 추가');
+  const chained = need("TimeoutError: locator.fill: Timeout 15000ms exceeded.\nCall log:\n  - waiting for locator('table').filter({ hasText: '경과일' }).last().locator('input').first()");
+  assert.match(chained.peek, /마지막 ‘경과일’ 표 › 첫 번째 입력칸/);
+});
+
+test('a rejected request shows what the server said under the headline', () => {
+  assert.equal(need('Error: POST /api/a → 409 {"code":"FROZEN","message":"확정된 배합은 수정할 수 없습니다"}').peek, '확정된 배합은 수정할 수 없습니다');
 });
 
 test('expected and received values are put side by side', () => {

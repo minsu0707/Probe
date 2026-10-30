@@ -32,7 +32,7 @@ function readShotSize(): ShotSize {
 /** One row in the list: severity dot and title, where it is, and one quiet line of facts. */
 export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Defect; selected: boolean; onSelect: () => void; now: number }) {
   const closed = d.status === 'fixed' || d.status === 'false_positive';
-  const headline = reviewNeed({ error: d.error, page: d.page, feature: d.feature, hasScreenshot: Boolean(d.screenshot) }).headline;
+  const { headline, peek } = reviewNeed({ error: d.error, page: d.page, feature: d.feature, hasScreenshot: Boolean(d.screenshot) });
   const facts = [d.status !== 'candidate' ? DEFECT_STATUS_LABEL[d.status] : null, d.cause !== 'unknown' ? CAUSE_LABEL[d.cause] : null, d.answer ? '답변함' : null, d.feature && isTemporarySpec(d.feature) ? '임시 탐색에서 나옴' : null, d.occurrences > 1 ? `${d.occurrences}회` : null, `${startTime(d.firstSeen)} 발견`, d.occurrences > 1 ? `최근 ${ago(d.lastSeen, now)}` : null].filter(Boolean);
   return (
     <li className={`defect-item${closed ? ' defect-done' : ''}${selected ? ' selected' : ''}`}>
@@ -43,6 +43,11 @@ export function DefectItem({ defect: d, selected, onSelect, now }: { defect: Def
             {headline}
           </span>
         </span>
+        {peek && (
+          <span className="defect-peek small" title={peek}>
+            {peek}
+          </span>
+        )}
         <span className="defect-case muted small" title={d.title}>
           {d.title}
         </span>

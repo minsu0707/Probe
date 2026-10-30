@@ -15,6 +15,13 @@ test('a locator is named the way a person would say it', () => {
   assert.equal(readableTarget("locator('#p')"), '#p');
 });
 
+test('a chain of locators is said in words, not shown as code', () => {
+  assert.equal(readableTarget("locator('table').filter({ hasText: '경과일' }).last().locator('tbody tr').nth(2).locator('input').first()"), '마지막 ‘경과일’ 표 › 3번째 행 › 첫 번째 입력칸');
+  assert.equal(readableTarget("getByRole('dialog').getByRole('button', { name: '확인' })"), '대화상자 › 확인');
+  assert.equal(readableTarget("locator('#mat-list').locator('tbody tr').filter({ hasText: '감귤착즙액' }).first()"), '#mat-list › 첫 번째 ‘감귤착즙액’ 행');
+  assert.equal(readableTarget("locator('weird::thing')"), 'weird::thing');
+});
+
 test('an action survives the trip through the log, and long values are cut', () => {
   const a: Act = { what: 'fill', target: '제품명', value: '누드빼빼로' };
   assert.deepEqual(decodeAct(encodeAct(a)), a);
